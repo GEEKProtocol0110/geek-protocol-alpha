@@ -6,9 +6,17 @@ export default function Home() {
       <div className="mx-auto max-w-6xl px-6 py-14">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 grid place-items-center">
-              <span className="text-lg">👾</span>
-            </div>
+            <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 grid place-items-center overflow-hidden">
+  <Image
+    src="/logo.png"
+    alt="Geek Protocol"
+    width={40}
+    height={40}
+    className="h-10 w-10 object-contain"
+    priority
+  />
+</div>
+
             <div className="leading-tight">
               <div className="font-semibold tracking-tight">Geek Protocol</div>
               <div className="text-xs text-white/60">Your Knowledge is Now an Asset</div>
