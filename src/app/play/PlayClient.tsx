@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { questions as questionBank } from "@/lib/questions";
+import { mvpQuestions as questionBank } from "@/lib/questions";
+
 
 type Choice = { id: string; text: string };
 type Q = {
