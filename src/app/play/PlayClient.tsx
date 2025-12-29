@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mvpQuestions as questionBank } from "@/lib/questions";
+import { useWallet } from "@/components/WalletProvider";
 
 type Choice = { id: string; text: string };
 type Q = {
@@ -59,6 +60,7 @@ function pickRunQuestions(all: any[]): Q[] {
 
 export default function PlayClient() {
   const router = useRouter();
+const { mode } = useWallet();
 
   const runQuestions = useMemo(() => pickRunQuestions(questionBank as any), []);
   const [phase, setPhase] = useState<"intro" | "run" | "done">("intro");
@@ -247,6 +249,25 @@ export default function PlayClient() {
           />
         </div>
       </div>
+<div
+  className={`rounded-2xl border p-4 ${
+    mode === "earn"
+      ? "border-emerald-400/20 bg-emerald-400/10"
+      : "border-white/10 bg-white/5"
+  }`}
+>
+  <div className="text-xs text-white/60">Rewards Mode</div>
+  <div className="mt-1 font-medium">
+    {mode === "earn"
+      ? "Earn Mode: rewards will route to your connected Kaspa wallet (when enabled)."
+      : "Practice Mode: connect Kasware to become eligible to earn $GEEK."}
+  </div>
+  <div className="mt-1 text-sm text-white/70">
+    {mode === "earn"
+      ? "Your Knowledge is Now an Asset. All hope, no hype."
+      : "You can still play now — rewards are only for verified wallet addresses."}
+  </div>
+</div>
 
       {/* Question Card */}
       <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-6">
