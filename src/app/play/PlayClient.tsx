@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mvpQuestions as questionBank } from "@/lib/questions";
 
-
 type Choice = { id: string; text: string };
 type Q = {
   id: string;
@@ -23,26 +22,29 @@ function clamp(n: number, min: number, max: number) {
 }
 
 function pickRunQuestions(all: any[]): Q[] {
-  // Try to normalize if your questions.ts format differs slightly
   const normalized: Q[] = (all ?? []).map((q: any, i: number) => {
-    const choices: Choice[] =
-      q.choices ??
-      q.options?.map((t: string, idx: number) => ({ id: String(idx), text: t })) ??
-      [];
+    const choices: Choice[] = (q.options ?? []).map((text: string, idx: number) => ({
+      id: String(idx),
+      text,
+    }));
+
+    const answerId =
+      typeof q.answerIndex === "number" && choices[q.answerIndex]
+        ? choices[q.answerIndex].id
+        : "";
 
     return {
       id: String(q.id ?? i),
-      question: String(q.question ?? q.q ?? ""),
+      question: String(q.prompt ?? ""),
       choices,
-      answerId: String(q.answerId ?? q.answer ?? q.correctId ?? ""),
+      answerId,
       category: q.category,
-      difficulty: q.difficulty,
+      difficulty: "Alpha",
     };
   });
 
-  // Filter out broken entries
   const clean = normalized.filter(
-    (q) => q.question && q.choices?.length >= 2 && q.answerId !== ""
+    (q) => q.question && q.choices.length >= 2 && q.answerId !== ""
   );
 
   // Shuffle
@@ -53,6 +55,7 @@ function pickRunQuestions(all: any[]): Q[] {
 
   return clean.slice(0, RUN_LENGTH);
 }
+
 
 export default function PlayClient() {
   const router = useRouter();
@@ -138,15 +141,30 @@ export default function PlayClient() {
   }
 
   if (!runQuestions.length) {
-    return (
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <div className="text-xl font-semibold">No questions found</div>
-        <p className="mt-2 text-sm text-white/70">
-          Add questions to <code className="text-white/90">src/lib/questions.ts</code>.
-        </p>
+  const sample: any = (questionBank as any)?.[0];
+  const keys = sample ? Object.keys(sample) : [];
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <div className="text-xl font-semibold">No questions found</div>
+      <p className="mt-2 text-sm text-white/70">
+        The app loaded <b>{(questionBank as any)?.length ?? 0}</b> raw questions,
+        but couldn’t map them into the format the quiz run expects.
+      </p>
+
+      <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+        <div className="text-xs text-white/60">Debug (first question keys)</div>
+        <div className="mt-2 text-sm text-white/80 break-words">
+          {keys.length ? keys.join(", ") : "No sample question found."}
+        </div>
       </div>
-    );
-  }
+
+      <p className="mt-3 text-sm text-white/70">
+        Send me the keys shown above and I’ll give you the exact 5-line fix.
+      </p>
+    </div>
+  );
+}
+
 
   // INTRO
   if (phase === "intro") {
