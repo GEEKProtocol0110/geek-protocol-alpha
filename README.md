@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="[https://www.geekprotocol.xyz/]">Website</a> •
-  <a href="[geek-litepaper-nu.vercel.app]">Litepaper</a> •
+  <a href="https://www.geekprotocol.xyz/">Website</a> •
+  <a href="geek-litepaper-nu.vercel.app">Litepaper</a> •
   <a href="https://x.com/geekonkas">X (Twitter)</a> •
   <a href="https://t.me/GEEKonKAScommunity">Telegram</a>
 </p>
