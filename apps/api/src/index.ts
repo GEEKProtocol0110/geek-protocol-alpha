@@ -33,6 +33,12 @@ declare global {
     prisma: PrismaClient;
     redis: Redis;
   }
+  namespace Express {
+    interface Request {
+      userId?: string;
+      walletAddress?: string;
+    }
+  }
 }
 
 fastify.decorate("prisma", prisma);

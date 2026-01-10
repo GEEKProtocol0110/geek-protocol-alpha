@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { SignJWT, jwtVerify } from "jose";
 import { NonceResponseSchema, VerifySignatureSchema } from "@geek/shared";
 import { logger } from "../lib/logger";
+import { verifyKasWareSignature } from "../lib/kasware";
 import crypto from "crypto";
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -57,9 +58,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // TODO: Verify signature with KasWare (check against wallet's public key)
-      // For now, we'll mark nonce as used and proceed
-      // In production, verify the signature cryptographically
+      // Verify signature with KasWare
+      const isValidSignature = verifyKasWareSignature(nonce, signature, walletAddress);
+      if (!isValidSignature) {
+        return reply.code(401).send({
+          success: false,
+          error: "Invalid signature",
+        });
+      }
 
       await fastify.redis.setex(`nonce:${nonce}`, 600, JSON.stringify({ used: true }));
 

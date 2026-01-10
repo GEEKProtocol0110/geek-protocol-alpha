@@ -1,27 +1,74 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getRewardStatus } from "@/lib/api";
 
-type Result = {
-  score: number;
+type ResultData = {
+  correct: number;
   total: number;
-  rewardAmount: number;
-  txStatus: string;
-  message?: string;
+  score: number;
+  time: number;
+  attempt: string;
+};
+
+type RewardStatus = {
+  status: "PENDING" | "SENT" | "CONFIRMED" | "FAILED";
+  txId?: string;
+  error?: string;
 };
 
 export default function ResultPage() {
-  const [result, setResult] = useState<Result | null>(null);
+  const searchParams = useSearchParams();
+  const [result, setResult] = useState<ResultData | null>(null);
+  const [reward, setReward] = useState<RewardStatus | null>(null);
+  const [polling, setPolling] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("gp:lastResult");
-      if (raw) setResult(JSON.parse(raw) as Result);
-    } catch {
-      // ignore
+    // Parse URL params
+    const correct = searchParams.get("correct");
+    const total = searchParams.get("total");
+    const score = searchParams.get("score");
+    const time = searchParams.get("time");
+    const attempt = searchParams.get("attempt");
+
+    if (correct && total && score && attempt) {
+      setResult({
+        correct: parseInt(correct),
+        total: parseInt(total),
+        score: parseInt(score),
+        time: time ? parseInt(time) : 0,
+        attempt,
+      });
     }
-  }, []);
+  }, [searchParams]);
+
+  // Poll reward status
+  useEffect(() => {
+    if (!result?.attempt || !polling) return;
+
+    const poll = async () => {
+      try {
+        const status = await getRewardStatus(result.attempt);
+        setReward(status);
+        if (status.status === "CONFIRMED" || status.status === "FAILED") {
+          setPolling(false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch reward status:", error);
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    const timeout = setTimeout(() => setPolling(false), 60000); // Stop after 60s
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [result?.attempt, polling]);
 
   return (
     <main className="min-h-dvh bg-black text-white">
@@ -37,15 +84,45 @@ export default function ResultPage() {
           <h1 className="text-2xl font-semibold">Round Complete</h1>
 
           {result ? (
-            <div className="mt-4 space-y-3">
-              <p className="text-white/80">
-                Score: <span className="font-semibold text-white">{result.score}</span> / {result.total}
-              </p>
-              <p className="text-white/80">
-                Reward: <span className="font-semibold text-white">{result.rewardAmount}</span> $GEEK (testnet stub)
-              </p>
-              <p className="text-xs text-white/60">TX Status: {result.txStatus}</p>
-              {result.message ? <p className="text-xs text-white/60">{result.message}</p> : null}
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-white/80">
+                  Score:{" "}
+                  <span className="font-semibold text-white">
+                    {result.correct} / {result.total} ({Math.round((result.correct / result.total) * 100)}%)
+                  </span>
+                </p>
+                <p className="text-sm text-white/60">Time: {result.time}s</p>
+              </div>
+
+              <div
+                className={`rounded-lg border px-4 py-3 ${
+                  reward?.status === "CONFIRMED"
+                    ? "border-emerald-500/50 bg-emerald-500/10"
+                    : reward?.status === "FAILED"
+                      ? "border-red-500/50 bg-red-500/10"
+                      : "border-white/20 bg-white/5"
+                }`}
+              >
+                <p className="text-white/80">
+                  Reward Status:{" "}
+                  <span
+                    className={`font-semibold ${
+                      reward?.status === "CONFIRMED"
+                        ? "text-emerald-400"
+                        : reward?.status === "FAILED"
+                          ? "text-red-400"
+                          : "text-white"
+                    }`}
+                  >
+                    {reward?.status || "PENDING"}
+                  </span>
+                </p>
+                {reward?.txId && (
+                  <p className="mt-1 text-xs text-white/60">TX: {reward.txId.slice(0, 16)}...</p>
+                )}
+                {reward?.error && <p className="mt-1 text-xs text-red-400">{reward.error}</p>}
+              </div>
             </div>
           ) : (
             <p className="mt-4 text-sm text-white/70">

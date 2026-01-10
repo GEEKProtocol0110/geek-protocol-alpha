@@ -1,6 +1,7 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { StartQuizRequestSchema, QuestionPublicSchema } from "@geek/shared";
 import { makeAttemptToken, verifyAttemptToken } from "../lib/security";
+import { authMiddleware } from "../lib/auth-middleware";
 
 const RUN_LENGTH = 10;
 const ATTEMPT_TTL_SECONDS = 15 * 60; // 15 minutes window
@@ -9,8 +10,12 @@ export async function quizRoutes(fastify: FastifyInstance) {
   // Start quiz attempt
   fastify.post<{ Body: unknown }>("/start", async (request, reply) => {
     try {
+      await authMiddleware(request, reply);
       const body = StartQuizRequestSchema.parse(request.body);
       const category = body.category || "General Geek";
+      
+      // Use authenticated userId or fallback to temp-user
+      const userId = (request as any).userId || "temp-user";
 
       // Select questions from DB (active, category)
       const questions = await fastify.prisma.question.findMany({
@@ -32,7 +37,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
       const now = new Date();
       const attempt = await fastify.prisma.attempt.create({
         data: {
-          userId: "temp-user", // replaced by auth middleware later
+          userId,
           category,
           questionIds: selected.map((q) => q.id),
           answers: [],
