@@ -17,6 +17,14 @@ export function TopBar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          <Link
+            href="/leaderboard"
+            className="text-sm text-white/70 hover:text-white transition-colors"
+            title="View leaderboard"
+          >
+            Leaderboard
+          </Link>
+
           <span
             className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
               mode === "earn"

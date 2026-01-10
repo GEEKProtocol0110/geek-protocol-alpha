@@ -53,3 +53,33 @@ export async function getRewardStatus(attemptId: string) {
   const json = await res.json();
   return json;
 }
+
+export async function getLeaderboard(limit = 100) {
+  const res = await fetch(`${API_BASE}/api/leaderboard/top?limit=${limit}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Leaderboard fetch failed: ${res.status}`);
+  const json = await res.json();
+  if (!json?.success) throw new Error(json?.error || "Leaderboard fetch failed");
+  return json.data as Array<{
+    id: string;
+    walletAddress: string;
+    xp: number;
+    level: number;
+    streak: number;
+    rank: number;
+  }>;
+}
+
+export async function getUserStats(userId: string) {
+  const res = await fetch(`${API_BASE}/api/leaderboard/user/${userId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`User stats fetch failed: ${res.status}`);
+  const json = await res.json();
+  if (!json?.success) throw new Error(json?.error || "User stats fetch failed");
+  return json.data;
+}
+
