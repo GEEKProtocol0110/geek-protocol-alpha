@@ -88,7 +88,7 @@ export default function Home() {
               </a>
 
               <a
-                href="https://kas.fyi/token/krc20/GEEK"
+                href="https://kaspa-lens.com/krc20-tokens/details/?ticker=GEEK"
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-xl border border-white/15 px-5 py-3 font-medium hover:bg-white/5"
