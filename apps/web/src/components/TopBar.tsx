@@ -1,11 +1,39 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useWallet } from "@/components/WalletProvider";
 import { shortAddr } from "@/lib/kasware";
 
 export function TopBar() {
   const { installed, address, network, connecting, connect, disconnect, mode } = useWallet();
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+  const [apiStatus, setApiStatus] = useState<"ok" | "degraded" | null>(null);
+  const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchHealth = async () => {
+      try {
+        const r1 = await fetch(`${API_BASE}/health`);
+        if (r1.ok) {
+          const j = await r1.json();
+          if (mounted) setApiStatus(j.status);
+        }
+        const r2 = await fetch(`${API_BASE}/health/worker`);
+        if (r2.ok) {
+          const j2 = await r2.json();
+          if (mounted) setWorkerAlive(Boolean(j2.alive));
+        }
+      } catch {}
+    };
+    fetchHealth();
+    const id = setInterval(fetchHealth, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [API_BASE]);
 
   return (
     <div className="sticky top-0 z-50 border-b border-cyan-400/20 bg-black/70 backdrop-blur-md glass">
@@ -24,6 +52,25 @@ export function TopBar() {
           >
             Leaderboard
           </Link>
+
+          <Link
+            href="/admin"
+            className="text-sm text-white/70 hover:text-white transition-colors"
+            title="Admin panel"
+          >
+            Admin
+          </Link>
+
+          <span
+            className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
+              apiStatus === "ok" && workerAlive
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                : "border-yellow-500/50 bg-yellow-500/10 text-yellow-300"
+            }`}
+            title={`API: ${apiStatus ?? "unknown"} • Worker: ${workerAlive ? "alive" : "idle"}`}
+          >
+            {apiStatus === "ok" && workerAlive ? "System OK" : "System Degraded"}
+          </span>
 
           <span
             className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${

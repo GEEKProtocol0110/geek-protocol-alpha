@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyCors from "@fastify/cors";
+import fastifyCookie from "@fastify/cookie";
 import { PrismaClient } from "@prisma/client";
 import Redis from "ioredis";
 import { logger } from "./lib/logger";
@@ -9,6 +10,8 @@ import { quizRoutes } from "./routes/quiz";
 import { rewardRoutes } from "./routes/rewards";
 import { leaderboardRoutes } from "./routes/leaderboard";
 import { adminRoutes } from "./routes/admin";
+import { healthRoutes } from "./routes/health";
+import { healthWorkerRoutes } from "./routes/health-worker";
 
 const prisma = new PrismaClient();
 const redis = new Redis({
@@ -17,7 +20,7 @@ const redis = new Redis({
 });
 
 const fastify = Fastify({
-  logger,
+  logger: true,
 });
 
 // Register plugins
@@ -26,28 +29,14 @@ fastify.register(fastifyCors, {
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
 });
-
-// Attach services to fastify
-declare global {
-  namespace FastifyInstance {
-    prisma: PrismaClient;
-    redis: Redis;
-  }
-  namespace Express {
-    interface Request {
-      userId?: string;
-      walletAddress?: string;
-    }
-  }
-}
+fastify.register(fastifyCookie);
 
 fastify.decorate("prisma", prisma);
 fastify.decorate("redis", redis);
 
-// Health check
-fastify.get("/health", async (request, reply) => {
-  return { status: "ok", timestamp: new Date().toISOString() };
-});
+// Health check (full DB + Redis)
+fastify.register(healthRoutes, { prefix: "/health" });
+fastify.register(healthWorkerRoutes, { prefix: "/health/worker" });
 
 // Register routes
 fastify.register(authRoutes, { prefix: "/api/auth" });

@@ -83,7 +83,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
   // Submit attempt for server-side scoring
   fastify.post<{ Body: any }>("/submit", async (request, reply) => {
     try {
-      const { attemptId, attemptToken, answers } = request.body || {};
+      const { attemptId, attemptToken, answers } = (request.body || {}) as any;
       if (!attemptId || !attemptToken || !Array.isArray(answers)) {
         return reply.code(400).send({ success: false, error: "Invalid payload" });
       }

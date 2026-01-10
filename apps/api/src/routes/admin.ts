@@ -1,27 +1,144 @@
 import { FastifyInstance } from "fastify";
 
+type AttemptsQuery = {
+  limit?: string;
+  offset?: string;
+  userId?: string;
+  wallet?: string;
+};
+
+type RewardsQuery = {
+  limit?: string;
+  offset?: string;
+  status?: string;
+  userId?: string;
+  wallet?: string;
+};
+
 export async function adminRoutes(fastify: FastifyInstance) {
-  fastify.get<{ Querystring: { flagged?: string } }>("/attempts", async (request, reply) => {
-    // TODO: Implement admin attempts view
-    return reply.send({
-      success: false,
-      error: "Not implemented",
-    });
+  // Attempts listing with basic pagination and filters
+  fastify.get<{ Querystring: AttemptsQuery }>("/attempts", async (request, reply) => {
+    try {
+      const { limit = "50", offset = "0", userId, wallet } = request.query;
+      const take = Math.max(1, Math.min(200, parseInt(limit || "50")));
+      const skip = Math.max(0, parseInt(offset || "0"));
+
+      const where: any = {};
+      if (userId) where.userId = userId;
+      if (wallet) where.user = { walletAddress: wallet };
+
+      const items = await fastify.prisma.attempt.findMany({
+        where,
+        orderBy: { finishedAt: "desc" },
+        take,
+        skip,
+        include: {
+          user: { select: { walletAddress: true, id: true } },
+          reward: { select: { status: true, amount: true, txid: true, id: true } },
+        },
+      });
+
+      const data = items.map((a) => ({
+        id: a.id,
+        userId: a.userId,
+        walletAddress: a.user.walletAddress,
+        category: a.category,
+        score: a.score,
+        scorePct: a.scorePct,
+        timeSeconds: a.timeSeconds,
+        finishedAt: a.finishedAt,
+        flags: a.flags,
+        reward: a.reward
+          ? {
+              id: a.reward.id,
+              status: a.reward.status,
+              amount: Number(a.reward.amount),
+              txid: a.reward.txid || null,
+            }
+          : null,
+      }));
+
+      return reply.send({ success: true, data });
+    } catch (err) {
+      fastify.log.error({ err }, "Admin attempts list failed");
+      return reply.code(500).send({ success: false, error: "Failed to list attempts" });
+    }
   });
 
-  fastify.get<{ Querystring: { status?: string } }>("/rewards", async (request, reply) => {
-    // TODO: Implement admin rewards view
-    return reply.send({
-      success: false,
-      error: "Not implemented",
-    });
+  // Rewards listing with status filter
+  fastify.get<{ Querystring: RewardsQuery }>("/rewards", async (request, reply) => {
+    try {
+      const { limit = "50", offset = "0", status, userId, wallet } = request.query;
+      const take = Math.max(1, Math.min(200, parseInt(limit || "50")));
+      const skip = Math.max(0, parseInt(offset || "0"));
+
+      const where: any = {};
+      if (status) where.status = status;
+      if (userId) where.userId = userId;
+      if (wallet) where.user = { walletAddress: wallet };
+
+      const items = await fastify.prisma.reward.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take,
+        skip,
+        include: {
+          user: { select: { walletAddress: true, id: true } },
+          attempt: { select: { id: true, score: true, scorePct: true, finishedAt: true } },
+        },
+      });
+
+      const data = items.map((r) => ({
+        id: r.id,
+        attemptId: r.attemptId,
+        userId: r.userId,
+        walletAddress: r.user.walletAddress,
+        amount: Number(r.amount),
+        status: r.status,
+        txid: r.txid || null,
+        error: r.error || null,
+        createdAt: r.createdAt,
+        confirmedAt: r.confirmedAt || null,
+        attempt: r.attempt,
+      }));
+
+      return reply.send({ success: true, data });
+    } catch (err) {
+      fastify.log.error({ err }, "Admin rewards list failed");
+      return reply.code(500).send({ success: false, error: "Failed to list rewards" });
+    }
   });
 
-  fastify.post<{ Body: unknown }>("/questions/import", async (request, reply) => {
-    // TODO: Implement question import
-    return reply.send({
-      success: false,
-      error: "Not implemented",
-    });
+  // Bulk import questions (admin-only manual tool)
+  fastify.post<{ Body: any }>("/questions/import", async (request, reply) => {
+    try {
+      const body: any = request.body as any;
+      const items = Array.isArray(body) ? body : body?.questions;
+      if (!Array.isArray(items) || items.length === 0) {
+        return reply.code(400).send({ success: false, error: "No questions provided" });
+      }
+
+      const created = await fastify.prisma.$transaction(
+        items.map((q: any) =>
+          fastify.prisma.question.create({
+            data: {
+              category: String(q.category || "General Geek"),
+              prompt: String(q.prompt),
+              options: (q.options ?? []).map((s: any) => String(s)),
+              correctIndex: Number(q.correctIndex ?? 0),
+              difficulty: String(q.difficulty || "medium"),
+              tags: (q.tags ?? []).map((t: any) => String(t)),
+              version: Number(q.version ?? 1),
+              active: q.active === false ? false : true,
+            },
+          })
+        )
+      );
+
+      return reply.send({ success: true, data: { created: created.length } });
+    } catch (err) {
+      fastify.log.error({ err }, "Admin question import failed");
+      return reply.code(500).send({ success: false, error: "Failed to import questions" });
+    }
   });
 }

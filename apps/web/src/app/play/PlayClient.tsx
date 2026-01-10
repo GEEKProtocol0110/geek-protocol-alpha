@@ -49,6 +49,7 @@ function mapApiQuestions(all: any[]): Q[] {
 export default function PlayClient() {
   const router = useRouter();
   const { mode } = useWallet();
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
   const [runQuestions, setRunQuestions] = useState<Q[]>([]);
   const [attemptId, setAttemptId] = useState<string>("");
@@ -62,6 +63,7 @@ export default function PlayClient() {
   const [correctCount, setCorrectCount] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(RUN_SECONDS);
   const [questionSecondsLeft, setQuestionSecondsLeft] = useState(QUESTION_SECONDS);
+  const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
 
   const current = runQuestions[idx];
 
@@ -94,6 +96,26 @@ export default function PlayClient() {
 
     return () => clearInterval(t);
   }, [phase, locked, idx]);
+
+  // Poll worker health (visible in HUD)
+  useEffect(() => {
+    let mounted = true;
+    const fetchHealth = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/health/worker`);
+        if (r.ok) {
+          const j = await r.json();
+          if (mounted) setWorkerAlive(Boolean(j.alive));
+        }
+      } catch {}
+    };
+    fetchHealth();
+    const id = setInterval(fetchHealth, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [API_BASE]);
 
   // If overall timer hits 0, finish
   useEffect(() => {
@@ -281,6 +303,7 @@ export default function PlayClient() {
             <HudPill label="Time" value={`${secondsLeft}s`} />
             <HudPill label="Correct" value={`${correctCount}`} />
             <HudPill label="Run %" value={`${clamp(scorePct, 0, 100)}%`} />
+            <HudPill label="Worker" value={workerAlive === null ? "…" : workerAlive ? "Alive" : "Idle"} />
           </div>
         </div>
 

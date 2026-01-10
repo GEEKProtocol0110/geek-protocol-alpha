@@ -24,6 +24,8 @@ function ResultPageContent() {
   const [result, setResult] = useState<ResultData | null>(null);
   const [reward, setReward] = useState<RewardStatus | null>(null);
   const [polling, setPolling] = useState(true);
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+  const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
 
   useEffect(() => {
     const correct = searchParams.get("correct");
@@ -67,6 +69,25 @@ function ResultPageContent() {
       clearTimeout(timeout);
     };
   }, [result?.attempt, polling]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchHealth = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/health/worker`);
+        if (r.ok) {
+          const j = await r.json();
+          if (mounted) setWorkerAlive(Boolean(j.alive));
+        }
+      } catch {}
+    };
+    fetchHealth();
+    const id = setInterval(fetchHealth, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [API_BASE]);
 
   return (
     <main className="min-h-dvh bg-black text-white">
@@ -120,6 +141,16 @@ function ResultPageContent() {
                   <p className="mt-1 text-xs text-white/60">TX: {reward.txId.slice(0, 16)}...</p>
                 )}
                 {reward?.error && <p className="mt-1 text-xs text-red-400">{reward.error}</p>}
+                {workerAlive === null ? (
+                  <p className="mt-1 text-xs text-white/60">Worker: Checking…</p>
+                ) : (
+                  <p className="mt-1 text-xs text-white/60">
+                    Worker: {" "}
+                    <span className={workerAlive ? "text-emerald-400" : "text-yellow-300"}>
+                      {workerAlive ? "Alive" : "Idle"}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           ) : (

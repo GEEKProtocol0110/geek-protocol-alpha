@@ -9,7 +9,9 @@ import {
   kaswareGetNetwork,
   getKasware,
   type KaswareNetwork,
+  signWithKasware,
 } from "@/lib/kasware";
+import { getNonce, verifySignature, logout } from "@/lib/api";
 
 type WalletState = {
   installed: boolean;
@@ -74,6 +76,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setAddress(addr);
       const net = await kaswareGetNetwork();
       setNetwork(net);
+
+      // Dev-friendly auth handshake: get nonce, sign, verify to set session cookie
+      if (addr) {
+        try {
+          const { nonce } = await getNonce();
+          const signature = await signWithKasware(nonce);
+          await verifySignature(addr, signature, nonce);
+        } catch (e) {
+          // Non-fatal in dev; user can still play in practice mode
+          console.warn("Auth handshake failed", e);
+        }
+      }
     } finally {
       setConnecting(false);
     }
@@ -81,6 +95,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   async function disconnect() {
     await kaswareDisconnect();
+    try {
+      await logout();
+    } catch {}
     setAddress(null);
   }
 

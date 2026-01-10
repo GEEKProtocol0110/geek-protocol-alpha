@@ -14,7 +14,7 @@ const ENABLE_REWARDS = (process.env.ENABLE_REWARDS || "false").toLowerCase() ===
 async function processRewardJob(job: { attemptId: string }) {
   const { attemptId } = job;
   const lockKey = `lock:reward:${attemptId}`;
-  const gotLock = await redis.set(lockKey, "1", "NX", "EX", 300); // 5 min lock
+  const gotLock = await (redis as any).set(lockKey, "1", "EX", 300, "NX"); // 5 min lock
   if (!gotLock) {
     logger.warn({ attemptId }, "Reward lock exists, skipping");
     return;
@@ -73,6 +73,19 @@ async function processRewardJob(job: { attemptId: string }) {
 
 export async function startRewardWorker() {
   logger.info("Reward worker started");
+  // Heartbeat updater
+  const heartbeatKey = "worker:rewards:heartbeat";
+  const updateHeartbeat = async () => {
+    try {
+      const payload = JSON.stringify({ ts: Date.now() });
+      await (redis as any).set(heartbeatKey, payload, "EX", 60);
+    } catch (err) {
+      logger.warn({ err }, "Failed to update worker heartbeat");
+    }
+  };
+  setInterval(updateHeartbeat, 15000);
+  await updateHeartbeat();
+
   while (true) {
     try {
       const data = await redis.brpop("reward_queue", 5); // block pop

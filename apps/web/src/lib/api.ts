@@ -83,3 +83,40 @@ export async function getUserStats(userId: string) {
   return json.data;
 }
 
+// Auth: KasWare nonce + signature verify (dev-friendly)
+export async function getNonce(): Promise<{ nonce: string; expiresAt: number }> {
+  const res = await fetch(`${API_BASE}/api/auth/nonce`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Nonce failed: ${res.status}`);
+  const json = await res.json();
+  if (!json?.success) throw new Error(json?.error || "Nonce failed");
+  return json.data as { nonce: string; expiresAt: number };
+}
+
+export async function verifySignature(
+  walletAddress: string,
+  signature: string,
+  nonce: string
+): Promise<{ userId: string; walletAddress: string; token: string }> {
+  const res = await fetch(`${API_BASE}/api/auth/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ walletAddress, signature, nonce }),
+  });
+  if (!res.ok) throw new Error(`Verify failed: ${res.status}`);
+  const json = await res.json();
+  if (!json?.success) throw new Error(json?.error || "Verify failed");
+  return json.data as { userId: string; walletAddress: string; token: string };
+}
+
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Logout failed: ${res.status}`);
+}
+
