@@ -26,7 +26,7 @@ export default function Home() {
           <nav className="hidden sm:flex items-center gap-3 text-sm">
             <a
               className="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5"
-              href="https://kas.fyi/token/krc20/GEEK"
+              href="https://kaspa-lens.com/krc20-tokens/details/?ticker=GEEK"
               target="_blank"
               rel="noreferrer"
             >
