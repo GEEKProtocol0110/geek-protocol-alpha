@@ -44,3 +44,5 @@ next-env.d.ts
 *.txt
 mintty.*.png
 .scripts*
+apps/web/.next/
+apps/api/.next/
