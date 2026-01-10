@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { getRewardStatus } from "@/lib/api";
 
 type ResultData = {
@@ -19,14 +19,13 @@ type RewardStatus = {
   error?: string;
 };
 
-export default function ResultPage() {
+function ResultPageContent() {
   const searchParams = useSearchParams();
   const [result, setResult] = useState<ResultData | null>(null);
   const [reward, setReward] = useState<RewardStatus | null>(null);
   const [polling, setPolling] = useState(true);
 
   useEffect(() => {
-    // Parse URL params
     const correct = searchParams.get("correct");
     const total = searchParams.get("total");
     const score = searchParams.get("score");
@@ -44,7 +43,6 @@ export default function ResultPage() {
     }
   }, [searchParams]);
 
-  // Poll reward status
   useEffect(() => {
     if (!result?.attempt || !polling) return;
 
@@ -62,7 +60,7 @@ export default function ResultPage() {
 
     poll();
     const interval = setInterval(poll, 3000);
-    const timeout = setTimeout(() => setPolling(false), 60000); // Stop after 60s
+    const timeout = setTimeout(() => setPolling(false), 60000);
 
     return () => {
       clearInterval(interval);
@@ -125,9 +123,7 @@ export default function ResultPage() {
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-white/70">
-              No result found. Play a round first.
-            </p>
+            <p className="mt-4 text-sm text-white/70">No result data found.</p>
           )}
 
           <div className="mt-8 flex gap-3">
@@ -137,19 +133,20 @@ export default function ResultPage() {
             >
               Play Again
             </Link>
-            <Link
-              href="/"
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80"
-            >
-              Back to Home
+            <Link href="/" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80">
+              Home
             </Link>
           </div>
         </div>
-
-        <p className="mt-6 text-xs text-white/50">
-          Next step: wire Kaspa Testnet wallet connect + backend reward send.
-        </p>
       </div>
     </main>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-black flex items-center justify-center">Loading...</div>}>
+      <ResultPageContent />
+    </Suspense>
   );
 }
