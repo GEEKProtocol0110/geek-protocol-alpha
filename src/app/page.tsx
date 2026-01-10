@@ -145,7 +145,7 @@ export default function Home() {
           <div className="flex gap-3">
             <a className="hover:text-white/80" href="https://x.com/geekonkas" target="_blank" rel="noreferrer">X</a>
             <a className="hover:text-white/80" href="https://t.me/GEEKonKAScommunity" target="_blank" rel="noreferrer">Telegram</a>
-            <a className="hover:text-white/80" href="https://kas.fyi/token/krc20/GEEK" target="_blank" rel="noreferrer">$GEEK</a>
+            <a className="hover:text-white/80" href="https://kaspa-lens.com/krc20-tokens/details/?ticker=GEEK" target="_blank" rel="noreferrer">$GEEK</a>
           </div>
         </footer>
       </div>
