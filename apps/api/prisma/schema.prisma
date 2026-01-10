@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  xp            Int      @default(0)
+  level         Int      @default(1)
+  streak        Int      @default(0)
+  lastAttemptAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  attempts Attempt[]
+  rewards  Reward[]
+
+  @@index([walletAddress])
+  @@map("users")
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  category  String
+  prompt    String
+  options   String[] // JSON-serialized array
+  correctIndex Int
+  difficulty String   @default("medium") // easy, medium, hard
+  tags      String[] @default([])
+  version   Int      @default(1)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attempts AttemptQuestion[]
+
+  @@index([category, active])
+  @@map("questions")
+}
+
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   String
+  questionIds String[] // JSON-serialized array
+  answers    Int[]    // JSON-serialized array (indices into choices)
+  correctAnswers Int[] @default([]) // JSON-serialized array
+  score      Int
+  scorePct   Int      @default(0) // 0-100
+  startedAt  DateTime
+  finishedAt DateTime
+  timeSeconds Int     @default(0)
+  flags      String[] @default([]) // suspicious activity flags
+  createdAt  DateTime @default(now())
+
+  questions AttemptQuestion[]
+  reward    Reward?
+
+  @@unique([id])
+  @@index([userId, finishedAt])
+  @@map("attempts")
+}
+
+model AttemptQuestion {
+  id         String   @id @default(cuid())
+  attemptId  String
+  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  answer     Int      @default(-1)
+  correct    Boolean  @default(false)
+
+  @@unique([attemptId, questionId])
+  @@map("attempt_questions")
+}
+
+model Reward {
+  id        String   @id @default(cuid())
+  attemptId String   @unique
+  attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    BigInt   // in satoshis
+  status    String   @default("PENDING") // PENDING, SENT, CONFIRMED, FAILED
+  txid      String?  // Kaspa transaction ID
+  error     String?  // error message if failed
+  createdAt DateTime @default(now())
+  confirmedAt DateTime?
+
+  @@index([userId, status])
+  @@index([attemptId])
+  @@map("rewards")
+}
+
+model Nonce {
+  id        String   @id @default(cuid())
+  nonce     String   @unique
+  walletAddress String
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([walletAddress, expiresAt])
+  @@map("nonces")
+}
