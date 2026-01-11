@@ -21,6 +21,7 @@ type WalletState = {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   mode: "earn" | "practice";
+  sessionVersion: number;
 };
 
 const Ctx = createContext<WalletState | null>(null);
@@ -30,6 +31,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [network, setNetwork] = useState<KaswareNetwork | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [sessionVersion, setSessionVersion] = useState(0);
 
   // Detect + hydrate (safe read; does NOT request connect)
   useEffect(() => {
@@ -83,6 +85,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           const { nonce } = await getNonce();
           const signature = await signWithKasware(nonce);
           await verifySignature(addr, signature, nonce);
+          setSessionVersion((v) => v + 1);
         } catch (e) {
           // Non-fatal in dev; user can still play in practice mode
           console.warn("Auth handshake failed", e);
@@ -99,12 +102,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       await logout();
     } catch {}
     setAddress(null);
+    setSessionVersion(0);
   }
 
   const value = useMemo<WalletState>(() => {
     const mode: WalletState["mode"] = address ? "earn" : "practice";
-    return { installed, address, network, connecting, connect, disconnect, mode };
-  }, [installed, address, network, connecting]);
+    return { installed, address, network, connecting, connect, disconnect, mode, sessionVersion };
+  }, [installed, address, network, connecting, sessionVersion]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

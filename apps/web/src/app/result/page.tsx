@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { getRewardStatus } from "@/lib/api";
+import { getRewardStatus, type RewardRecord } from "@/lib/api";
 
 type ResultData = {
   correct: number;
@@ -13,16 +13,10 @@ type ResultData = {
   attempt: string;
 };
 
-type RewardStatus = {
-  status: "PENDING" | "SENT" | "CONFIRMED" | "FAILED";
-  txId?: string;
-  error?: string;
-};
-
 function ResultPageContent() {
   const searchParams = useSearchParams();
   const [result, setResult] = useState<ResultData | null>(null);
-  const [reward, setReward] = useState<RewardStatus | null>(null);
+  const [reward, setReward] = useState<RewardRecord | null>(null);
   const [polling, setPolling] = useState(true);
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
   const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
@@ -51,9 +45,11 @@ function ResultPageContent() {
     const poll = async () => {
       try {
         const status = await getRewardStatus(result.attempt);
-        setReward(status);
-        if (status.status === "CONFIRMED" || status.status === "FAILED") {
-          setPolling(false);
+        if (status) {
+          setReward(status);
+          if (status.status === "CONFIRMED" || status.status === "FAILED") {
+            setPolling(false);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch reward status:", error);
@@ -137,8 +133,8 @@ function ResultPageContent() {
                     {reward?.status || "PENDING"}
                   </span>
                 </p>
-                {reward?.txId && (
-                  <p className="mt-1 text-xs text-white/60">TX: {reward.txId.slice(0, 16)}...</p>
+                {reward?.txid && (
+                  <p className="mt-1 text-xs text-white/60">TX: {reward.txid.slice(0, 16)}...</p>
                 )}
                 {reward?.error && <p className="mt-1 text-xs text-red-400">{reward.error}</p>}
                 {workerAlive === null ? (

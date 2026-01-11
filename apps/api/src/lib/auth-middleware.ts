@@ -1,5 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import * as jose from "jose";
+import { getJwtSecret, SESSION_COOKIE_NAME } from "./jwt";
+
+const JWT_SECRET = getJwtSecret();
 
 export async function authMiddleware(
   request: FastifyRequest,
@@ -7,16 +10,16 @@ export async function authMiddleware(
 ): Promise<void> {
   try {
     // Extract JWT from cookies or Authorization header
-    const token =
-      request.cookies.token ||
-      request.headers.authorization?.replace("Bearer ", "");
+    const cookieToken = request.cookies?.[SESSION_COOKIE_NAME];
+    const header = request.headers.authorization;
+    const bearerToken = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
+    const token = cookieToken || bearerToken;
 
     if (!token) {
       return; // Continue without auth
     }
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "");
-    const verified = await jose.jwtVerify(token, secret);
+    const verified = await jose.jwtVerify(token, JWT_SECRET);
 
     // Attach userId and walletAddress to request
     (request as any).userId = verified.payload.userId;

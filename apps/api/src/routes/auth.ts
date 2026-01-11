@@ -3,11 +3,10 @@ import { SignJWT, jwtVerify } from "jose";
 import { NonceResponseSchema, VerifySignatureSchema } from "@geek/shared";
 import { logger } from "../lib/logger";
 import { verifyKasWareSignature } from "../lib/kasware";
+import { getJwtSecret, SESSION_COOKIE_NAME } from "../lib/jwt";
 import crypto from "crypto";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-key-change-in-production"
-);
+const JWT_SECRET = getJwtSecret();
 
 export async function authRoutes(fastify: FastifyInstance) {
   // Generate nonce
@@ -94,7 +93,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         .sign(JWT_SECRET);
 
       return reply
-        .cookie("session", token, {
+        .cookie(SESSION_COOKIE_NAME, token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
@@ -120,7 +119,8 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Get current user profile
   fastify.get<{ Body: unknown }>("/me", async (request, reply) => {
     try {
-      const token = request.cookies.session || extractBearerToken(request.headers.authorization);
+      const token =
+        request.cookies[SESSION_COOKIE_NAME] || extractBearerToken(request.headers.authorization);
       if (!token) {
         return reply.code(401).send({
           success: false,
@@ -164,7 +164,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Logout
   fastify.post<{ Body: unknown }>("/logout", async (request, reply) => {
     return reply
-      .clearCookie("session")
+      .clearCookie(SESSION_COOKIE_NAME)
       .send({ success: true, data: { message: "Logged out" } });
   });
 }

@@ -1,14 +1,18 @@
 "use client";
 
 import { useWallet } from "@/components/WalletProvider";
-import { Starfield } from "@/components/Starfield";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getCurrentUser, getUserRewards, type CurrentUser, type RewardRecord } from "@/lib/api";
 
 export default function DashboardPage() {
-  const { address } = useWallet();
+  const { address, sessionVersion } = useWallet();
   const router = useRouter();
+  const [sessionUser, setSessionUser] = useState<CurrentUser | null>(null);
+  const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardsError, setRewardsError] = useState<string | null>(null);
   
   // Mock player stats
   const [playerStats] = useState({
@@ -31,12 +35,57 @@ export default function DashboardPage() {
     }
   }, [address, router]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    if (!address) {
+      setSessionUser(null);
+      setRewardHistory([]);
+      setRewardsError(null);
+      setRewardsLoading(false);
+      return;
+    }
+
+    setRewardsLoading(true);
+    setRewardsError(null);
+
+    (async () => {
+      try {
+        const user = await getCurrentUser();
+        if (!mounted) return;
+
+        if (!user) {
+          setSessionUser(null);
+          setRewardHistory([]);
+          setRewardsError("Complete the KasWare signature to enable Earn Mode rewards.");
+          return;
+        }
+
+        setSessionUser(user);
+        const rewards = await getUserRewards(user.id);
+        if (!mounted) return;
+        setRewardHistory(rewards);
+      } catch (err) {
+        if (!mounted) return;
+        setSessionUser(null);
+        setRewardHistory([]);
+        setRewardsError(err instanceof Error ? err.message : "Failed to load rewards");
+      } finally {
+        if (mounted) {
+          setRewardsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [address, sessionVersion]);
+
   if (!address) return null;
 
   return (
     <main className="w-full min-h-screen bg-black text-white pb-12 relative overflow-hidden">
-      <Starfield />
-      
       {/* Cyberpunk grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]" />
 
@@ -247,6 +296,13 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            <RewardHistoryPanel
+              loading={rewardsLoading}
+              error={rewardsError}
+              rewards={rewardHistory}
+              hasSession={Boolean(sessionUser)}
+            />
+
             {/* Round Rewards Preview */}
             <div className="rounded-2xl glass p-6 border-2 border-cyan-400/30 bg-gradient-to-br from-cyan-400/5 via-teal-400/5 to-emerald-400/5">
               <div className="space-y-3">
@@ -387,4 +443,83 @@ function StatCard({ icon, label, value, trend, color = "emerald" }: { icon: stri
       </div>
     </div>
   );
+}
+
+function RewardHistoryPanel({
+  loading,
+  error,
+  rewards,
+  hasSession,
+}: {
+  loading: boolean;
+  error: string | null;
+  rewards: RewardRecord[];
+  hasSession: boolean;
+}) {
+  return (
+    <div className="rounded-2xl glass p-6 border border-emerald-400/30 bg-black/30">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-white">💎 Reward Activity</h3>
+        {loading && <span className="text-xs text-white/60">Syncing…</span>}
+      </div>
+
+      {error ? (
+        <p className="text-sm text-red-400">{error}</p>
+      ) : !hasSession ? (
+        <p className="text-sm text-white/60">
+          Connect and sign the KasWare prompt to unlock Earn Mode rewards.
+        </p>
+      ) : rewards.length === 0 ? (
+        <p className="text-sm text-white/60">No rewards yet — finish a run to see payouts.</p>
+      ) : (
+        <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+          {rewards.map((reward) => (
+            <RewardRow key={reward.id} reward={reward} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RewardRow({ reward }: { reward: RewardRecord }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-white">{formatRewardAmount(reward.amount)}</p>
+          <p className="text-xs text-white/50">
+            {new Date(reward.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className={`text-[11px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(reward.status)}`}>
+            {reward.status}
+          </span>
+          {reward.txid && (
+            <p className="mt-1 text-[10px] text-white/50 font-mono">{reward.txid.slice(0, 10)}…</p>
+          )}
+        </div>
+      </div>
+      {reward.error && <p className="mt-1 text-xs text-red-400">{reward.error}</p>}
+    </div>
+  );
+}
+
+function formatRewardAmount(amount: string) {
+  const numeric = Number(amount);
+  if (!Number.isFinite(numeric)) {
+    return `${amount} sats`;
+  }
+  return `${numeric.toLocaleString()} sats`;
+}
+
+function getStatusBadgeColor(status: RewardRecord["status"]) {
+  const palette: Record<RewardRecord["status"], string> = {
+    PENDING: "border-yellow-500/40 bg-yellow-500/10 text-yellow-200",
+    SENT: "border-cyan-400/40 bg-cyan-400/10 text-cyan-200",
+    CONFIRMED: "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
+    FAILED: "border-red-500/40 bg-red-500/10 text-red-200",
+  };
+  return palette[status] || "border-white/20 bg-white/10 text-white";
 }

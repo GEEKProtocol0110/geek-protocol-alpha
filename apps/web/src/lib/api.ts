@@ -1,5 +1,25 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
+export type CurrentUser = {
+  id: string;
+  walletAddress: string;
+  xp: number;
+  level: number;
+  streak: number;
+};
+
+export type RewardRecord = {
+  id: string;
+  attemptId: string;
+  userId: string;
+  amount: string;
+  status: "PENDING" | "SENT" | "CONFIRMED" | "FAILED";
+  txid: string | null;
+  error: string | null;
+  createdAt: string;
+  confirmedAt: string | null;
+};
+
 export type StartQuizResponse = {
   attemptId: string;
   attemptToken: string;
@@ -44,14 +64,18 @@ export async function submitQuiz(
   return json.data as { attemptId: string; score: number; scorePct: number; timeSeconds: number };
 }
 
-export async function getRewardStatus(attemptId: string) {
+export async function getRewardStatus(attemptId: string): Promise<RewardRecord | null> {
   const res = await fetch(`${API_BASE}/api/rewards/${attemptId}`, {
     method: "GET",
     credentials: "include",
   });
+  if (res.status === 404) {
+    return null;
+  }
   if (!res.ok) throw new Error(`Reward status failed: ${res.status}`);
   const json = await res.json();
-  return json;
+  if (!json?.success) throw new Error(json?.error || "Reward status failed");
+  return json.data as RewardRecord;
 }
 
 export async function getLeaderboard(limit = 100) {
@@ -81,6 +105,31 @@ export async function getUserStats(userId: string) {
   const json = await res.json();
   if (!json?.success) throw new Error(json?.error || "User stats fetch failed");
   return json.data;
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (res.status === 401) {
+    return null;
+  }
+  if (!res.ok) throw new Error(`Current user fetch failed: ${res.status}`);
+  const json = await res.json();
+  if (!json?.success) throw new Error(json?.error || "Current user fetch failed");
+  return json.data as CurrentUser;
+}
+
+export async function getUserRewards(userId: string): Promise<RewardRecord[]> {
+  const res = await fetch(`${API_BASE}/api/rewards/user/${userId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`User rewards fetch failed: ${res.status}`);
+  const json = await res.json();
+  if (!json?.success) throw new Error(json?.error || "User rewards fetch failed");
+  return json.data as RewardRecord[];
 }
 
 // Auth: KasWare nonce + signature verify (dev-friendly)

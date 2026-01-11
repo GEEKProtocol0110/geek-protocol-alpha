@@ -139,6 +139,42 @@ npm run dev
 - 🔌 **API Server:** http://localhost:3002
 - 🛠️ **Admin Dashboard:** http://localhost:3000/admin
 
+### Reward Economics Configuration
+
+Tune the reward worker directly through environment variables in `apps/api/.env` (create the file from your shell if it does not already exist):
+
+```bash
+# Minimum server-side accuracy (percentage) required before a payout job is enqueued
+MIN_SCORE_FOR_REWARD=75
+
+# Amount of $GEEK (in atomic sats) paid per correct answer — adjust to hit your treasury targets
+REWARD_SATS_PER_CORRECT=750
+
+# Simulated confirmation delay for the worker (milliseconds). Increase in production to mirror on-chain settlement.
+REWARD_CONFIRM_DELAY_MS=5000
+
+# Require a verified KasWare wallet signature before rewards progress past PENDING
+REWARD_REQUIRE_WALLET=true
+
+# Flip to "true" only when you are ready to broadcast real payouts
+ENABLE_REWARDS=false
+
+# Existing knobs (database + redis)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# …plus DATABASE_URL, JWT_SECRET, ATTEMPT_TOKEN_SECRET, etc.
+```
+
+Once edited, restart the Fastify API and the reward worker so the new economics take effect:
+
+```bash
+npm run dev -- --filter=api   # API
+node apps/api/dist/workers/rewards.js  # or tsx for TS source
+```
+
+Because payouts depend on quiz accuracy, a higher `MIN_SCORE_FOR_REWARD` tightens eligibility, while a larger `REWARD_SATS_PER_CORRECT` scales the amount linearly by the player’s correct count. `REWARD_CONFIRM_DELAY_MS` only affects user-facing status transitions (SENT ➡ CONFIRMED) and can be lengthened to simulate on-chain confirmation windows.
+
 ## Contributing
 
 We welcome contributions! Please fork the repository, create a feature branch, make your changes, and submit a pull request.

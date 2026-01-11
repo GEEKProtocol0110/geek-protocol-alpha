@@ -3,7 +3,6 @@
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { LandingFooter } from "@/components/LandingFooter";
-import { Starfield } from "@/components/Starfield";
 import { useWallet } from "@/components/WalletProvider";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -30,8 +29,6 @@ export default function Home() {
   if (isRedirecting && address) {
     return (
       <main className="w-full min-h-screen bg-black text-white flex items-center justify-center relative overflow-hidden">
-        <Starfield />
-        
         {/* Cyberpunk grid background */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]" />
         
@@ -67,8 +64,6 @@ export default function Home() {
   if (showWalletPrompt && !address) {
     return (
       <main className="w-full min-h-screen bg-black text-white flex items-center justify-center relative overflow-hidden">
-        <Starfield />
-        
         {/* Cyberpunk grid background */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]" />
         

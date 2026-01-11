@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TopBar } from "@/components/TopBar";
 import { WalletProvider } from "@/components/WalletProvider";
+import { Starfield } from "@/components/Starfield";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -44,8 +45,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}>
         <WalletProvider>
-          <TopBar />
-          <div className="min-h-screen">{children}</div>
+          <div className="relative min-h-screen overflow-hidden bg-black text-white">
+            <Starfield />
+            <div className="relative z-10 flex min-h-screen flex-col">
+              <TopBar />
+              <div className="flex-1">{children}</div>
+            </div>
+          </div>
         </WalletProvider>
       </body>
     </html>
