@@ -45,6 +45,16 @@ export function TopBar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          {address && (
+            <Link
+              href="/dashboard"
+              className="text-sm text-white/70 hover:text-white transition-colors"
+              title="Game Dashboard"
+            >
+              Dashboard
+            </Link>
+          )}
+
           <Link
             href="/leaderboard"
             className="text-sm text-white/70 hover:text-white transition-colors"
