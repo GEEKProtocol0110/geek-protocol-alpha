@@ -50,15 +50,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const k = getKasware();
     if (!k) return;
 
-    const onAccountsChanged = (accounts: string[]) => {
+    const onAccountsChanged = (...args: unknown[]) => {
+      const accounts = args[0] as string[];
       setAddress(accounts?.[0] ?? null);
     };
 
-    const onNetworkChanged = (net: string) => {
+    const onNetworkChanged = (...args: unknown[]) => {
+      const net = args[0] as string;
       setNetwork(net);
     };
 
-    // Kasware docs show .on and removeListener for these events :contentReference[oaicite:1]{index=1}
+    // Kasware docs show .on and removeListener for these events
     k.on("accountsChanged", onAccountsChanged);
     k.on("networkChanged", onNetworkChanged);
 

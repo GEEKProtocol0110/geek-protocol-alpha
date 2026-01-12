@@ -1,0 +1,10 @@
+# Vercel deployment configuration
+node_modules
+.turbo
+*.log
+.env
+.env.local
+apps/api
+packages/shared/node_modules
+LANDING_PAGE_*.md
+QUICK_REFERENCE.md

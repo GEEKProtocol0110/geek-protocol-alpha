@@ -15,8 +15,8 @@ const STORY_SECTIONS = [
   },
   {
     icon: "🏆",
-    title: "How It Works",
-    description: "Enter the Geek Gauntlet. Answer 10 rapid-fire questions across 8 categories. Beat the clock. Beat the competition. The protocol handles scoring, validation, and payouts.",
+    title: "Coming Q1 2026",
+    description: "The Geek Gauntlet launches soon. Answer 10 rapid-fire questions across 8 categories. Beat the clock. Beat the competition. The protocol handles scoring, validation, and payouts.",
     highlight: "From play to payout in less than 6 seconds."
   }
 ];
@@ -265,70 +265,52 @@ export function NavLinks() {
     <section className="relative py-24 px-6 bg-gradient-to-b from-[#0a0e27] to-black">
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Explore</h2>
-          <p className="text-lg text-white/60">All the tools you need, in one place.</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Coming Soon</h2>
+          <p className="text-lg text-white/60">All features launching in Q1 2026</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link 
-            href="/play"
-            className="group p-8 rounded-xl border border-white/10 hover:border-cyan-500/60 bg-white/2 hover:bg-cyan-500/5 transition-all duration-300"
-          >
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
+          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
             <div className="text-5xl mb-4">🎮</div>
             <h3 className="text-2xl font-bold text-white mb-2">Play</h3>
             <p className="text-white/70 mb-4">Enter the Geek Gauntlet. Prove your knowledge. Earn $GEEK rewards.</p>
-            <span className="text-cyan-400 font-semibold text-sm">Launch →</span>
-          </Link>
+            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
+          </div>
 
-          <Link 
-            href="/dashboard"
-            className="group p-8 rounded-xl border border-white/10 hover:border-emerald-400/60 bg-white/2 hover:bg-emerald-500/5 transition-all duration-300"
-          >
+          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
             <div className="text-5xl mb-4">📊</div>
             <h3 className="text-2xl font-bold text-white mb-2">Dashboard</h3>
             <p className="text-white/70 mb-4">Track your attempts, XP, and rewards. View your progress and history.</p>
-            <span className="text-emerald-400 font-semibold text-sm">Open →</span>
-          </Link>
+            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
+          </div>
 
-          <Link 
-            href="/leaderboard"
-            className="group p-8 rounded-xl border border-white/10 hover:border-cyan-400/60 bg-white/2 hover:bg-cyan-500/5 transition-all duration-300"
-          >
+          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
             <div className="text-5xl mb-4">🏆</div>
             <h3 className="text-2xl font-bold text-white mb-2">Leaderboard</h3>
             <p className="text-white/70 mb-4">Global rankings updated in real-time. See who&rsquo;s dominating.</p>
-            <span className="text-cyan-400 font-semibold text-sm">View →</span>
-          </Link>
+            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
+          </div>
 
-          <Link 
-            href="/profile"
-            className="group p-8 rounded-xl border border-white/10 hover:border-emerald-400/60 bg-white/2 hover:bg-emerald-500/5 transition-all duration-300"
-          >
+          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
             <div className="text-5xl mb-4">👤</div>
             <h3 className="text-2xl font-bold text-white mb-2">Profile</h3>
             <p className="text-white/70 mb-4">Your personal performance page. Stats, achievements, and history.</p>
-            <span className="text-emerald-400 font-semibold text-sm">View →</span>
-          </Link>
+            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
+          </div>
 
-          <Link 
-            href="/litepaper"
-            className="group p-8 rounded-xl border border-white/10 hover:border-cyan-400/60 bg-white/2 hover:bg-cyan-500/5 transition-all duration-300"
-          >
+          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
             <div className="text-5xl mb-4">📋</div>
             <h3 className="text-2xl font-bold text-white mb-2">Litepaper</h3>
             <p className="text-white/70 mb-4">Deep dive into the protocol. How it works. Why it matters.</p>
-            <span className="text-cyan-400 font-semibold text-sm">Read →</span>
-          </Link>
+            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
+          </div>
 
-          <Link 
-            href="/admin"
-            className="group p-8 rounded-xl border border-white/10 hover:border-emerald-400/60 bg-white/2 hover:bg-emerald-500/5 transition-all duration-300"
-          >
+          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
             <div className="text-5xl mb-4">⚙️</div>
             <h3 className="text-2xl font-bold text-white mb-2">Admin</h3>
             <p className="text-white/70 mb-4">Operator console. Monitor attempts, rewards, and system health.</p>
-            <span className="text-emerald-400 font-semibold text-sm">Access →</span>
-          </Link>
+            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
+          </div>
         </div>
       </div>
     </section>
@@ -384,23 +366,12 @@ export function CTASection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Play?</h2>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Join the Early Community</h2>
         <p className="text-xl text-white/70 mb-12">
-          Your knowledge is valuable. Stop letting platforms capture it.
-          <br />
-          Enter the Geek Gauntlet. Prove your signal. Earn real assets.
+          Be part of the first wave. Get notified when we launch in Q1 2026.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/play"
-            className="group relative inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-emerald-500 to-cyan-500 opacity-100 group-hover:opacity-90 transition-opacity" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 translate-x-full group-hover:translate-x-[-100%] transition-transform duration-500" />
-            <span className="relative">Launch Gauntlet</span>
-          </Link>
-
           <a
             href="https://x.com/geekonkas"
             target="_blank"
