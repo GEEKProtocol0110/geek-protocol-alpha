@@ -11,6 +11,11 @@
   ],
   "redirects": [
     {
+      "source": "/landing",
+      "destination": "/",
+      "permanent": false
+    },
+    {
       "source": "/play",
       "destination": "/play",
       "permanent": false
