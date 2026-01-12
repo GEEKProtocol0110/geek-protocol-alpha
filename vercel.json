@@ -1,46 +1,8 @@
 {
-  "buildCommand": "cd apps/web && npm run build",
-  "outputDirectory": "apps/web/.next",
+  "buildCommand": "npm run build",
   "framework": "nextjs",
   "installCommand": "npm install",
-  "devCommand": "npm run dev:web",
   "regions": ["iad1"],
-  "domains": [
-    "www.geekprotocol.xyz",
-    "geekprotocol.xyz"
-  ],
-  "redirects": [
-    {
-      "source": "/landing",
-      "destination": "/",
-      "permanent": false
-    },
-    {
-      "source": "/play",
-      "destination": "/play",
-      "permanent": false
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/dashboard",
-      "permanent": false
-    },
-    {
-      "source": "/leaderboard",
-      "destination": "/leaderboard",
-      "permanent": false
-    },
-    {
-      "source": "/profile",
-      "destination": "/profile",
-      "permanent": false
-    },
-    {
-      "source": "/litepaper",
-      "destination": "/litepaper",
-      "permanent": false
-    }
-  ],
   "git": {
     "deploymentEnabled": {
       "main": true
