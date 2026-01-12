@@ -11,6 +11,7 @@ import {
   NavLinks,
   ImpactSection,
   ResourcesSection,
+  HowItWorksSection,
 } from "@/components/LandingPage";
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
       <LandingHero />
       <StorySection />
       <ImpactSection />
+      <HowItWorksSection />
       <CategoriesSection />
       <RoadmapSection />
       <KaspaHonorSection />

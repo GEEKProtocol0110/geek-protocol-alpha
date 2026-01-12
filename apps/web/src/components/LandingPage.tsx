@@ -1,5 +1,44 @@
 import Link from "next/link";
 
+const FLOW_STEPS = [
+  {
+    number: "1",
+    title: "Connect Wallet",
+    description: "Link your Kaspa wallet with one click. No passwords, no security risks.",
+    icon: "🔗"
+  },
+  {
+    number: "2",
+    title: "Enter The Gauntlet",
+    description: "Face 10 rapid-fire questions across any category. 15 seconds per question.",
+    icon: "🎮"
+  },
+  {
+    number: "3",
+    title: "Prove Your Knowledge",
+    description: "Answer correctly. Beat the clock. Show the world your expertise.",
+    icon: "🧠"
+  },
+  {
+    number: "4",
+    title: "Earn $GEEK",
+    description: "Get rewarded instantly. Sub-6 second settlement. No waiting, no intermediaries.",
+    icon: "💰"
+  },
+  {
+    number: "5",
+    title: "Climb Leaderboards",
+    description: "Build your XP, maintain winning streaks, and compete globally.",
+    icon: "🏆"
+  },
+  {
+    number: "6",
+    title: "Build Reputation",
+    description: "Your on-chain achievements are permanent. Portable. Verifiable.",
+    icon: "⭐"
+  }
+];
+
 const STORY_SECTIONS = [
   {
     icon: "🧠",
@@ -554,6 +593,78 @@ export function ResourcesSection() {
                 </div>
               )}
             </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function HowItWorksSection() {
+  return (
+    <section className="relative py-32 px-6 bg-black">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 left-1/4 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[80px]" />
+        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[80px]" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="mb-20 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">How It Works</h2>
+          <p className="text-lg text-white/60">Six simple steps from wallet to rewards</p>
+        </div>
+
+        {/* Flow visualization */}
+        <div className="mb-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {FLOW_STEPS.map((step, idx) => (
+              <div key={idx} className="relative group">
+                {/* Connection line */}
+                {idx < FLOW_STEPS.length - 1 && (
+                  <div className="hidden lg:block absolute top-16 left-[calc(100%+8px)] w-[calc(100%-16px)] h-1 bg-gradient-to-r from-cyan-500/50 to-emerald-500/50 group-hover:from-cyan-400 group-hover:to-emerald-400 transition-all" />
+                )}
+
+                <div className="relative p-6 rounded-xl border border-cyan-500/30 hover:border-cyan-400/60 bg-gradient-to-br from-cyan-500/5 to-transparent hover:from-cyan-500/10 transition-all duration-300 group">
+                  {/* Step number */}
+                  <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-bold text-sm">
+                    {step.number}
+                  </div>
+
+                  {/* Icon */}
+                  <div className="text-4xl mb-4 group-hover:scale-125 transition-transform duration-300">
+                    {step.icon}
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-white/60">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Timeline visualization for mobile */}
+        <div className="lg:hidden space-y-4">
+          {FLOW_STEPS.map((step, idx) => (
+            <div key={idx} className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-bold flex-shrink-0">
+                  {step.number}
+                </div>
+                {idx < FLOW_STEPS.length - 1 && (
+                  <div className="w-1 h-12 bg-gradient-to-b from-cyan-500/50 to-transparent mt-2" />
+                )}
+              </div>
+              <div className="flex-1 pt-1">
+                <h3 className="font-bold text-white text-lg">{step.title}</h3>
+                <p className="text-white/60 text-sm mt-1">{step.description}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
