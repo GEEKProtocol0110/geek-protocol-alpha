@@ -63,7 +63,7 @@ Traditional platforms:
 ❌ Keep the profits
 
 Geek Protocol:
-✅ You prove expertise
+✅ 10 rounds, 100 questions, progressing difficulty
 ✅ Instant $GEEK rewards
 ✅ <6s settlement on @kaspa_currency
 ✅ Your reputation, portable
@@ -101,8 +101,8 @@ This model is broken. 🔥
 ```
 2/ Geek Protocol flips the script:
 
-🎮 10 rapid-fire questions
-⚡ 15 seconds per question
+🎮 10 rounds of 10 questions (100 total)
+⚡ Progressing difficulty, 15 seconds each
 🧠 Server-validated answers
 💰 Instant $GEEK rewards
 ⏱️ <6 second settlement
@@ -142,12 +142,12 @@ Where's your expertise? 🧠
 
 1️⃣ Connect wallet (Kasware)
 2️⃣ Choose category
-3️⃣ Answer 10 questions
-4️⃣ Beat the 15s clock
+3️⃣ Complete 10 rounds (100 questions)
+4️⃣ Progressing difficulty, beat the 15s clock
 5️⃣ Get verified on-chain
 6️⃣ Receive rewards instantly
 
-From knowledge to earnings in <3 minutes.
+From knowledge to earnings, prove your mastery.
 ```
 
 ```
@@ -580,7 +580,8 @@ Your knowledge. Your wallet. Your proof.
 
 Play now: https://geekprotocol.xyz
 
-10 questions. <6s settlement. $GEEK rewards.
+10 rounds. 100 questions. Progressing difficulty.
+<6s settlement. $GEEK rewards.
 
 The knowledge economy starts now. 🧠⚡
 ```

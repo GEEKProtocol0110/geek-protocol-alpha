@@ -55,7 +55,7 @@ const STORY_SECTIONS = [
   {
     icon: "🏆",
     title: "Coming Q1 2026",
-    description: "The Geek Gauntlet launches soon. Answer 10 rapid-fire questions across 8 categories. Beat the clock. Beat the competition. The protocol handles scoring, validation, and payouts.",
+    description: "The Geek Gauntlet launches soon. Complete 10 rounds of 10 questions (100 total) with progressing difficulty across 8 categories. Beat the clock. Beat the competition. The protocol handles scoring, validation, and payouts.",
     highlight: "From play to payout in less than 6 seconds."
   }
 ];
@@ -64,7 +64,7 @@ const FEATURES = [
   {
     icon: "🎮",
     title: "The Gauntlet",
-    description: "10 rapid-fire questions. 15 seconds each. Server-side validation prevents cheating. Real players, real rewards.",
+    description: "10 rounds of 10 questions (100 total) with progressing difficulty. 15 seconds each. Server-side validation prevents cheating. Real players, real rewards.",
     details: ["Server-side scoring", "HMAC attempt tokens", "Anti-cheat orchestration"]
   },
   {
