@@ -5,6 +5,37 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev:web",
   "regions": ["iad1"],
+  "domains": [
+    "www.geekprotocol.xyz",
+    "geekprotocol.xyz"
+  ],
+  "redirects": [
+    {
+      "source": "/play",
+      "destination": "/play",
+      "permanent": false
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard",
+      "permanent": false
+    },
+    {
+      "source": "/leaderboard",
+      "destination": "/leaderboard",
+      "permanent": false
+    },
+    {
+      "source": "/profile",
+      "destination": "/profile",
+      "permanent": false
+    },
+    {
+      "source": "/litepaper",
+      "destination": "/litepaper",
+      "permanent": false
+    }
+  ],
   "git": {
     "deploymentEnabled": {
       "main": true

@@ -9,17 +9,21 @@ import {
   KaspaHonorSection,
   CTASection,
   NavLinks,
+  ImpactSection,
+  ResourcesSection,
 } from "@/components/LandingPage";
 
 export default function Home() {
   return (
     <main className="w-full bg-black text-white">
-      {/* Narrative landing composed for excitement + clarity */}
+      {/* Comprehensive landing page explaining everything about Geek Protocol */}
       <LandingHero />
       <StorySection />
+      <ImpactSection />
       <CategoriesSection />
       <RoadmapSection />
       <KaspaHonorSection />
+      <ResourcesSection />
       <NavLinks />
       <CTASection />
       <LandingFooter />

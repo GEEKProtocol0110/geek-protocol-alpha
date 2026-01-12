@@ -1,0 +1,7 @@
+
+
+> @geek/api@0.1.0 lint
+> eslint src
+
+Pages directory cannot be found at /workspaces/geek-protocol-alpha/apps/api/pages or /workspaces/geek-protocol-alpha/apps/api/src/pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.
+⠙[1G[0K

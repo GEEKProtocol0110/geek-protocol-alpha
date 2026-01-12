@@ -358,6 +358,209 @@ export function KaspaHonorSection() {
   );
 }
 
+export function ImpactSection() {
+  return (
+    <section className="relative py-24 px-6 bg-gradient-to-b from-black to-[#0a0e27]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[80px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[80px]" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="mb-16 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">How Geek Protocol Changes Your Life</h2>
+          <p className="text-lg text-white/60">Real impact. Measurable rewards. Lasting change.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="p-8 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent">
+            <div className="text-5xl mb-4">💡</div>
+            <h3 className="text-2xl font-bold text-white mb-4">Your Knowledge Has Value</h3>
+            <p className="text-white/70 leading-relaxed mb-4">
+              Stop giving away your expertise for free. Every answer you provide proves your knowledge. Every correct response generates real, verifiable signal that gets rewarded immediately.
+            </p>
+            <ul className="space-y-3 text-white/70">
+              <li className="flex gap-3">
+                <span className="text-cyan-400">✦</span>
+                <span>Monetize your geek knowledge instantly</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-cyan-400">✦</span>
+                <span>No middleman taking a cut</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-cyan-400">✦</span>
+                <span>Direct rewards to your wallet</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-8 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent">
+            <div className="text-5xl mb-4">🎯</div>
+            <h3 className="text-2xl font-bold text-white mb-4">Compete Without Gatekeeping</h3>
+            <p className="text-white/70 leading-relaxed mb-4">
+              Leaderboards are global. Competition is fair. Everyone plays by the same rules. Your ranking is determined by skill and speed, not money or connections.
+            </p>
+            <ul className="space-y-3 text-white/70">
+              <li className="flex gap-3">
+                <span className="text-emerald-400">✦</span>
+                <span>Fair, transparent ranking system</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-emerald-400">✦</span>
+                <span>Real-time leaderboards show your position</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-emerald-400">✦</span>
+                <span>Compete against geeks worldwide</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-8 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent">
+            <div className="text-5xl mb-4">⚡</div>
+            <h3 className="text-2xl font-bold text-white mb-4">Instant Rewards, Real Settlement</h3>
+            <p className="text-white/70 leading-relaxed mb-4">
+              You don&rsquo;t wait days for your earnings. Rewards settle in under 6 seconds. The blockchain doesn&rsquo;t lie. Your token hits your wallet almost before the game ends.
+            </p>
+            <ul className="space-y-3 text-white/70">
+              <li className="flex gap-3">
+                <span className="text-cyan-400">✦</span>
+                <span>Sub-6 second settlement times</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-cyan-400">✦</span>
+                <span>No waiting for manual payouts</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-cyan-400">✦</span>
+                <span>Cryptographically verified rewards</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-8 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent">
+            <div className="text-5xl mb-4">🌟</div>
+            <h3 className="text-2xl font-bold text-white mb-4">Build Your On-Chain Reputation</h3>
+            <p className="text-white/70 leading-relaxed mb-4">
+              Every achievement is recorded. Your skill profile is permanent. Your reputation isn&rsquo;t deleted by algorithm changes. It lives on the blockchain—forever.
+            </p>
+            <ul className="space-y-3 text-white/70">
+              <li className="flex gap-3">
+                <span className="text-emerald-400">✦</span>
+                <span>Permanent on-chain proof of knowledge</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-emerald-400">✦</span>
+                <span>Portable reputation across platforms</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-emerald-400">✦</span>
+                <span>XP streaks and achievement tracking</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function ResourcesSection() {
+  const resources = [
+    {
+      icon: "📖",
+      title: "Litepaper",
+      description: "Deep technical dive into how Geek Protocol works",
+      href: "/litepaper",
+      status: "Coming Soon"
+    },
+    {
+      icon: "🔗",
+      title: "Kaspa Official",
+      description: "Learn about the blockchain powering Geek Protocol",
+      href: "https://kaspa.org",
+      external: true,
+      status: "Live"
+    },
+    {
+      icon: "💻",
+      title: "GitHub Repository",
+      description: "Open-source code. Full transparency.",
+      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha",
+      external: true,
+      status: "Live"
+    },
+    {
+      icon: "🎮",
+      title: "Play the Game",
+      description: "Enter the Geek Gauntlet and start earning",
+      href: "/play",
+      status: "Coming Soon"
+    },
+    {
+      icon: "👥",
+      title: "Community",
+      description: "Join geeks building the future together",
+      href: "https://t.me/GEEKonKAScommunity",
+      external: true,
+      status: "Live"
+    },
+    {
+      icon: "🐦",
+      title: "Follow Updates",
+      description: "Stay informed about launches and milestones",
+      href: "https://x.com/geekonkas",
+      external: true,
+      status: "Live"
+    }
+  ];
+
+  return (
+    <section className="relative py-24 px-6 bg-black">
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="mb-16 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Resources & Links</h2>
+          <p className="text-lg text-white/60">Everything you need to understand and join Geek Protocol</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {resources.map((resource, idx) => (
+            <a
+              key={idx}
+              href={resource.href}
+              target={resource.external ? "_blank" : undefined}
+              rel={resource.external ? "noopener noreferrer" : undefined}
+              className="group p-8 rounded-xl border border-white/10 hover:border-cyan-500/50 bg-white/2 hover:bg-white/5 transition-all duration-300 cursor-pointer"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="text-5xl">{resource.icon}</div>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                  resource.status === "Live" 
+                    ? "bg-emerald-500/20 text-emerald-400" 
+                    : "bg-white/10 text-white/60"
+                }`}>
+                  {resource.status}
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
+                {resource.title}
+              </h3>
+              <p className="text-white/70 text-sm">{resource.description}</p>
+              {resource.external && (
+                <div className="mt-4 flex items-center gap-2 text-cyan-400 text-sm font-semibold">
+                  <span>Open External</span>
+                  <span>↗</span>
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function CTASection() {
   return (
     <section className="relative py-24 px-6 bg-gradient-to-b from-black via-[#0a0e27] to-black">
@@ -366,17 +569,17 @@ export function CTASection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Join the Early Community</h2>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Join the Geek Revolution</h2>
         <p className="text-xl text-white/70 mb-12">
-          Be part of the first wave. Get notified when we launch in Q1 2026.
+          Your knowledge. Your edge. Your rewards. Be part of the protocol changing how geeks earn.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <a
             href="https://x.com/geekonkas"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl border-2 border-white/30 hover:border-cyan-400/60 transition-all duration-300"
+            className="group inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl border-2 border-white/30 hover:border-cyan-400/60 bg-white/5 hover:bg-cyan-500/10 transition-all duration-300"
           >
             <span>Follow on X →</span>
           </a>
@@ -385,13 +588,15 @@ export function CTASection() {
             href="https://t.me/GEEKonKAScommunity"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl border-2 border-emerald-400/40 hover:border-emerald-400/70 transition-all duration-300"
+            className="group inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl border-2 border-emerald-400/40 hover:border-emerald-400/70 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all duration-300"
           >
             <span>Join Community →</span>
           </a>
         </div>
 
-        <div className="mt-12 pt-12 border-t border-white/10">
+        <p className="text-white/50 mb-12">Coming to www.geekprotocol.xyz in Q1 2026</p>
+
+        <div className="pt-12 border-t border-white/10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             <div>
               <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Infrastructure</p>
@@ -399,11 +604,11 @@ export function CTASection() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Security</p>
-              <p className="text-white/90 font-semibold">Cryptographic Validation</p>
+              <p className="text-white/90 font-semibold">Schnorr Signatures • HMAC Tokens</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Settlement</p>
-              <p className="text-white/90 font-semibold">Sub-Second Finality</p>
+              <p className="text-white/90 font-semibold">Sub-6 Second Finality</p>
             </div>
           </div>
         </div>
