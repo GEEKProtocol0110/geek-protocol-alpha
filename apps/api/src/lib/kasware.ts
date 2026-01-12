@@ -8,6 +8,9 @@ export function verifyKasWareSignature(
   signature: string,
   walletAddress: string
 ): boolean {
+  if (!message) {
+    return false;
+  }
   // Dev mode: accept any non-empty valid hex signature from KasWare
   // In production, this would validate against the wallet's public key using Schnorr verification
   if (!signature || signature.length < 64) {
@@ -16,6 +19,10 @@ export function verifyKasWareSignature(
 
   // Validate hex encoding
   if (!/^[0-9a-fA-F]+$/.test(signature)) {
+    return false;
+  }
+
+  if (!walletAddress || walletAddress.length < 10) {
     return false;
   }
 

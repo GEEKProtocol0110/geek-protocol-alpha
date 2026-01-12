@@ -39,7 +39,7 @@ export default function Litepaper() {
           {/* Vision */}
           <Section id="vision" title="Vision & Mandate">
             <p className="mb-4">
-              <strong>Geek Protocol</strong> is built on a simple but powerful mandate: <em>"All hope, no hype."</em>
+              <strong>Geek Protocol</strong> is built on a simple but powerful mandate: <em>&ldquo;All hope, no hype.&rdquo;</em>
             </p>
             <p className="mb-4">
               We believe that knowledge should be rewarded, learning should be competitive, and the blockchain should serve the community—not vice versa. Our mission is to create a transparent, community-driven ecosystem where knowledge becomes an asset.
@@ -52,7 +52,7 @@ export default function Litepaper() {
           {/* Problem */}
           <Section id="problem" title="The Problem">
             <p className="mb-4">
-              Traditional learning platforms offer little incentive beyond certificates. Existing crypto projects are often hype-driven with unclear utility. There's a gap in the market for:
+              Traditional learning platforms offer little incentive beyond certificates. Existing crypto projects are often hype-driven with unclear utility. There&rsquo;s a gap in the market for:
             </p>
             <ul className="space-y-3 mb-6">
               <li className="flex gap-3">
@@ -65,7 +65,7 @@ export default function Litepaper() {
               </li>
               <li className="flex gap-3">
                 <span className="text-cyan-400 font-bold">•</span>
-                <span>Community ownership in the project's success</span>
+                <span>Community ownership in the project&rsquo;s success</span>
               </li>
             </ul>
           </Section>
@@ -86,7 +86,7 @@ export default function Litepaper() {
               />
               <SolutionBlock
                 title="3. Kaspa Network"
-                description="Built on Kaspa's fast, scalable blockchain. $GEEK is a KRC-20 token with real liquidity and utility across the ecosystem."
+                description="Built on Kaspa&rsquo;s fast, scalable blockchain. $GEEK is a KRC-20 token with real liquidity and utility across the ecosystem."
               />
             </div>
           </Section>
@@ -147,7 +147,7 @@ export default function Litepaper() {
           {/* Closing */}
           <Section title="Join Us">
             <p className="mb-6 text-lg">
-              Geek Protocol is more than a game—it's a movement. We're building a community of learners, competitors, and believers in fair, transparent protocols.
+              Geek Protocol is more than a game—it&rsquo;s a movement. We&rsquo;re building a community of learners, competitors, and believers in fair, transparent protocols.
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="/play" className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-400 text-black font-bold rounded-lg hover:shadow-[0_0_30px_rgba(0,209,255,0.3)] transition-all">

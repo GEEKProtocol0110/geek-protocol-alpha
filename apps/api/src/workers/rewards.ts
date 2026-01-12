@@ -1,8 +1,9 @@
 import Redis from "ioredis";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { logger } from "../lib/logger";
 
 type RewardJob = { attemptId: string };
+type AttemptWithRelations = Prisma.AttemptGetPayload<{ include: { user: true; reward: true } }>;
 
 const redis = new Redis({
   host: process.env.REDIS_HOST || "localhost",
@@ -87,7 +88,7 @@ async function processRewardJob(job: RewardJob) {
     return;
   }
 
-  let attempt: any = null;
+  let attempt: AttemptWithRelations | null = null;
 
   try {
     attempt = await prisma.attempt.findUnique({
@@ -199,8 +200,12 @@ export async function startRewardWorker() {
       const data = await redis.brpop("reward_queue", 5);
       if (data && data[1]) {
         try {
-          const job = JSON.parse(String(data[1]));
-          await processRewardJob(job as RewardJob);
+          const jobCandidate = JSON.parse(String(data[1])) as unknown;
+          if (isRewardJob(jobCandidate)) {
+            await processRewardJob(jobCandidate);
+          } else {
+            logger.warn({ payload: jobCandidate }, "Ignoring invalid reward job structure");
+          }
         } catch (parseErr) {
           logger.error({ parseErr, payload: data[1] }, "Invalid reward job payload");
         }
@@ -214,4 +219,8 @@ export async function startRewardWorker() {
 
 if (require.main === module) {
   void startRewardWorker();
+}
+
+function isRewardJob(candidate: unknown): candidate is RewardJob {
+  return Boolean(candidate && typeof (candidate as { attemptId?: unknown }).attemptId === "string");
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { startQuiz, submitQuiz } from "@/lib/api";
-import { mvpQuestions as questionBank } from "@/lib/questions";
+import Link from "next/link";
+import { startQuiz, submitQuiz, type StartQuizResponse } from "@/lib/api";
+import { mvpQuestions as questionBank, type Question as LocalQuestion } from "@/lib/questions";
 import { useWallet } from "@/components/WalletProvider";
 
 type Choice = { id: string; text: string };
@@ -24,8 +25,10 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function mapApiQuestions(all: any[]): Q[] {
-  const normalized: Q[] = (all ?? []).map((q: any, i: number) => {
+type ApiQuestion = StartQuizResponse["questions"][number] & { difficulty?: string };
+
+function mapApiQuestions(all: ApiQuestion[]): Q[] {
+  const normalized: Q[] = (all ?? []).map((q, i) => {
     const choices: Choice[] = (q.options ?? []).map((text: string, idx: number) => ({
       id: String(idx),
       text,
@@ -66,8 +69,8 @@ export default function PlayClient() {
   const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
 
   const current = runQuestions[idx];
+  const choices = current?.choices ?? [];
 
-  // Overall timer (only during run)
   useEffect(() => {
     if (phase !== "run") return;
 
@@ -82,7 +85,6 @@ export default function PlayClient() {
     return () => clearInterval(t);
   }, [phase]);
 
-  // Per-question timer (only during run)
   useEffect(() => {
     if (phase !== "run" || locked) return;
 
@@ -97,7 +99,6 @@ export default function PlayClient() {
     return () => clearInterval(t);
   }, [phase, locked, idx]);
 
-  // Poll worker health (visible in HUD)
   useEffect(() => {
     let mounted = true;
     const fetchHealth = async () => {
@@ -107,7 +108,9 @@ export default function PlayClient() {
           const j = await r.json();
           if (mounted) setWorkerAlive(Boolean(j.alive));
         }
-      } catch {}
+      } catch {
+        if (mounted) setWorkerAlive(null);
+      }
     };
     fetchHealth();
     const id = setInterval(fetchHealth, 15000);
@@ -117,7 +120,6 @@ export default function PlayClient() {
     };
   }, [API_BASE]);
 
-  // If overall timer hits 0, finish
   useEffect(() => {
     if (phase === "run" && secondsLeft === 0) {
       finishRun();
@@ -125,7 +127,6 @@ export default function PlayClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft, phase]);
 
-  // If question timer hits 0, auto-advance
   useEffect(() => {
     if (phase === "run" && questionSecondsLeft === 0 && idx < runQuestions.length) {
       next();
@@ -141,7 +142,7 @@ export default function PlayClient() {
     setCorrectCount(0);
     setSecondsLeft(RUN_SECONDS);
     setQuestionSecondsLeft(QUESTION_SECONDS);
-    // Fetch attempt and questions from API
+
     (async () => {
       try {
         const start = await startQuiz("General Geek");
@@ -157,7 +158,7 @@ export default function PlayClient() {
       } catch (err) {
         console.error("API start failed, falling back to local questions", err);
         const fallback = mapApiQuestions(
-          (questionBank as any[]).map((q: any) => ({
+          (questionBank as LocalQuestion[]).map((q) => ({
             id: q.id,
             category: q.category,
             prompt: q.prompt,
@@ -174,15 +175,14 @@ export default function PlayClient() {
   function finishRun() {
     setPhase("done");
     const total = runQuestions.length || RUN_LENGTH;
-    // Submit to server for canonical scoring
+
     (async () => {
       try {
         const resp = await submitQuiz(attemptId, attemptToken, answers);
         router.push(
           `/result?correct=${resp.score}&total=${total}&score=${resp.scorePct}&time=${resp.timeSeconds}&attempt=${attemptId}`
         );
-      } catch (err) {
-        // Fallback to local computed values if submit fails
+      } catch {
         const scorePct = Math.round((correctCount / total) * 100);
         router.push(
           `/result?correct=${correctCount}&total=${total}&score=${scorePct}&time=${RUN_SECONDS - secondsLeft}`
@@ -192,16 +192,15 @@ export default function PlayClient() {
   }
 
   function choose(choiceId: string) {
-    if (phase !== "run") return;
-    if (locked) return;
+    if (phase !== "run" || locked) return;
 
     setSelectedId(choiceId);
     setLocked(true);
     const selectedIdx = Number(choiceId);
     setAnswers((arr) => {
-      const next = [...arr];
-      next[idx] = selectedIdx;
-      return next;
+      const nextAnswers = [...arr];
+      nextAnswers[idx] = selectedIdx;
+      return nextAnswers;
     });
     if (current?.answerId && choiceId === current.answerId) {
       setCorrectCount((c) => c + 1);
@@ -226,210 +225,179 @@ export default function PlayClient() {
   if (!runQuestions.length && phase === "run") {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <div className="text-xl font-semibold">Preparing your run…</div>
+        <div className="text-xl font-semibold text-white">Preparing your run…</div>
         <p className="mt-2 text-sm text-white/70">Fetching questions from the API.</p>
       </div>
     );
   }
 
-  // INTRO
   if (phase === "intro") {
     return (
-      <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-xs text-white/60">Geek Protocol</div>
-            <h1 className="mt-1 text-3xl md:text-4xl font-semibold tracking-tight">
-              Alpha Run: Geek Gauntlet
+      <div className="space-y-6">
+        <div className="layer-card flex flex-col gap-6 p-8 md:flex-row md:items-center">
+          <div className="flex-1 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-white/60">
+              <span className="size-2 rounded-full bg-[var(--brand-primary)]" />
+              Geek Gauntlet • Alpha
+            </div>
+            <h1 className="text-3xl font-semibold text-white md:text-4xl">
+              {RUN_LENGTH} questions. {RUN_SECONDS} seconds. Earn-mode integrity baked in.
             </h1>
-            <p className="mt-3 text-white/70">
-              {RUN_LENGTH} questions • {RUN_SECONDS}s total • 15s per question • instant feedback
-            </p>
-            <p className="mt-1 text-sm text-white/60">
-              Mantra: <span className="text-white/80 font-medium">All hope, no hype.</span>
+            <p className="text-white/70">
+              A single sprint measured by A.C.E. intelligence. We verify every response server-side, apply HMAC attempt tokens, and post-run push rewards to the Kaspa queue.
             </p>
           </div>
 
-          <div className="hidden md:block rounded-2xl border border-white/10 bg-black/30 px-5 py-4">
-            <div className="text-xs text-white/60">A.C.E.</div>
-            <div className="mt-1 font-medium">"Initialize run."</div>
-            <div className="mt-1 text-xs text-white/60">Knowledge verification online.</div>
+          <div className="rounded-3xl border border-white/10 bg-black/30 p-6 text-sm text-white/80">
+            <div className="text-xs uppercase tracking-wide text-white/50">Run telemetry</div>
+            <ul className="mt-4 space-y-3">
+              <li className="flex items-center justify-between">
+                <span>Question cadence</span>
+                <span className="font-semibold text-white">15s per card</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Attempt token TTL</span>
+                <span className="font-semibold text-white">15 minutes</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Worker heartbeat</span>
+                <span className="font-semibold text-white">{workerAlive === null ? "Pending" : workerAlive ? "Synced" : "Idle"}</span>
+              </li>
+            </ul>
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MiniCard title="Score" desc="Earn points by answering correctly." />
-          <MiniCard title="Timer" desc="Beat the clock to maximize performance." />
-          <MiniCard title="Integrity" desc="No hype. Just knowledge." />
+        <div className="grid gap-4 md:grid-cols-3">
+          <MiniCard title="Server scoring" desc="Submit answers once. Fastify scores, logs, and queues payouts." />
+          <MiniCard title="Kasware identity" desc="Connect wallet for Earn mode. Practice stays open for everyone." />
+          <MiniCard title="Mantra" desc="All hope, no hype. Signal gets paid." />
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={startRun}
-            className="rounded-xl bg-white text-black px-5 py-3 font-medium hover:opacity-90"
+            className="rounded-2xl bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-secondary)] to-[var(--brand-tertiary)] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-black transition hover:scale-[1.01]"
           >
             Start Run
           </button>
-
-          <a
+          <Link
             href="/"
-            className="rounded-xl border border-white/15 px-5 py-3 font-medium hover:bg-white/5"
+            className="rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/5"
           >
             Back Home
-          </a>
+          </Link>
         </div>
       </div>
     );
   }
 
-  // RUN
+  if (phase === "done") {
+    return (
+      <div className="layer-card space-y-4 p-8 text-center">
+        <div className="text-4xl">🛰️</div>
+        <p className="text-xl font-semibold text-white">A.C.E. is verifying your run…</p>
+        <p className="text-sm text-white/70">Submitting to Fastify, scoring server-side, and queueing rewards.</p>
+      </div>
+    );
+  }
+
   const total = runQuestions.length;
   const progress = total ? (idx + 1) / total : 0;
   const scorePct = total ? Math.round((correctCount / (idx + 1)) * 100) : 0;
+  const questionProgress = clamp(questionSecondsLeft / QUESTION_SECONDS, 0, 1);
 
   return (
-    <div className="space-y-5">
-      {/* Top HUD */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-6">
+      <div className="layer-card space-y-4 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="text-xs text-white/60">Run Progress</div>
-            <div className="mt-1 font-semibold">
-              Question {idx + 1} / {total}
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <HudPill label="Time" value={`${secondsLeft}s`} />
-            <HudPill label="Correct" value={`${correctCount}`} />
-            <HudPill label="Run %" value={`${clamp(scorePct, 0, 100)}%`} />
-            <HudPill label="Worker" value={workerAlive === null ? "…" : workerAlive ? "Alive" : "Idle"} />
-          </div>
-        </div>
-
-        <div className="mt-4 h-2 w-full rounded-full bg-white/10 overflow-hidden">
-          <div
-            className="h-full bg-white/70"
-            style={{ width: `${Math.round(progress * 100)}%` }}
-          />
-        </div>
-      </div>
-
-      <div
-        className={`rounded-2xl border p-4 ${
-          mode === "earn"
-            ? "border-emerald-400/20 bg-emerald-400/10"
-            : "border-white/10 bg-white/5"
-        }`}
-      >
-        <div className="text-xs text-white/60">Rewards Mode</div>
-        <div className="mt-1 font-medium">
-          {mode === "earn"
-            ? "Earn Mode: rewards will route to your connected Kaspa wallet (when enabled)."
-            : "Practice Mode: connect Kasware to become eligible to earn $GEEK."}
-        </div>
-        <div className="mt-1 text-sm text-white/70">
-          {mode === "earn"
-            ? "Your Knowledge is Now an Asset. All hope, no hype."
-            : "You can still play now — rewards are only for verified wallet addresses."}
-        </div>
-      </div>
-
-      {/* Question Card */}
-      <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="max-w-2xl">
-            <div className="text-xs text-white/60">
-              {current.category ? `${current.category} • ` : ""}
-              {current.difficulty ?? "Alpha"}
-            </div>
-            <h2 className="mt-2 text-xl md:text-2xl font-semibold">
-              {current.question}
+            <p className="text-xs uppercase tracking-wide text-white/50">Run Progress</p>
+            <h2 className="text-2xl font-semibold text-white">
+              Question {idx + 1} of {total}
             </h2>
           </div>
+          <div className="flex flex-wrap gap-3">
+            <HudMetric label="Time Left" value={`${secondsLeft}s`} detail="Total run" />
+            <HudMetric label="Question" value={`${questionSecondsLeft}s`} detail="Card timer" variant={questionSecondsLeft <= 5 ? "alert" : undefined} />
+            <HudMetric label="Correct" value={`${correctCount}`} detail={`${clamp(scorePct, 0, 100)}%`} />
+            <HudMetric label="Worker" value={workerAlive === null ? "…" : workerAlive ? "Stable" : "Idle"} detail="Rewards" />
+          </div>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-secondary)] to-[var(--brand-tertiary)]" style={{ width: `${Math.round(progress * 100)}%` }} />
+        </div>
+      </div>
 
-          <div className="hidden md:block text-right space-y-2">
-            <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2">
-              <div className="text-[10px] text-white/50">Question Timer</div>
-              <div
-                className={`text-sm font-semibold ${
-                  questionSecondsLeft <= 5
-                    ? "text-red-400"
-                    : questionSecondsLeft <= 10
-                    ? "text-yellow-400"
-                    : "text-white"
-                }`}
-              >
-                {questionSecondsLeft}s
+      <div className={`rounded-3xl border p-5 ${mode === "earn" ? "border-emerald-400/30 bg-emerald-400/5" : "border-white/10 bg-white/5"}`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-white/60">Mode</p>
+            <p className="text-lg font-semibold text-white">{mode === "earn" ? "Earn Mode" : "Practice Mode"}</p>
+          </div>
+          <p className="text-sm text-white/70">
+            {mode === "earn"
+              ? "Verified wallet connected. Rewards will route to your Kaspa address after confirmation."
+              : "Practice freely. Connect Kasware when you're ready to turn scores into $GEEK."}
+          </p>
+        </div>
+      </div>
+
+      <div className="layer-card space-y-6 p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex-1">
+            <div className="text-xs uppercase tracking-wide text-white/50">
+              {current?.category ? `${current.category} • ` : ""}
+              {current?.difficulty ?? "Alpha"}
+            </div>
+            <h3 className="mt-2 text-2xl font-semibold text-white">{current?.question}</h3>
+          </div>
+          <div className="w-full max-w-xs">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-right">
+              <div className="text-[0.65rem] uppercase tracking-wide text-white/50">Question timer</div>
+              <div className={`text-2xl font-semibold ${questionSecondsLeft <= 5 ? "text-red-400" : questionSecondsLeft <= 10 ? "text-amber-300" : "text-white"}`}>{questionSecondsLeft}s</div>
+              <div className="mt-3 h-1 rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-white/70" style={{ width: `${questionProgress * 100}%` }} />
               </div>
             </div>
-            <div>
-              <div className="text-xs text-white/60">A.C.E.</div>
-              <div className="mt-1 text-sm text-white/80">
-                {locked ? "Answer locked." : "Select your answer."}
-              </div>
-            </div>
+            <p className="mt-3 text-xs uppercase tracking-wide text-white/50">
+              {locked ? "Answer locked" : "Select an answer"}
+            </p>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3">
-          {current.choices.map((c) => {
+        <div className="grid gap-3">
+          {choices.map((c) => {
             const isSelected = selectedId === c.id;
-            const isCorrect = c.id === current.answerId;
+            const isCorrect = c.id === current?.answerId;
             const showCorrect = locked && isCorrect;
             const showWrong = locked && isSelected && !isCorrect;
-
-            const base =
-              "w-full text-left rounded-2xl border px-4 py-4 transition";
-            const idle = "border-white/10 bg-black/30 hover:bg-white/5";
-            const correct = "border-white/40 bg-white/10";
-            const wrong = "border-white/20 bg-black/50 opacity-80";
 
             return (
               <button
                 key={c.id}
                 onClick={() => choose(c.id)}
                 disabled={locked}
-                className={[
-                  base,
-                  locked ? "cursor-not-allowed" : "cursor-pointer",
-                  showCorrect ? correct : showWrong ? wrong : idle,
-                ].join(" ")}
+                className={`w-full rounded-2xl border px-5 py-4 text-left transition ${locked ? "cursor-not-allowed" : "hover:-translate-y-0.5"} ${showCorrect ? "border-emerald-400/60 bg-emerald-400/10" : showWrong ? "border-red-400/40 bg-red-400/5" : isSelected ? "border-white/40 bg-white/10" : "border-white/10 bg-black/30 hover:border-white/20"}`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="font-medium">{c.text}</div>
-                  {showCorrect ? (
-                    <span className="text-xs text-white/80">Correct</span>
-                  ) : showWrong ? (
-                    <span className="text-xs text-white/60">Incorrect</span>
-                  ) : (
-                    <span className="text-xs text-white/40">Choose</span>
-                  )}
+                  <span className="font-medium text-white">{c.text}</span>
+                  <span className="text-xs text-white/50">{showCorrect ? "Correct" : showWrong ? "Incorrect" : isSelected ? "Selected" : "Choose"}</span>
                 </div>
               </button>
             );
           })}
         </div>
 
-        <div className="mt-6 flex items-center justify-between gap-3">
-          <button
-            onClick={() => finishRun()}
-            className="rounded-xl border border-white/15 px-4 py-3 text-sm font-medium hover:bg-white/5"
-          >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button onClick={() => finishRun()} className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/5">
             End Run
           </button>
-
           <button
             onClick={next}
             disabled={!locked}
-            className={[
-              "rounded-xl px-5 py-3 text-sm font-medium",
-              locked
-                ? "bg-white text-black hover:opacity-90"
-                : "bg-white/10 text-white/40 cursor-not-allowed",
-            ].join(" ")}
+            className={`rounded-2xl px-6 py-3 text-sm font-semibold uppercase tracking-wide ${locked ? "bg-white text-black hover:opacity-90" : "bg-white/10 text-white/40"}`}
           >
-            {idx >= total - 1 ? "Finish" : "Next"}
+            {idx >= total - 1 ? "Finish" : "Next Question"}
           </button>
         </div>
       </div>
@@ -437,11 +405,22 @@ export default function PlayClient() {
   );
 }
 
-function HudPill({ label, value }: { label: string; value: string }) {
+function HudMetric({
+  label,
+  value,
+  detail,
+  variant,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  variant?: "alert";
+}) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2">
-      <div className="text-[10px] text-white/50">{label}</div>
-      <div className="text-sm font-semibold">{value}</div>
+    <div className={`rounded-2xl border px-4 py-2 text-left ${variant === "alert" ? "border-red-400/40 bg-red-400/10" : "border-white/10 bg-black/30"}`}>
+      <div className="text-[0.65rem] uppercase tracking-wide text-white/50">{label}</div>
+      <div className="text-lg font-semibold text-white">{value}</div>
+      {detail && <div className="text-[0.65rem] text-white/50">{detail}</div>}
     </div>
   );
 }
@@ -449,7 +428,7 @@ function HudPill({ label, value }: { label: string; value: string }) {
 function MiniCard({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-      <div className="font-semibold">{title}</div>
+      <div className="font-semibold text-white">{title}</div>
       <div className="mt-1 text-sm text-white/70">{desc}</div>
     </div>
   );

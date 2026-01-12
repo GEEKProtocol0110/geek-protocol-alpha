@@ -1,10 +1,11 @@
 import { FastifyInstance } from "fastify";
+import { LeaderboardQuerySchema, LeaderboardUserParamsSchema } from "@geek/shared";
 
 export async function leaderboardRoutes(fastify: FastifyInstance) {
   // Get top leaderboard by XP
   fastify.get<{ Querystring: { limit?: string } }>("/top", async (request, reply) => {
     try {
-      const limit = Math.min(parseInt(request.query.limit || "100"), 500);
+      const { limit } = LeaderboardQuerySchema.parse(request.query);
 
       const users = await fastify.prisma.user.findMany({
         orderBy: { xp: "desc" },
@@ -27,7 +28,7 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
 
       return reply.send({ success: true, data: withRank });
     } catch (err) {
-      request.log.error(err);
+      request.log.error({ err }, "leaderboard.top_failed");
       return reply.code(500).send({ success: false, error: "Failed to fetch leaderboard" });
     }
   });
@@ -35,7 +36,7 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
   // Get single user stats
   fastify.get<{ Params: { userId: string } }>("/user/:userId", async (request, reply) => {
     try {
-      const { userId } = request.params;
+      const { userId } = LeaderboardUserParamsSchema.parse(request.params);
 
       const user = await fastify.prisma.user.findUnique({
         where: { id: userId },
@@ -78,7 +79,7 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
         },
       });
     } catch (err) {
-      request.log.error(err);
+      request.log.error({ err }, "leaderboard.user_summary_failed");
       return reply.code(500).send({ success: false, error: "Failed to fetch user stats" });
     }
   });

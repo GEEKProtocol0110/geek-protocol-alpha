@@ -66,7 +66,7 @@ const STAR_LAYERS: LayerConfig[] = [
     driftDuration: [35, 65],
     colorClass: "bg-teal-200/90",
     shadow: [1, 3],
-    shadowColor: "rgba(34,197,94,0.35)",
+    shadowColor: "rgba(14, 236, 33, 0.99)",
   },
   {
     id: "near",
@@ -80,7 +80,7 @@ const STAR_LAYERS: LayerConfig[] = [
     driftDuration: [20, 40],
     colorClass: "bg-emerald-200",
     shadow: [2, 6],
-    shadowColor: "rgba(34,197,94,0.6)",
+    shadowColor: "rgb(236, 12, 169)",
   },
 ];
 
@@ -160,8 +160,8 @@ const createShootingStars = (rng: () => number): ShootingInstance[] =>
       borderRadius: "9999px",
       animationDuration: `${duration}s`,
       animationDelay: `${delay}s`,
-      boxShadow: "0 0 12px rgba(34,197,94,0.7), 0 0 30px rgba(6,182,212,0.45)",
-      backgroundColor: "rgba(165, 243, 252, 0.95)",
+      boxShadow: "0 0 12px rgba(235, 26, 148, 0.91), 0 0 30px rgba(6,182,212,0.45)",
+      backgroundColor: "rgb(236, 12, 206)",
     };
 
     (style as ShootingStyle)["--shoot-dx"] = `${dx}px`;
@@ -174,35 +174,25 @@ const createShootingStars = (rng: () => number): ShootingInstance[] =>
   });
 
 export function Starfield() {
-  const [mounted, setMounted] = useState(false);
   const [shootingSeed, setShootingSeed] = useState(0);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
-    if (!mounted) return;
     const id = setInterval(() => setShootingSeed((s) => s + 1), 5000);
     return () => clearInterval(id);
-  }, [mounted]);
+  }, []);
 
   const seed = useId();
-  const rng = useMemo(() => createRng(`${seed}-${mounted ? "client" : "ssr"}`), [seed, mounted]);
+  const rng = useMemo(() => createRng(`${seed}-base`), [seed]);
+  const shootingRng = useMemo(() => createRng(`${seed}-shooting-${shootingSeed}`), [seed, shootingSeed]);
 
   const stars = useMemo(() => {
-    if (!mounted) return [] as StarInstance[];
-    let offset = 0;
-    return STAR_LAYERS.flatMap((layer) => {
-      const layerStars = createStars(rng, layer, offset);
-      offset += layer.count;
-      return layerStars;
+    return STAR_LAYERS.flatMap((layer, index) => {
+      const offset = STAR_LAYERS.slice(0, index).reduce((sum, l) => sum + l.count, 0);
+      return createStars(rng, layer, offset);
     });
-  }, [rng, mounted]);
+  }, [rng]);
 
-  const shootingStars = useMemo(() => {
-    if (!mounted) return [] as ShootingInstance[];
-    return createShootingStars(() => Math.random());
-  }, [mounted, shootingSeed]);
+  const shootingStars = useMemo(() => createShootingStars(shootingRng), [shootingRng]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 opacity-80 mix-blend-screen" aria-hidden="true">

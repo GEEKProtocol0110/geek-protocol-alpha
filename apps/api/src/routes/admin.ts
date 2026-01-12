@@ -1,4 +1,11 @@
 import { FastifyInstance } from "fastify";
+import {
+  AdminAttemptsQuerySchema,
+  AdminRewardsQuerySchema,
+  AdminQuestionImportRequestSchema,
+} from "@geek/shared";
+import { ZodError } from "zod";
+import { Prisma } from "@prisma/client";
 
 type AttemptsQuery = {
   limit?: string;
@@ -19,11 +26,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // Attempts listing with basic pagination and filters
   fastify.get<{ Querystring: AttemptsQuery }>("/attempts", async (request, reply) => {
     try {
-      const { limit = "50", offset = "0", userId, wallet } = request.query;
-      const take = Math.max(1, Math.min(200, parseInt(limit || "50")));
-      const skip = Math.max(0, parseInt(offset || "0"));
+      const { limit, offset, userId, wallet } = AdminAttemptsQuerySchema.parse(request.query);
+      const take = limit;
+      const skip = offset;
 
-      const where: any = {};
+      const where: Prisma.AttemptWhereInput = {};
       if (userId) where.userId = userId;
       if (wallet) where.user = { walletAddress: wallet };
 
@@ -60,7 +67,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       return reply.send({ success: true, data });
     } catch (err) {
-      fastify.log.error({ err }, "Admin attempts list failed");
+      request.log.error({ err }, "admin.attempts_list_failed");
       return reply.code(500).send({ success: false, error: "Failed to list attempts" });
     }
   });
@@ -68,11 +75,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // Rewards listing with status filter
   fastify.get<{ Querystring: RewardsQuery }>("/rewards", async (request, reply) => {
     try {
-      const { limit = "50", offset = "0", status, userId, wallet } = request.query;
-      const take = Math.max(1, Math.min(200, parseInt(limit || "50")));
-      const skip = Math.max(0, parseInt(offset || "0"));
+      const { limit, offset, status, userId, wallet } = AdminRewardsQuerySchema.parse(request.query);
+      const take = limit;
+      const skip = offset;
 
-      const where: any = {};
+      const where: Prisma.RewardWhereInput = {};
       if (status) where.status = status;
       if (userId) where.userId = userId;
       if (wallet) where.user = { walletAddress: wallet };
@@ -104,32 +111,34 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       return reply.send({ success: true, data });
     } catch (err) {
-      fastify.log.error({ err }, "Admin rewards list failed");
+      request.log.error({ err }, "admin.rewards_list_failed");
       return reply.code(500).send({ success: false, error: "Failed to list rewards" });
     }
   });
 
   // Bulk import questions (admin-only manual tool)
-  fastify.post<{ Body: any }>("/questions/import", async (request, reply) => {
+  fastify.post<{ Body: unknown }>("/questions/import", async (request, reply) => {
     try {
-      const body: any = request.body as any;
-      const items = Array.isArray(body) ? body : body?.questions;
-      if (!Array.isArray(items) || items.length === 0) {
-        return reply.code(400).send({ success: false, error: "No questions provided" });
-      }
+      const rawBody = request.body;
+      const normalized = Array.isArray(rawBody)
+        ? { questions: rawBody }
+        : typeof rawBody === "object" && rawBody !== null
+        ? (rawBody as Record<string, unknown>)
+        : undefined;
+      const { questions } = AdminQuestionImportRequestSchema.parse(normalized);
 
       const created = await fastify.prisma.$transaction(
-        items.map((q: any) =>
+        questions.map((q) =>
           fastify.prisma.question.create({
             data: {
-              category: String(q.category || "General Geek"),
-              prompt: String(q.prompt),
-              options: (q.options ?? []).map((s: any) => String(s)),
-              correctIndex: Number(q.correctIndex ?? 0),
-              difficulty: String(q.difficulty || "medium"),
-              tags: (q.tags ?? []).map((t: any) => String(t)),
-              version: Number(q.version ?? 1),
-              active: q.active === false ? false : true,
+              category: q.category,
+              prompt: q.prompt,
+              options: q.options,
+              correctIndex: q.correctIndex,
+              difficulty: q.difficulty,
+              tags: q.tags,
+              version: q.version,
+              active: q.active,
             },
           })
         )
@@ -137,8 +146,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       return reply.send({ success: true, data: { created: created.length } });
     } catch (err) {
-      fastify.log.error({ err }, "Admin question import failed");
-      return reply.code(500).send({ success: false, error: "Failed to import questions" });
+      request.log.error({ err }, "admin.question_import_failed");
+      const statusCode = err instanceof ZodError ? 400 : 500;
+      const errorMessage = statusCode === 400 ? "Invalid question payload" : "Failed to import questions";
+      return reply.code(statusCode).send({ success: false, error: errorMessage });
     }
   });
 }

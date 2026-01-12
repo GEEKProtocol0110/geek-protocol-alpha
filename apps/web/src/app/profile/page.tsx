@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useWallet } from "@/components/WalletProvider";
-import { getUserStats } from "@/lib/api";
+import { getCurrentUser, getUserStats } from "@/lib/api";
 import { shortAddr } from "@/lib/kasware";
 
 type UserStats = {
@@ -24,31 +24,50 @@ type UserStats = {
 };
 
 export default function ProfilePage() {
-  const { address } = useWallet();
+  const { address, sessionVersion } = useWallet();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     if (!address) {
+      setStats(null);
       setError("Please connect your wallet to view profile");
       setLoading(false);
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
-    const load = async () => {
+    setLoading(true);
+    setError(null);
+
+    (async () => {
       try {
-        // For now, we'll use a simplified approach
-        // In production, you'd fetch by userId from the authenticated session
-        setError("Profile page - connect wallet feature pending full integration");
+        const user = await getCurrentUser();
+        if (cancelled) return;
+        if (!user) {
+          setError("Complete the KasWare signature to view your profile");
+          setStats(null);
+          return;
+        }
+        const data = await getUserStats(user.id);
+        if (cancelled) return;
+        setStats(data as UserStats);
       } catch (err) {
+        if (cancelled) return;
+        setStats(null);
         setError(err instanceof Error ? err.message : "Failed to load profile");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-    load();
-  }, [address]);
+  }, [address, sessionVersion]);
 
   return (
     <main className="min-h-dvh bg-black text-white">
@@ -79,7 +98,7 @@ export default function ProfilePage() {
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
               <h2 className="text-xl font-semibold mb-4">Wallet</h2>
               <p className="font-mono text-white/80">
-                {stats.walletAddress}
+                {shortAddr(stats.walletAddress)}
               </p>
             </div>
 

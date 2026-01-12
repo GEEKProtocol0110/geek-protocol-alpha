@@ -3,7 +3,7 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
-  --accent: #00d1ff;
+  --accent: #23c7f0;
   --accent-dark: #0099cc;
 }
 
@@ -62,10 +62,10 @@ html {
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 209, 255, 0.3);
+    box-shadow: 0 0 20px rgba(238, 7, 161, 0.918);
   }
   50% {
-    box-shadow: 0 0 40px rgba(0, 209, 255, 0.5);
+    box-shadow: 0 0 40px rgba(224, 8, 231, 0.911);
   }
 }
 

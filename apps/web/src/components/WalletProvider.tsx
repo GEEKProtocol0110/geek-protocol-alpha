@@ -108,7 +108,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<WalletState>(() => {
     const mode: WalletState["mode"] = address ? "earn" : "practice";
     return { installed, address, network, connecting, connect, disconnect, mode, sessionVersion };
-  }, [installed, address, network, connecting, sessionVersion]);
+  }, [installed, address, network, connecting, connect, disconnect, sessionVersion]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -1,13 +1,10 @@
-import { FastifyRequest, FastifyReply } from "fastify";
+import { FastifyRequest } from "fastify";
 import * as jose from "jose";
 import { getJwtSecret, SESSION_COOKIE_NAME } from "./jwt";
 
 const JWT_SECRET = getJwtSecret();
 
-export async function authMiddleware(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<void> {
+export async function authMiddleware(request: FastifyRequest): Promise<void> {
   try {
     // Extract JWT from cookies or Authorization header
     const cookieToken = request.cookies?.[SESSION_COOKIE_NAME];
@@ -22,9 +19,10 @@ export async function authMiddleware(
     const verified = await jose.jwtVerify(token, JWT_SECRET);
 
     // Attach userId and walletAddress to request
-    (request as any).userId = verified.payload.userId;
-    (request as any).walletAddress = verified.payload.walletAddress;
-  } catch (error) {
+    request.userId = typeof verified.payload.userId === "string" ? verified.payload.userId : undefined;
+    request.walletAddress =
+      typeof verified.payload.walletAddress === "string" ? verified.payload.walletAddress : undefined;
+  } catch {
     // Invalid or expired token - continue without auth
   }
 }

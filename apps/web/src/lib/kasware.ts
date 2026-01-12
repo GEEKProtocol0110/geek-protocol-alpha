@@ -7,8 +7,8 @@ export type KaswareProvider = {
   getAccounts: () => Promise<string>; // current account address
   getNetwork: () => Promise<KaswareNetwork>;
   disconnect: (origin: string) => void | Promise<void>;
-  on: (event: string, handler: (...args: any[]) => void) => void;
-  removeListener: (event: string, handler: (...args: any[]) => void) => void;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeListener: (event: string, handler: (...args: unknown[]) => void) => void;
   // Optional signing methods (check availability before use)
   signMessage?: (message: string) => Promise<string>;
   signSchnorr?: (message: string) => Promise<string>;

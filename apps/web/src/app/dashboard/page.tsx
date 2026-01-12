@@ -116,7 +116,7 @@ export default function DashboardPage() {
               10 Rounds. 100 Questions. One Champion.
             </p>
             <p className="text-sm text-emerald-300/60 font-mono">
-              // Survive • Earn • Ascend
+              {"// Survive • Earn • Ascend"}
             </p>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl mb-1">❓</div>
-                  <div className="text-xs text-white/50 mb-1 font-mono">TOTAL Q's</div>
+                  <div className="text-xs text-white/50 mb-1 font-mono">TOTAL Q&rsquo;s</div>
                   <div className="text-sm font-bold text-teal-300">100 Questions</div>
                 </div>
                 <div className="text-center">
@@ -400,7 +400,7 @@ export default function DashboardPage() {
                 </li>
                 <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-all">
                   <span className="text-cyan-400 font-black text-base mt-0.5">3</span>
-                  <span>Use your winnings to pay for the next round's entry fee</span>
+                  <span>Use your winnings to pay for the next round&rsquo;s entry fee</span>
                 </li>
                 <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-all">
                   <span className="text-cyan-400 font-black text-base mt-0.5">4</span>

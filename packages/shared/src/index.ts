@@ -85,6 +85,48 @@ export const SubmitQuizRequestSchema = z.object({
   answers: z.array(z.number()),
 });
 
+// ============ ADMIN QUERIES ==========
+const PaginationQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const AdminAttemptsQuerySchema = PaginationQuerySchema.extend({
+  userId: z.string().trim().optional(),
+  wallet: z.string().trim().optional(),
+});
+
+export const AdminRewardsQuerySchema = PaginationQuerySchema.extend({
+  status: z.string().trim().optional(),
+  userId: z.string().trim().optional(),
+  wallet: z.string().trim().optional(),
+});
+
+export const AdminQuestionImportSchema = z
+  .object({
+    category: z.string().trim().default("General Geek"),
+    prompt: z.string().min(1),
+    options: z.array(z.string().min(1)).min(2),
+    correctIndex: z.number().int().nonnegative().default(0),
+    difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+    tags: z.array(z.string().trim()).default([]),
+    version: z.number().int().positive().default(1),
+    active: z.boolean().default(true),
+  })
+  .superRefine((data, ctx) => {
+    if (data.correctIndex >= data.options.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "correctIndex must point to one of the provided options",
+        path: ["correctIndex"],
+      });
+    }
+  });
+
+export const AdminQuestionImportRequestSchema = z.object({
+  questions: z.array(AdminQuestionImportSchema).nonempty(),
+});
+
 export const AttemptResultSchema = z.object({
   attemptId: z.string(),
   userId: z.string(),
@@ -135,6 +177,22 @@ export const LeaderboardEntrySchema = z.object({
 });
 
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
+
+export const LeaderboardQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+});
+
+export const LeaderboardUserParamsSchema = z.object({
+  userId: z.string().trim(),
+});
+
+export const RewardLookupParamsSchema = z.object({
+  userId: z.string().trim(),
+});
+
+export const RewardAttemptParamsSchema = z.object({
+  attemptId: z.string().trim(),
+});
 
 // ============ API RESPONSE WRAPPER ============
 export const ApiResponseSchema = <T extends z.ZodTypeAny>(schema: T) =>

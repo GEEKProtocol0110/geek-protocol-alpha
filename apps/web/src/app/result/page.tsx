@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { getRewardStatus, type RewardRecord } from "@/lib/api";
 
 type ResultData = {
@@ -15,29 +15,27 @@ type ResultData = {
 
 function ResultPageContent() {
   const searchParams = useSearchParams();
-  const [result, setResult] = useState<ResultData | null>(null);
-  const [reward, setReward] = useState<RewardRecord | null>(null);
-  const [polling, setPolling] = useState(true);
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
-  const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
-
-  useEffect(() => {
+  const result = useMemo(() => {
     const correct = searchParams.get("correct");
     const total = searchParams.get("total");
     const score = searchParams.get("score");
     const time = searchParams.get("time");
     const attempt = searchParams.get("attempt");
-
     if (correct && total && score && attempt) {
-      setResult({
-        correct: parseInt(correct),
-        total: parseInt(total),
-        score: parseInt(score),
-        time: time ? parseInt(time) : 0,
+      return {
+        correct: parseInt(correct, 10),
+        total: parseInt(total, 10),
+        score: parseInt(score, 10),
+        time: time ? parseInt(time, 10) : 0,
         attempt,
-      });
+      } satisfies ResultData;
     }
+    return null;
   }, [searchParams]);
+  const [reward, setReward] = useState<RewardRecord | null>(null);
+  const [polling, setPolling] = useState(true);
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+  const [workerAlive, setWorkerAlive] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!result?.attempt || !polling) return;
