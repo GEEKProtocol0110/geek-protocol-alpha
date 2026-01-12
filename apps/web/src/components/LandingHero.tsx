@@ -97,8 +97,8 @@ export function LandingHero() {
             <div className="text-xs md:text-sm text-white/60 mt-2">Knowledge<br/>Categories</div>
           </div>
           <div className="group p-4 rounded-xl border border-white/5 hover:border-emerald-500/30 bg-white/2 hover:bg-emerald-500/5 transition-all duration-300 text-center animate-slide-in" style={{animationDelay: "0.6s"}}>
-            <div className="text-3xl md:text-5xl font-bold text-emerald-400 group-hover:scale-110 transition-transform duration-300">10</div>
-            <div className="text-xs md:text-sm text-white/60 mt-2">Questions<br/>per Run</div>
+            <div className="text-3xl md:text-5xl font-bold text-emerald-400 group-hover:scale-110 transition-transform duration-300">100</div>
+            <div className="text-xs md:text-sm text-white/60 mt-2">Questions<br/>(10 rounds)</div>
           </div>
           <div className="group p-4 rounded-xl border border-white/5 hover:border-cyan-500/30 bg-white/2 hover:bg-cyan-500/5 transition-all duration-300 text-center animate-slide-in" style={{animationDelay: "0.7s"}}>
             <div className="text-3xl md:text-5xl font-bold text-cyan-400 group-hover:scale-110 transition-transform duration-300">15s</div>
