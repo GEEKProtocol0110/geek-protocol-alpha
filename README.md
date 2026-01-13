@@ -737,9 +737,14 @@ For production, create an override file (for example `docker-compose.prod.yml`) 
 
 Support ongoing development and infrastructure:
 
-**Kaspa Address:**
+**Dev Fund (Primary):**
 ```
 kaspa:qznpmmjcsg7hud6s4lupuaza3fenmhwha4ffn5yz70wgdravxyhmqghqayv5e
+```
+
+**Community Contribution Fund:**
+```
+See latest address: https://x.com/geekonkas/status/1954024949489762699
 ```
 
 Contributions help fund:
