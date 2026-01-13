@@ -129,7 +129,7 @@ export function LandingHero() {
         <div className="flex justify-center mb-12 animate-slide-in">
           <div className="group relative inline-flex items-center gap-2 rounded-full border border-cyan-500/50 bg-cyan-500/10 px-6 py-3 backdrop-blur-sm hover:border-cyan-400/80 hover:bg-cyan-400/15 transition-all duration-300 animate-glow-ring">
             <span className="size-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
-            <span className="text-sm font-bold text-cyan-300 tracking-wide uppercase">Built on Kaspa • All Hope, No Hype</span>
+            <span className="text-sm font-bold text-cyan-300 tracking-wide uppercase">Enter the Omniscient Grid • All Hope, No Hype</span>
             <div className="absolute inset-0 rounded-full animate-shimmer opacity-50" />
           </div>
         </div>
@@ -145,11 +145,11 @@ export function LandingHero() {
             </span>
           </h1>
           <p className="text-xl md:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed animate-slide-in font-light" style={{animationDelay: "0.3s"}}>
-            Geek Protocol transforms your expertise into <span className="font-bold text-cyan-400">on-chain assets</span>. 
+            The Old Net collapsed into noise. The Kaspa Graph rose as foundation.
             <br />
-            Prove your knowledge. Earn real rewards. 
+            Now: the <span className="font-bold text-cyan-400">Omniscient Grid</span>—where knowledge strengthens reality.
             <br />
-            <span className="text-white/70 text-lg md:text-xl">No middleman. No delays. Just pure signal on the fastest blockchain.</span>
+            <span className="text-white/70 text-lg md:text-xl">Enter as a Seeker. Prove mastery. Earn $GEEK. Become Cognoscenti.</span>
           </p>
         </div>
 

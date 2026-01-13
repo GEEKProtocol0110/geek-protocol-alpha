@@ -41,22 +41,22 @@ const FLOW_STEPS = [
 
 const STORY_SECTIONS = [
   {
-    icon: "🧠",
-    title: "The Problem",
-    description: "Knowledge has value. Yet traditional platforms hide it behind ads and paywalls. Your expertise, your data, your edge—captured and sold, never returned.",
-    highlight: "We built Geek Protocol to change that."
+    icon: "🌐",
+    title: "The Old Net (The Fall)",
+    description: "The Old Net decayed into misinformation, distraction algorithms, and entropy—the Age of Noise, where truth lost authority and knowledge lost value. Your expertise became noise, captured and sold, never returned.",
+    highlight: "The collapse demanded a new foundation."
   },
   {
     icon: "⚡",
-    title: "The Solution",
-    description: "A quiz-to-earn protocol that runs on Kaspa. You answer questions. The blockchain settles rewards. No middleman. No delays. Pure signal.",
-    highlight: "Your knowledge becomes an on-chain asset."
+    title: "The Kaspa Foundation",
+    description: "From the collapse emerged the Kaspa Graph—the Velocity Layer of the New Net: fast, fair, scalable, resistant to stagnation. A protocol that runs on proof, not promises.",
+    highlight: "Speed without compromise. Truth without intermediaries."
   },
   {
-    icon: "🏆",
-    title: "Coming Q1 2026",
-    description: "The Geek Gauntlet launches soon. Complete 10 rounds of 10 questions (100 total) with progressing difficulty across 8 categories. Beat the clock. Beat the competition. The protocol handles scoring, validation, and payouts.",
-    highlight: "From play to payout in less than 6 seconds."
+    icon: "🏙️",
+    title: "The Omniscient Grid",
+    description: "Geek Protocol exists inside the Omniscient Grid—a neon, Kaspa-blue City of Light where XP flows like energy, knowledge nodes glow, and every correct answer strengthens reality. The Gauntlet is your gateway.",
+    highlight: "Enter as a Seeker. Prove yourself. Become Cognoscenti."
   }
 ];
 
@@ -133,19 +133,57 @@ export function StorySection() {
           ))}
         </div>
 
-        {/* The Philosophy */}
-        <div className="my-24 p-10 md:p-16 rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 via-emerald-500/5 to-purple-500/10 backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_60px_rgba(34,197,94,0.3)]">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-shimmer" />
-          <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-8 relative z-10">All Hope, No Hype</h2>
-          <p className="text-lg text-white/70 leading-relaxed mb-6">
-            Geek Protocol isn&rsquo;t built on promises of 10,000x gains or locked liquidity pools. It&rsquo;s built on <span className="text-white font-semibold">signal</span>—measurable, verifiable knowledge.
-          </p>
-          <p className="text-lg text-white/70 leading-relaxed mb-6">
-            Kaspa gave us a blockchain that actually works. Sub-second blocks. No compromise on decentralization. A foundation of solid engineering instead of marketing hype.
-          </p>
-          <p className="text-lg text-white/70 leading-relaxed">
-            Geek Protocol mirrors that philosophy. Clear mechanics. Transparent rewards. Real-time settlements. No dark arts. No hidden yield farming. Just a protocol that does what it promises, backed by the blockchain that makes it possible.
-          </p>
+        {/* The Core Law & Characters */}
+        <div className="my-24 space-y-12">
+          {/* Core Law */}
+          <div className="p-10 md:p-16 rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 via-emerald-500/5 to-purple-500/10 backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_60px_rgba(34,197,94,0.3)]">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-shimmer" />
+            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-8 relative z-10">All Hope, No Hype</h2>
+            <p className="text-lg text-white/70 leading-relaxed mb-6">
+              This isn&rsquo;t a tagline. It&rsquo;s an operating rule. No empty promises. No manipulation. No artificial scarcity. No click-to-earn deception.
+            </p>
+            <p className="text-lg text-white/70 leading-relaxed mb-6">
+              Only: <span className="text-cyan-400 font-bold">learning → proof → progress → truth</span>
+            </p>
+            <p className="text-lg text-white/70 leading-relaxed">
+              Kaspa gave us a blockchain that actually works. Sub-second blocks. No compromise on decentralization. Geek Protocol mirrors that philosophy. Clear mechanics. Transparent rewards. Real-time settlements. Just a protocol that does what it promises.
+            </p>
+          </div>
+
+          {/* The Foundational Beings */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* GIGA */}
+            <div className="p-8 rounded-2xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 to-transparent hover:border-yellow-400/60 transition-all duration-500 hover:shadow-[0_0_40px_rgba(234,179,8,0.2)]">
+              <div className="text-5xl mb-4">🤖</div>
+              <h3 className="text-3xl font-black text-yellow-400 mb-4">GIGA — The Heart</h3>
+              <p className="text-white/70 leading-relaxed mb-4">
+                The golden, glitchy welcoming force. Optimism, onboarding, identity, and community warmth.
+              </p>
+              <p className="text-yellow-300 italic text-sm">
+                &ldquo;Where systems grow cold, GIGA stays warm.&rdquo;
+              </p>
+            </div>
+
+            {/* A.C.E. */}
+            <div className="p-8 rounded-2xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-transparent hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)]">
+              <div className="text-5xl mb-4">🔷</div>
+              <h3 className="text-3xl font-black text-cyan-400 mb-4">A.C.E. — The Mind</h3>
+              <p className="text-white/70 leading-relaxed mb-4">
+                The cold precision. Adjudication, analytics, difficulty, legitimacy, and permanent memory.
+              </p>
+              <p className="text-cyan-300 italic text-sm">
+                &ldquo;Emerged from corrupted trivia files. Haunts the Gauntlet. Adapts to intellect.&rdquo;
+              </p>
+            </div>
+          </div>
+
+          {/* The Prime Directive */}
+          <div className="text-center p-12 rounded-2xl border border-white/20 bg-gradient-to-b from-white/5 to-transparent">
+            <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-purple-400">
+              &ldquo;Rebuild the collective mind. Reward the knowing.&rdquo;
+            </p>
+            <p className="text-white/50 mt-4 text-sm uppercase tracking-wider">The Prime Directive</p>
+          </div>
         </div>
 
         {/* Core Features */}
@@ -215,82 +253,82 @@ export function RoadmapSection() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-20 text-center">
-          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">The Path Forward</h2>
-          <p className="text-xl md:text-2xl text-white/70 font-light">From alpha to economy. Built on hope, not hype.</p>
+          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">The Ecosystem Arc</h2>
+          <p className="text-xl md:text-2xl text-white/70 font-light">In-world history you&rsquo;re living. Built on hope, not hype.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Phase 0 */}
+          {/* Year 1 */}
           <div className="p-8 rounded-xl border-2 border-cyan-500/60 bg-gradient-to-br from-cyan-500/10 to-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-cyan-500 text-black flex items-center justify-center font-bold">0</div>
+              <div className="w-10 h-10 rounded-full bg-cyan-500 text-black flex items-center justify-center font-bold">1</div>
               <div>
-                <h3 className="text-2xl font-bold text-white">Alpha</h3>
-                <p className="text-sm text-white/60">Now Live</p>
+                <h3 className="text-2xl font-bold text-white">Year 1</h3>
+                <p className="text-sm text-white/60">2026 – Launch & Traction</p>
               </div>
             </div>
             <ul className="space-y-3 text-white/70 text-sm">
               <li className="flex gap-2">
-                <span className="text-cyan-400">✓</span> Quiz2Earn MVP
+                <span className="text-cyan-400">✓</span> Public beta on Kaspa mainnet
               </li>
               <li className="flex gap-2">
-                <span className="text-cyan-400">✓</span> Kasware auth
+                <span className="text-cyan-400">✓</span> First major live tournament
               </li>
               <li className="flex gap-2">
-                <span className="text-cyan-400">✓</span> Reward queue
+                <span className="text-cyan-400">→</span> Content velocity expansion
               </li>
               <li className="flex gap-2">
-                <span className="text-cyan-400">✓</span> Live leaderboards
+                <span className="text-cyan-400">→</span> Telegram mini app + Geek Wallet
               </li>
             </ul>
           </div>
 
-          {/* Phase 1 */}
+          {/* Year 3 */}
           <div className="p-8 rounded-xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-500/5 to-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full border-2 border-emerald-500/60 text-emerald-400 flex items-center justify-center font-bold">1</div>
+              <div className="w-10 h-10 rounded-full border-2 border-emerald-500/60 text-emerald-400 flex items-center justify-center font-bold">3</div>
               <div>
-                <h3 className="text-2xl font-bold text-white">Signal</h3>
-                <p className="text-sm text-white/60">Q1 2026</p>
+                <h3 className="text-2xl font-bold text-white">Year 3</h3>
+                <p className="text-sm text-white/60">2028 – Expansion</p>
               </div>
             </div>
             <ul className="space-y-3 text-white/70 text-sm">
               <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> Advanced telemetry
+                <span className="text-emerald-400">→</span> Mobile app (iOS + Android)
               </li>
               <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> XP streaks
+                <span className="text-emerald-400">→</span> Partner integrations
               </li>
               <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> Health dashboards
+                <span className="text-emerald-400">→</span> IRL presence & events
               </li>
               <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> Category curator tools
+                <span className="text-emerald-400">→</span> DAO + open-sourcing begins
               </li>
             </ul>
           </div>
 
-          {/* Phase 2 */}
-          <div className="p-8 rounded-xl border-2 border-white/20 bg-gradient-to-br from-white/5 to-transparent">
+          {/* Year 5 */}
+          <div className="p-8 rounded-xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-500/5 to-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full border-2 border-white/30 text-white/70 flex items-center justify-center font-bold">2</div>
+              <div className="w-10 h-10 rounded-full border-2 border-purple-500/60 text-purple-400 flex items-center justify-center font-bold">5</div>
               <div>
-                <h3 className="text-2xl font-bold text-white">Economy</h3>
-                <p className="text-sm text-white/60">H2 2026</p>
+                <h3 className="text-2xl font-bold text-white">Year 5</h3>
+                <p className="text-sm text-white/60">2030 – Definitive Hub</p>
               </div>
             </div>
             <ul className="space-y-3 text-white/70 text-sm">
               <li className="flex gap-2">
-                <span className="text-white/50">→</span> Treasury-backed pools
+                <span className="text-purple-400">→</span> Ecosystem hub status
               </li>
               <li className="flex gap-2">
-                <span className="text-white/50">→</span> Token staking
+                <span className="text-purple-400">→</span> A.C.E. as a Service licensing
               </li>
               <li className="flex gap-2">
-                <span className="text-white/50">→</span> Governance
+                <span className="text-purple-400">→</span> Launchpad for geek-native projects
               </li>
               <li className="flex gap-2">
-                <span className="text-white/50">→</span> On-chain verification
+                <span className="text-purple-400">→</span> Legacy system complete
               </li>
             </ul>
           </div>

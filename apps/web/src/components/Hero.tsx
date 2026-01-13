@@ -31,10 +31,10 @@ export function Hero() {
 
           <div className="space-y-6">
             <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-              Your knowledge is a balance sheet. Geek Protocol turns mastery into on-chain yield.
+              Enter the Omniscient Grid. Your knowledge becomes measurable power.
             </h1>
             <p className="text-lg text-[var(--text-2)]">
-              Built on Kaspa, charged by the $GEEK KRC-20 economy, and audited by the A.C.E. intelligence layer. Enter runs, prove signal, and let the protocol settle payouts without the hype.
+              Built on Kaspa, charged by the $GEEK KRC-20 economy, and judged by the A.C.E. intelligence layer. Step out of the Age of Noise. Become a Seeker. Prove signal. Let the protocol settle payouts without the hype.
             </p>
           </div>
 
