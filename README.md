@@ -14,6 +14,7 @@
   <a href="https://geek-litepaper-nu.vercel.app"><img src="https://img.shields.io/badge/Litepaper-Read-green?style=flat-square" alt="Litepaper"/></a>
   <a href="https://x.com/geekonkas"><img src="https://img.shields.io/twitter/follow/geekonkas?style=flat-square&logo=x" alt="X"/></a>
   <a href="https://t.me/GEEKonKAScommunity"><img src="https://img.shields.io/badge/Telegram-Join-blue?style=flat-square&logo=telegram" alt="Telegram"/></a>
+  <a href="LORE.md"><img src="https://img.shields.io/badge/📖-Lore_Bible-gold?style=flat-square" alt="Lore"/></a>
 </p>
 
 <p align="center">
@@ -140,6 +141,9 @@ What This Is](#what-this-is)
 **Geek Protocol** is a pioneering Quiz-to-Earn platform built on the Kaspa blockchain, where knowledge meets opportunity. By combining competitive trivia gameplay with cryptocurrency rewards, Geek Protocol creates an ecosystem where users can monetize their expertise across multiple categories including gaming, technology, entertainment, and culture.
 
 This repository contains the alpha release featuring a production-ready monorepo architecture with enterprise-grade security, real-time leaderboards, automated reward distribution, and comprehensive testing infrastructure.
+
+> **"All Hope. No Hype."**  
+> Learn more about the world, lore, and vision in [LORE.md](LORE.md)
 
 ## Core Features
 
@@ -522,10 +526,26 @@ For production, create an override file (for example `docker-compose.prod.yml`) 
 
 ## Roadmap
 
-- **Q1 2026:** Public beta launch on Kaspa mainnet
-- **Q2 2026:** Mobile app releases (iOS + Android)
-- **Q3 2026:** Tournament modes, clans, and seasonal ladders
-- **Q4 2026:** NFT achievements, creator tools, and social layers
+### The Ecosystem Arc (In-World History You're Living)
+
+**Year 1 (2026):**
+- Public beta launch on Kaspa mainnet
+- First major live tournament
+- Content velocity expansion
+- Early Telegram mini app + Geek Wallet beginnings
+
+**Year 3 (2028):**
+- Mobile app releases (iOS + Android)
+- Partner integrations
+- IRL presence & events
+- DAO + open-sourcing begins
+
+**Year 5 (2030):**
+- Definitive hub status
+- "A.C.E. as a Service" licensing
+- Launchpad incubating geek-native projects
+
+See [LORE.md](LORE.md) for the complete narrative and meta-plot.
 
 ## Security
 
@@ -554,6 +574,15 @@ MIT License - Copyright (c) 2026 Geek Protocol
 
 <p align="center">
   <strong>Transform Your Knowledge into Digital Assets</strong><br/>
+  <em>"All Hope. No Hype." — The Geek Protocol Way</em><br/><br/>
+  <a href="LORE.md">📖 Read the Lore Bible</a> • 
+  <a href="docs/PROOF_OF_LEARNING.md">🔐 Proof-of-Learning Spec</a> • 
+  <a href="FUNDING_READY_STRATEGY.md">💡 Funding Strategy</a>
+</p>
+
+<p align="center">
+  <sub>Built with ❤️ by the Geek Protocol team on the Kaspa blockchain</sub>
+</p>
   <a href="https://geekprotocol.xyz">Visit Geek Protocol</a>
 </p>
 
