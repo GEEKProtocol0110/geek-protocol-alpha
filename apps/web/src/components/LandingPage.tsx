@@ -545,11 +545,52 @@ export function ImpactSection() {
 export function ResourcesSection() {
   const resources = [
     {
+      icon: "�",
+      title: "v0.1.0-alpha Release",
+      description: "Our first Alpha release is live! Check out what's new.",
+      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/releases/tag/v0.1.0-alpha",
+      external: true,
+      status: "Live",
+      featured: true
+    },
+    {
+      icon: "📋",
+      title: "Changelog",
+      description: "Complete version history and feature updates",
+      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/CHANGELOG.md",
+      external: true,
+      status: "Live"
+    },
+    {
+      icon: "🏗️",
+      title: "Architecture",
+      description: "System design, data flows, and technical diagrams",
+      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/docs/ARCHITECTURE.md",
+      external: true,
+      status: "Live"
+    },
+    {
+      icon: "💰",
+      title: "Grant Proposal",
+      description: "Our Kaspa DAO funding proposal and roadmap",
+      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/docs/funding/GRANT_PROPOSAL.md",
+      external: true,
+      status: "Live"
+    },
+    {
       icon: "📖",
       title: "Litepaper",
       description: "Deep technical dive into how Geek Protocol works",
       href: "/litepaper",
       status: "Coming Soon"
+    },
+    {
+      icon: "💻",
+      title: "GitHub Repository",
+      description: "Open-source code. Full transparency. MIT licensed.",
+      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha",
+      external: true,
+      status: "Live"
     },
     {
       icon: "🔗",
@@ -560,19 +601,11 @@ export function ResourcesSection() {
       status: "Live"
     },
     {
-      icon: "💻",
-      title: "GitHub Repository",
-      description: "Open-source code. Full transparency.",
-      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha",
-      external: true,
-      status: "Live"
-    },
-    {
       icon: "🎮",
       title: "Play the Game",
       description: "Enter the Geek Gauntlet and start earning",
       href: "/play",
-      status: "Coming Soon"
+      status: "Alpha"
     },
     {
       icon: "👥",
@@ -607,13 +640,19 @@ export function ResourcesSection() {
               href={resource.href}
               target={resource.external ? "_blank" : undefined}
               rel={resource.external ? "noopener noreferrer" : undefined}
-              className="group p-10 rounded-2xl border border-white/10 hover:border-cyan-500/50 bg-gradient-to-br from-white/5 to-transparent hover:from-cyan-500/10 transition-all duration-500 cursor-pointer hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)]"
+              className={`group p-10 rounded-2xl border hover:border-cyan-500/50 bg-gradient-to-br from-white/5 to-transparent hover:from-cyan-500/10 transition-all duration-500 cursor-pointer hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)] ${
+                resource.featured 
+                  ? "border-cyan-500/40 shadow-[0_0_30px_rgba(34,197,94,0.15)]" 
+                  : "border-white/10"
+              }`}
             >
               <div className="flex items-start justify-between mb-6">
                 <div className="text-6xl transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{resource.icon}</div>
                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${
                   resource.status === "Live" 
                     ? "bg-emerald-500/20 text-emerald-400" 
+                    : resource.status === "Alpha"
+                    ? "bg-cyan-500/20 text-cyan-400"
                     : "bg-white/10 text-white/60"
                 }`}>
                   {resource.status}
