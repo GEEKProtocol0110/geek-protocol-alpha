@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/STATUS-Production_Ready_Alpha-success?style=for-the-badge" alt="Status"/>
+  <img src="https://img.shields.io/badge/STATUS-Deployment--Ready_Alpha_(Pre--Audit)-success?style=for-the-badge" alt="Status"/>
   <img src="https://img.shields.io/badge/Network-Kaspa_Ready-blueviolet?style=for-the-badge&logo=bitcoin" alt="Network"/>
   <img src="https://img.shields.io/badge/Deployment-Vercel_+_Railway-black?style=for-the-badge" alt="Deployment"/>
 </p>
@@ -30,7 +30,10 @@
   <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js" alt="Next.js"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License"/>
 </p>
-What This Is](#what-this-is)
+
+> **⚠️ Note:** This Alpha has not yet undergone a third-party security audit.
+
+- [What This Is](#what-this-is)
 - [What Works Today](#what-works-today)
 - [What Is Stubbed](#what-is-stubbed)
 - [Try It Now (5 Minutes)](#try-it-now-5-minutes)
@@ -50,17 +53,17 @@ What This Is](#what-this-is)
 
 ## What This Is
 
-**Geek Protocol** is a production-ready Proof-of-Learning platform demonstrating:
-- ✅ Complete Quiz2Earn mechanics with cryptographic validation
-- ✅ Enterprise-grade server-side anti-cheat system
+**Geek Protocol** is a deployment-ready Proof-of-Learning platform demonstrating:
+- ✅ Feature-complete Quiz2Earn mechanics with cryptographic validation
+- ✅ Production-oriented server-side anti-cheat system
 - ✅ Automated reward distribution with Redis queue
 - ✅ Full Kaspa wallet integration (KasWare)
 - ✅ Real-time leaderboards and analytics
 - ✅ Comprehensive lore and world-building ([LORE.md](LORE.md))
 - ✅ Deployment-ready architecture (Vercel + Railway)
 
-**This is a COMPLETE alpha ready for:**
-- ✅ Production deployment
+**This is a feature-complete Alpha ready for:**
+- ✅ Testnet deployment
 - ✅ Community beta testing
 - ✅ Developer contributions
 - ✅ Investor demonstrations
@@ -108,6 +111,36 @@ What This Is](#what-this-is)
 
 ---
 
+## Network Status
+
+**Current Operational State:**
+
+✅ **Kaspa Wallet Authentication** — KasWare integration fully operational; users can connect and authenticate securely.
+
+✅ **Reward Pipeline Architecture** — Complete end-to-end reward flow implemented and tested (Redis queue → worker → Kaspa TX).
+
+✅ **Testnet Reward Execution** — Active on Kaspa testnet; users can earn and receive test rewards to validate the full flow.
+
+⏳ **Mainnet Broadcasting** — Pending post-audit activation; infrastructure ready but mainnet reward distribution disabled until security audit completion.
+
+🛡️ **Alpha Safety** — **No mainnet funds are at risk during Alpha.** All reward broadcasting uses testnet; mainnet wallet interactions are read-only for testing purposes only.
+
+---
+
+## What This Is NOT (Yet)
+
+**Important Clarifications:**
+
+❌ **Not an Audited Mainnet Protocol** — This Alpha has not undergone third-party security audit. Mainnet reward distribution remains disabled until audit completion.
+
+❌ **Not a DAO-Governed Treasury** — Governance and community treasury management are planned for Phase 3 (Q3-Q4 2026).
+
+❌ **Not a Finished Marketplace/NFT System** — NFT achievements, peer-to-peer marketplace, and Community Content Engine are deferred to later phases per roadmap.
+
+**What it IS:** A pre-audit, testnet-validated, deployment-ready platform demonstrating complete Quiz2Earn mechanics, wallet integration, and reward architecture—ready for community testing and investor evaluation.
+
+---
+
 ## Production Readiness
 
 ### ✅ Deployment Ready
@@ -126,7 +159,7 @@ What This Is](#what-this-is)
 
 **See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide.**
 
-### ✅ Security Hardened
+### ✅ Pre-Audit Security
 
 - HMAC attempt token validation
 - Server-side answer verification
@@ -287,7 +320,7 @@ SESSION_SECRET="another-secure-secret"
 
 **Geek Protocol** is a pioneering Quiz-to-Earn platform built on the Kaspa blockchain, where knowledge meets opportunity. By combining competitive trivia gameplay with cryptocurrency rewards, Geek Protocol creates an ecosystem where users can monetize their expertise across multiple categories including gaming, technology, entertainment, and culture.
 
-This repository contains the alpha release featuring a production-ready monorepo architecture with enterprise-grade security, real-time leaderboards, automated reward distribution, and comprehensive testing infrastructure.
+This repository contains the alpha release featuring a deployment-ready monorepo architecture with production-oriented security, real-time leaderboards, automated reward distribution, and comprehensive testing infrastructure.
 
 > **"All Hope. No Hype."**  
 > Learn more about the world, lore, and vision in [LORE.md](LORE.md)
@@ -314,7 +347,7 @@ See [docs/PROOF_OF_LEARNING.md](docs/PROOF_OF_LEARNING.md) for complete technica
 ### 🎮 Geek Gauntlet Quiz Engine
 - **Dynamic Challenge System:** 10-question competitive runs with intelligent 15-second time limits per question
 - **Multi-Category Support:** 8 distinct knowledge domains including Video Games, Technology, Sci-Fi, Movies, Anime, Comics, History, and Pop Culture
-- **Server-Side Validation:** Enterprise-grade anti-cheat with cryptographic attempt tokens and HMAC verification
+- **Server-Side Validation:** Production-oriented anti-cheat with cryptographic attempt tokens and HMAC verification
 - **Dual Play Modes:** Earn-to-Play for $GEEK rewards or Practice mode for skill development
 - **Real-Time Feedback:** Instant scoring and performance analytics after each question
 
@@ -368,6 +401,41 @@ TX Hash Stored + User Notified
 Blockchain Confirmation
   ↓
 Status: CONFIRMED
+```
+
+### System Architecture Diagram
+
+```
+┌─────────────┐
+│   Web App   │  (Next.js - User Interface)
+│  localhost  │
+│    :3000    │
+└──────┬──────┘
+       │ HTTP/REST
+       ↓
+┌─────────────┐
+│  API Server │  (Fastify - Quiz Logic & Auth)
+│  localhost  │
+│    :4000    │
+└──────┬──────┘
+       │
+       ├──→ PostgreSQL (User data, attempts, scores)
+       │
+       ├──→ Redis Queue (Reward jobs: PENDING → PROCESSING)
+       │
+       ↓
+┌─────────────┐
+│Reward Worker│  (Background processor)
+│   (Node.js) │
+└──────┬──────┘
+       │
+       ↓
+┌─────────────┐
+│  Kaspa TX   │  (Blockchain broadcast)
+│  (Testnet)  │
+└─────────────┘
+       ↓
+   [User Wallet receives reward]
 ```
 
 See [docs/TOKEN_FLOW.md](docs/TOKEN_FLOW.md) for complete technical details.. Clone and install
