@@ -733,6 +733,21 @@ For production, create an override file (for example `docker-compose.prod.yml`) 
 - 📄 [Litepaper](https://geek-litepaper-nu.vercel.app)
 - 🐛 [GitHub Issues](https://github.com/GEEKProtocol0110/geek-protocol-alpha/issues)
 
+### Development Fund
+
+Support ongoing development and infrastructure:
+
+**Kaspa Address:**
+```
+kaspa:qznpmmjcsg7hud6s4lupuaza3fenmhwha4ffn5yz70wgdravxyhmqghqayv5e
+```
+
+Contributions help fund:
+- Infrastructure costs (hosting, databases, APIs)
+- Third-party security audits
+- Developer bounties and rewards
+- Community events and tournaments
+
 ## Roadmap
 
 ### The Ecosystem Arc (In-World History You're Living)
