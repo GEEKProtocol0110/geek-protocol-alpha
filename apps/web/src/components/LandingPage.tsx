@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 const FLOW_STEPS = [
   {
     number: "1",

@@ -41,7 +41,7 @@ export default function DashboardLanding() {
                   But the wise knew: true power lies not in what you scroll, but in what you <span className="text-purple-400 font-semibold">master</span>.
                 </p>
                 <p className="text-gray-400 italic text-sm">
-                  "The first Geeks emerged not from schools, but from late-night wikis, from speedruns, from Easter eggs hidden in forgotten code."
+                  &ldquo;The first Geeks emerged not from schools, but from late-night wikis, from speedruns, from Easter eggs hidden in forgotten code.&rdquo;
                 </p>
               </div>
             </div>
@@ -57,7 +57,7 @@ export default function DashboardLanding() {
                   where only those who truly know can claim their reward. Each category a realm, each question a boss fight.
                 </p>
                 <p className="text-gray-400 italic text-sm">
-                  "Speed matters. Accuracy is king. But wisdom? Wisdom is what separates the casual from the legendary."
+                  &ldquo;Speed matters. Accuracy is king. But wisdom? Wisdom is what separates the casual from the legendary.&rdquo;
                 </p>
               </div>
             </div>
@@ -69,11 +69,11 @@ export default function DashboardLanding() {
                 <div className="text-4xl mb-4">💎</div>
                 <h3 className="text-2xl font-bold text-cyan-300">The Protocol</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Built on Kaspa's lightning foundation, the <span className="text-cyan-400 font-semibold">Geek Protocol</span> transforms 
+                  Built on Kaspa&apos;s lightning foundation, the <span className="text-cyan-400 font-semibold">Geek Protocol</span> transforms 
                   neurons into tokens. Your mind becomes your treasury. Your knowledge, liquid.
                 </p>
                 <p className="text-gray-400 italic text-sm">
-                  "In the old world, you studied for grades. In the new world, you earn while you master the lore."
+                  &ldquo;In the old world, you studied for grades. In the new world, you earn while you master the lore.&rdquo;
                 </p>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function DashboardLanding() {
                   The <span className="text-purple-400 font-semibold">leaderboard</span> remembers. The blockchain never forgets.
                 </p>
                 <p className="text-gray-400 italic text-sm">
-                  "They say the top Geeks don't just play for rewards—they play for immortality. Their scores,永遠に eternal."
+                  &ldquo;They say the top Geeks don&apos;t just play for rewards—they play for immortality. Their scores,永遠に eternal.&rdquo;
                 </p>
               </div>
             </div>
@@ -99,10 +99,10 @@ export default function DashboardLanding() {
           <div className="mt-16 text-center space-y-6 p-12 bg-gradient-to-r from-purple-900/20 via-pink-900/20 to-cyan-900/20 rounded-3xl border border-purple-500/30">
             <div className="text-6xl mb-4">🌟</div>
             <blockquote className="text-2xl md:text-3xl font-light text-purple-200 leading-relaxed">
-              "In the age of information,<br />
+              &ldquo;In the age of information,<br />
               <span className="text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text font-semibold">
                 knowledge is the only true currency.
-              </span>"
+              </span>&rdquo;
             </blockquote>
             <p className="text-cyan-400 text-sm tracking-widest uppercase">— The Geek Manifesto</p>
           </div>

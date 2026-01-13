@@ -225,6 +225,177 @@ export declare const SubmitQuizRequestSchema: z.ZodObject<{
     attemptToken: string;
     answers: number[];
 }>;
+export declare const AdminAttemptsQuerySchema: z.ZodObject<{
+    limit: z.ZodDefault<z.ZodNumber>;
+    offset: z.ZodDefault<z.ZodNumber>;
+} & {
+    userId: z.ZodOptional<z.ZodString>;
+    wallet: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    limit: number;
+    offset: number;
+    userId?: string | undefined;
+    wallet?: string | undefined;
+}, {
+    userId?: string | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    wallet?: string | undefined;
+}>;
+export declare const AdminRewardsQuerySchema: z.ZodObject<{
+    limit: z.ZodDefault<z.ZodNumber>;
+    offset: z.ZodDefault<z.ZodNumber>;
+} & {
+    status: z.ZodOptional<z.ZodString>;
+    userId: z.ZodOptional<z.ZodString>;
+    wallet: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    limit: number;
+    offset: number;
+    status?: string | undefined;
+    userId?: string | undefined;
+    wallet?: string | undefined;
+}, {
+    status?: string | undefined;
+    userId?: string | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    wallet?: string | undefined;
+}>;
+export declare const AdminQuestionImportSchema: z.ZodEffects<z.ZodObject<{
+    category: z.ZodDefault<z.ZodString>;
+    prompt: z.ZodString;
+    options: z.ZodArray<z.ZodString, "many">;
+    correctIndex: z.ZodDefault<z.ZodNumber>;
+    difficulty: z.ZodDefault<z.ZodEnum<["easy", "medium", "hard"]>>;
+    tags: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    version: z.ZodDefault<z.ZodNumber>;
+    active: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    options: string[];
+    category: string;
+    prompt: string;
+    correctIndex: number;
+    difficulty: "easy" | "medium" | "hard";
+    tags: string[];
+    version: number;
+    active: boolean;
+}, {
+    options: string[];
+    prompt: string;
+    category?: string | undefined;
+    correctIndex?: number | undefined;
+    difficulty?: "easy" | "medium" | "hard" | undefined;
+    tags?: string[] | undefined;
+    version?: number | undefined;
+    active?: boolean | undefined;
+}>, {
+    options: string[];
+    category: string;
+    prompt: string;
+    correctIndex: number;
+    difficulty: "easy" | "medium" | "hard";
+    tags: string[];
+    version: number;
+    active: boolean;
+}, {
+    options: string[];
+    prompt: string;
+    category?: string | undefined;
+    correctIndex?: number | undefined;
+    difficulty?: "easy" | "medium" | "hard" | undefined;
+    tags?: string[] | undefined;
+    version?: number | undefined;
+    active?: boolean | undefined;
+}>;
+export declare const AdminQuestionImportRequestSchema: z.ZodObject<{
+    questions: z.ZodArray<z.ZodEffects<z.ZodObject<{
+        category: z.ZodDefault<z.ZodString>;
+        prompt: z.ZodString;
+        options: z.ZodArray<z.ZodString, "many">;
+        correctIndex: z.ZodDefault<z.ZodNumber>;
+        difficulty: z.ZodDefault<z.ZodEnum<["easy", "medium", "hard"]>>;
+        tags: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+        version: z.ZodDefault<z.ZodNumber>;
+        active: z.ZodDefault<z.ZodBoolean>;
+    }, "strip", z.ZodTypeAny, {
+        options: string[];
+        category: string;
+        prompt: string;
+        correctIndex: number;
+        difficulty: "easy" | "medium" | "hard";
+        tags: string[];
+        version: number;
+        active: boolean;
+    }, {
+        options: string[];
+        prompt: string;
+        category?: string | undefined;
+        correctIndex?: number | undefined;
+        difficulty?: "easy" | "medium" | "hard" | undefined;
+        tags?: string[] | undefined;
+        version?: number | undefined;
+        active?: boolean | undefined;
+    }>, {
+        options: string[];
+        category: string;
+        prompt: string;
+        correctIndex: number;
+        difficulty: "easy" | "medium" | "hard";
+        tags: string[];
+        version: number;
+        active: boolean;
+    }, {
+        options: string[];
+        prompt: string;
+        category?: string | undefined;
+        correctIndex?: number | undefined;
+        difficulty?: "easy" | "medium" | "hard" | undefined;
+        tags?: string[] | undefined;
+        version?: number | undefined;
+        active?: boolean | undefined;
+    }>, "atleastone">;
+}, "strip", z.ZodTypeAny, {
+    questions: [{
+        options: string[];
+        category: string;
+        prompt: string;
+        correctIndex: number;
+        difficulty: "easy" | "medium" | "hard";
+        tags: string[];
+        version: number;
+        active: boolean;
+    }, ...{
+        options: string[];
+        category: string;
+        prompt: string;
+        correctIndex: number;
+        difficulty: "easy" | "medium" | "hard";
+        tags: string[];
+        version: number;
+        active: boolean;
+    }[]];
+}, {
+    questions: [{
+        options: string[];
+        prompt: string;
+        category?: string | undefined;
+        correctIndex?: number | undefined;
+        difficulty?: "easy" | "medium" | "hard" | undefined;
+        tags?: string[] | undefined;
+        version?: number | undefined;
+        active?: boolean | undefined;
+    }, ...{
+        options: string[];
+        prompt: string;
+        category?: string | undefined;
+        correctIndex?: number | undefined;
+        difficulty?: "easy" | "medium" | "hard" | undefined;
+        tags?: string[] | undefined;
+        version?: number | undefined;
+        active?: boolean | undefined;
+    }[]];
+}>;
 export declare const AttemptResultSchema: z.ZodObject<{
     attemptId: z.ZodString;
     userId: z.ZodString;
@@ -322,6 +493,34 @@ export declare const LeaderboardEntrySchema: z.ZodObject<{
     attempts: number;
 }>;
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
+export declare const LeaderboardQuerySchema: z.ZodObject<{
+    limit: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    limit: number;
+}, {
+    limit?: number | undefined;
+}>;
+export declare const LeaderboardUserParamsSchema: z.ZodObject<{
+    userId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    userId: string;
+}, {
+    userId: string;
+}>;
+export declare const RewardLookupParamsSchema: z.ZodObject<{
+    userId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    userId: string;
+}, {
+    userId: string;
+}>;
+export declare const RewardAttemptParamsSchema: z.ZodObject<{
+    attemptId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    attemptId: string;
+}, {
+    attemptId: string;
+}>;
 export declare const ApiResponseSchema: <T extends z.ZodTypeAny>(schema: T) => z.ZodObject<{
     success: z.ZodBoolean;
     data: z.ZodOptional<T>;

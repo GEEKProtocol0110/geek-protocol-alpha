@@ -1,14 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 export function LandingHero() {
-  const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
+  // Memoize particle data to avoid calling Math.random during re-renders
+  // Math.random calls here are intentional and only execute once due to empty dependency array
+  const particles = useMemo(() => {
+    const randomValues = Array.from({ length: 20 }, (_, i) => ({
+      width: Math.random() * 6 + 2,
+      height: Math.random() * 6 + 2,
+      left: Math.random() * 100,
+      background: i % 3 === 0 ? 'rgba(34, 197, 94, 0.6)' : i % 3 === 1 ? 'rgba(20, 184, 166, 0.6)' : 'rgba(139, 92, 246, 0.6)',
+      animationDelay: Math.random() * 15,
+      animationDuration: Math.random() * 10 + 10
+    }));
+    return randomValues;
+  }, []);
+
   useEffect(() => {
-    setMounted(true);
-    
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({
         x: (e.clientX / window.innerWidth) * 100,
@@ -100,18 +111,18 @@ export function LandingHero() {
         />
 
         {/* Animated floating particles */}
-        {[...Array(20)].map((_, i) => (
+        {particles.map((particle, i) => (
           <div
             key={i}
             className="absolute rounded-full animate-particle"
             style={{
-              width: `${Math.random() * 6 + 2}px`,
-              height: `${Math.random() * 6 + 2}px`,
-              left: `${Math.random() * 100}%`,
+              width: `${particle.width}px`,
+              height: `${particle.height}px`,
+              left: `${particle.left}%`,
               top: '100%',
-              background: i % 3 === 0 ? 'rgba(34, 197, 94, 0.6)' : i % 3 === 1 ? 'rgba(20, 184, 166, 0.6)' : 'rgba(139, 92, 246, 0.6)',
-              animationDelay: `${Math.random() * 15}s`,
-              animationDuration: `${Math.random() * 10 + 10}s`
+              background: particle.background,
+              animationDelay: `${particle.animationDelay}s`,
+              animationDuration: `${particle.animationDuration}s`
             }}
           />
         ))}

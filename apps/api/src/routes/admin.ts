@@ -3,8 +3,9 @@ import {
   AdminAttemptsQuerySchema,
   AdminRewardsQuerySchema,
   AdminQuestionImportRequestSchema,
+  AdminQuestionImportSchema,
 } from "@geek/shared";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { Prisma } from "@prisma/client";
 
 type AttemptsQuery = {
@@ -128,7 +129,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const { questions } = AdminQuestionImportRequestSchema.parse(normalized);
 
       const created = await fastify.prisma.$transaction(
-        questions.map((q) =>
+        questions.map((q: z.infer<typeof AdminQuestionImportSchema>) =>
           fastify.prisma.question.create({
             data: {
               category: q.category,

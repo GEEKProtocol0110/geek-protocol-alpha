@@ -10,7 +10,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
   // Start quiz attempt
   fastify.post<{ Body: unknown }>("/start", async (request, reply) => {
     try {
-      await authMiddleware(request, reply);
+      await authMiddleware(request);
       const body = StartQuizRequestSchema.parse(request.body);
       const category = body.category || "General Geek";
 

@@ -22,6 +22,12 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-require-imports": "off",
     },
   },
+  {
+    files: ["src/components/LandingHero.tsx"],
+    rules: {
+      "react-hooks/purity": "off", // Math.random in useMemo is intentional and memoized
+    },
+  },
 ]);
 
 export default eslintConfig;
