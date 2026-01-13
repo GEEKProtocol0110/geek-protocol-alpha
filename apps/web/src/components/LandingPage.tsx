@@ -120,22 +120,23 @@ export function StorySection() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         {/* Story sections */}
-        <div className="mb-24 space-y-12">
+        <div className="mb-24 space-y-8">
           {STORY_SECTIONS.map((section, idx) => (
-            <div key={idx} className="grid md:grid-cols-[100px_1fr] gap-6 md:gap-12 items-start">
-              <div className="text-4xl">{section.icon}</div>
+            <div key={idx} className="group grid md:grid-cols-[120px_1fr] gap-6 md:gap-12 items-start p-8 rounded-2xl border border-white/5 hover:border-cyan-500/30 bg-gradient-to-br from-white/2 to-transparent hover:from-cyan-500/5 transition-all duration-500 hover:shadow-[0_0_40px_rgba(34,197,94,0.1)]">
+              <div className="text-5xl md:text-6xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">{section.icon}</div>
               <div className="space-y-4">
-                <h3 className="text-3xl md:text-4xl font-bold text-white">{section.title}</h3>
-                <p className="text-lg text-white/70 leading-relaxed">{section.description}</p>
-                <p className="text-lg font-semibold text-cyan-400">{section.highlight}</p>
+                <h3 className="text-3xl md:text-5xl font-black text-white group-hover:text-cyan-400 transition-colors duration-300">{section.title}</h3>
+                <p className="text-lg md:text-xl text-white/70 leading-relaxed group-hover:text-white/90 transition-colors">{section.description}</p>
+                <p className="text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">{section.highlight}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* The Philosophy */}
-        <div className="my-24 p-8 md:p-12 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-emerald-500/5 backdrop-blur-sm">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">All Hope, No Hype</h2>
+        <div className="my-24 p-10 md:p-16 rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 via-emerald-500/5 to-purple-500/10 backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_60px_rgba(34,197,94,0.3)]">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-shimmer" />
+          <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-8 relative z-10">All Hope, No Hype</h2>
           <p className="text-lg text-white/70 leading-relaxed mb-6">
             Geek Protocol isn&rsquo;t built on promises of 10,000x gains or locked liquidity pools. It&rsquo;s built on <span className="text-white font-semibold">signal</span>—measurable, verifiable knowledge.
           </p>
@@ -149,20 +150,20 @@ export function StorySection() {
 
         {/* Core Features */}
         <div>
-          <div className="mb-16 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Core Systems</h2>
-            <p className="text-lg text-white/60">Built for signal. Designed for scale.</p>
+          <div className="mb-20 text-center">
+            <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">Core Systems</h2>
+            <p className="text-xl md:text-2xl text-white/70 font-light">Built for signal. Designed for scale.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {FEATURES.map((feature, idx) => (
               <div 
                 key={idx}
-                className="p-6 rounded-xl border border-white/10 hover:border-cyan-500/30 bg-white/2 hover:bg-white/5 transition-all duration-300 group"
+                className="relative p-8 rounded-2xl border border-white/10 hover:border-cyan-500/50 bg-gradient-to-br from-white/5 to-transparent hover:from-cyan-500/10 hover:to-emerald-500/5 transition-all duration-500 group hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)] cursor-pointer"
               >
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-white/70 text-sm mb-4">{feature.description}</p>
+                <div className="text-5xl mb-6 transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{feature.icon}</div>
+                <h3 className="text-2xl font-black text-white group-hover:text-cyan-400 mb-3 transition-colors">{feature.title}</h3>
+                <p className="text-white/70 group-hover:text-white/90 text-base mb-6 leading-relaxed transition-colors">{feature.description}</p>
                 <ul className="space-y-2">
                   {feature.details.map((detail, didx) => (
                     <li key={didx} className="flex items-start gap-2 text-xs text-white/60">
@@ -184,19 +185,19 @@ export function CategoriesSection() {
   return (
     <section className="relative py-24 px-6 bg-gradient-to-b from-black to-[#0a0e27]">
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">8 Categories of Knowledge</h2>
-          <p className="text-lg text-white/60">Master multiple domains. Earn across disciplines.</p>
+        <div className="mb-20 text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-white mb-6">8 Categories of Knowledge</h2>
+          <p className="text-xl md:text-2xl text-white/70 font-light">Master multiple domains. Earn across disciplines.</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {CATEGORIES.map((category, idx) => (
             <div
               key={idx}
-              className="p-6 rounded-xl border border-white/10 hover:border-emerald-400/60 bg-white/2 hover:bg-emerald-500/5 transition-all duration-300 text-center"
+              className="group p-8 rounded-2xl border border-white/10 hover:border-emerald-400/60 bg-gradient-to-br from-white/5 to-transparent hover:from-emerald-500/10 transition-all duration-500 text-center cursor-pointer hover:scale-105 hover:shadow-[0_0_40px_rgba(20,184,166,0.2)]"
             >
-              <p className="text-2xl mb-2">{category.split(" ")[0]}</p>
-              <p className="text-white font-semibold text-sm">{category.substring(2)}</p>
+              <p className="text-4xl md:text-5xl mb-4 transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{category.split(" ")[0]}</p>
+              <p className="text-white group-hover:text-emerald-400 font-bold text-base transition-colors">{category.substring(2)}</p>
             </div>
           ))}
         </div>
@@ -213,9 +214,9 @@ export function RoadmapSection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">The Path Forward</h2>
-          <p className="text-lg text-white/60">From alpha to economy. Built on hope, not hype.</p>
+        <div className="mb-20 text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">The Path Forward</h2>
+          <p className="text-xl md:text-2xl text-white/70 font-light">From alpha to economy. Built on hope, not hype.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -364,8 +365,8 @@ export function KaspaHonorSection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Why Kaspa</h2>
-          <p className="text-lg text-white/70 leading-relaxed mb-8">
+        <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-400 mb-8">Why Kaspa</h2>
+          <p className="text-lg md:text-xl text-white/80 leading-relaxed mb-10">
             Kaspa isn&rsquo;t the loudest blockchain. It&rsquo;s the fastest. Sub-second blocks without sacrificing decentralization or security. 
           <br />
           <br />
@@ -406,9 +407,9 @@ export function ImpactSection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">How Geek Protocol Changes Your Life</h2>
-          <p className="text-lg text-white/60">Real impact. Measurable rewards. Lasting change.</p>
+        <div className="mb-20 text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-white mb-6">How Geek Protocol Changes Your Life</h2>
+          <p className="text-xl md:text-2xl text-white/70 font-light">Real impact. Measurable rewards. Lasting change.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -558,22 +559,22 @@ export function ResourcesSection() {
   return (
     <section className="relative py-24 px-6 bg-black">
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Resources & Links</h2>
-          <p className="text-lg text-white/60">Everything you need to understand and join Geek Protocol</p>
+        <div className="mb-20 text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">Resources & Links</h2>
+          <p className="text-xl md:text-2xl text-white/70 font-light">Everything you need to understand and join Geek Protocol</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {resources.map((resource, idx) => (
             <a
               key={idx}
               href={resource.href}
               target={resource.external ? "_blank" : undefined}
               rel={resource.external ? "noopener noreferrer" : undefined}
-              className="group p-8 rounded-xl border border-white/10 hover:border-cyan-500/50 bg-white/2 hover:bg-white/5 transition-all duration-300 cursor-pointer"
+              className="group p-10 rounded-2xl border border-white/10 hover:border-cyan-500/50 bg-gradient-to-br from-white/5 to-transparent hover:from-cyan-500/10 transition-all duration-500 cursor-pointer hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)]"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="text-5xl">{resource.icon}</div>
+              <div className="flex items-start justify-between mb-6">
+                <div className="text-6xl transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{resource.icon}</div>
                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${
                   resource.status === "Live" 
                     ? "bg-emerald-500/20 text-emerald-400" 
@@ -609,9 +610,9 @@ export function HowItWorksSection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-20 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">How It Works</h2>
-          <p className="text-lg text-white/60">Six simple steps from wallet to rewards</p>
+        <div className="mb-24 text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">How It Works</h2>
+          <p className="text-xl md:text-2xl text-white/70 font-light">Six simple steps from wallet to rewards</p>
         </div>
 
         {/* Flow visualization */}
@@ -680,32 +681,34 @@ export function CTASection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Join the Geek Revolution</h2>
-        <p className="text-xl text-white/70 mb-12">
-          Your knowledge. Your edge. Your rewards. Be part of the protocol changing how geeks earn.
+        <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-8">Join the Geek Revolution</h2>
+        <p className="text-2xl md:text-3xl text-white/80 mb-16 font-light leading-relaxed">
+          Your knowledge. Your edge. Your rewards. <br />Be part of the protocol changing how geeks earn.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
           <a
             href="https://x.com/geekonkas"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl border-2 border-white/30 hover:border-cyan-400/60 bg-white/5 hover:bg-cyan-500/10 transition-all duration-300"
+            className="group relative inline-flex items-center justify-center px-12 py-6 text-xl font-black uppercase tracking-widest text-white rounded-2xl border-2 border-white/30 hover:border-cyan-400/60 bg-white/5 hover:bg-cyan-500/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.3)]"
           >
-            <span>Follow on X →</span>
+            <span className="relative z-10">Follow on X →</span>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </a>
 
           <a
             href="https://t.me/GEEKonKAScommunity"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center justify-center px-10 py-5 text-lg font-bold uppercase tracking-widest text-white rounded-xl border-2 border-emerald-400/40 hover:border-emerald-400/70 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all duration-300"
+            className="group relative inline-flex items-center justify-center px-12 py-6 text-xl font-black uppercase tracking-widest text-white rounded-2xl border-2 border-emerald-400/40 hover:border-emerald-400/70 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(20,184,166,0.3)]"
           >
-            <span>Join Community →</span>
+            <span className="relative z-10">Join Community →</span>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </a>
         </div>
 
-        <p className="text-white/50 mb-12">Coming to www.geekprotocol.xyz in Q1 2026</p>
+        <p className="text-xl text-white/60 mb-16 font-medium">Coming to www.geekprotocol.xyz in Q1 2026</p>
 
         <div className="pt-12 border-t border-white/10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
