@@ -18,9 +18,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/STATUS-Production_Ready_Alpha-success?style=for-the-badge" alt="Status"/>
-  <img src="https://img.shields.io/badge/Network-Kaspa_Ready-blueviolet?style=for-the-badge&logo=bitcoin" alt="Network"/>
+  <img src="https://img.shields.io/badge/STATUS-Deployment_Ready_Alpha-success?style=for-the-badge" alt="Status"/>
+  <img src="https://img.shields.io/badge/Network-Kaspa_Testnet-blueviolet?style=for-the-badge&logo=bitcoin" alt="Network"/>
   <img src="https://img.shields.io/badge/Deployment-Vercel_+_Railway-black?style=for-the-badge" alt="Deployment"/>
+</p>
+
+<p align="center">
+  ⚠️ <strong>Pre-Audit Alpha:</strong> This project has not yet undergone third-party security audit.<br/>
+  <em>No mainnet funds are at risk in this phase.</em>
 </p>
 
 <p align="center">
@@ -50,17 +55,17 @@ What This Is](#what-this-is)
 
 ## What This Is
 
-**Geek Protocol** is a production-ready Proof-of-Learning platform demonstrating:
-- ✅ Complete Quiz2Earn mechanics with cryptographic validation
-- ✅ Enterprise-grade server-side anti-cheat system
+**Geek Protocol** is a deployment-ready Proof-of-Learning platform demonstrating:
+- ✅ Feature-complete Quiz2Earn mechanics with cryptographic validation
+- ✅ Production-oriented server-side anti-cheat system
 - ✅ Automated reward distribution with Redis queue
 - ✅ Full Kaspa wallet integration (KasWare)
 - ✅ Real-time leaderboards and analytics
 - ✅ Comprehensive lore and world-building ([LORE.md](LORE.md))
 - ✅ Deployment-ready architecture (Vercel + Railway)
 
-**This is a COMPLETE alpha ready for:**
-- ✅ Production deployment
+**This Alpha is ready for:**
+- ✅ Testnet deployment
 - ✅ Community beta testing
 - ✅ Developer contributions
 - ✅ Investor demonstrations
@@ -68,6 +73,30 @@ What This Is](#what-this-is)
 - ✅ DAO/Grant applications
 
 **See [DEPLOYMENT.md](DEPLOYMENT.md) for one-click deploy instructions.**
+
+---
+
+## Network Status
+
+- ✅ **Kaspa wallet authentication** (KasWare) — fully operational
+- ✅ **Reward pipeline architecture** — complete and tested
+- 🔄 **Testnet reward execution** — current phase
+- 🔜 **Mainnet reward broadcasting** — post-audit phase
+
+**No mainnet funds are at risk in Alpha.** All reward transactions currently execute on Kaspa testnet or demo mode.
+
+---
+
+## What This Is NOT (Yet)
+
+This Alpha does NOT include:
+- ❌ Third-party security audit
+- ❌ Mainnet token launch or treasury
+- ❌ DAO-governed protocol management
+- ❌ NFT marketplace or achievement minting
+- ❌ Production-scale load testing (10k+ concurrent users)
+
+Those features arrive in later phases per the roadmap.
 
 ---
 
@@ -338,6 +367,39 @@ See [docs/PROOF_OF_LEARNING.md](docs/PROOF_OF_LEARNING.md) for complete technica
 ```
 
 ## Architecture
+
+### System Flow
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Web (Next.js 16)                     │
+│            User Interface + Wallet Connect               │
+└─────────────────────┬───────────────────────────────────┘
+                      │ HTTPS/REST
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│                  API (Fastify + TypeScript)              │
+│          Auth • Quiz Logic • Answer Validation           │
+└─────────────────────┬───────────────────────────────────┘
+                      │ Redis Queue
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│                    Redis (ioredis)                       │
+│              Reward Job Queue + Worker Locks             │
+└─────────────────────┬───────────────────────────────────┘
+                      │ Job Processing
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│                 Reward Worker (Node.js)                  │
+│            Process Jobs • Build TX • Broadcast           │
+└─────────────────────┬───────────────────────────────────┘
+                      │ Kaspa RPC
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│                  Kaspa Blockchain                        │
+│              Testnet TX → Mainnet (post-audit)           │
+└─────────────────────────────────────────────────────────┘
+```
 
 ### Layer Separation
 
