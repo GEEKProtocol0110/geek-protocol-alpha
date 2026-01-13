@@ -6,6 +6,15 @@
 
 Unlike traditional quiz apps where rewards are disconnected from skill, we cryptographically prove that a user answered questions correctly within time constraints, making rewards a direct function of demonstrated knowledge.
 
+## Reward Eligibility Requirements
+
+A user earns $GEEK rewards **only when all four conditions are met:**
+
+1. **Wallet is authenticated** — User must have a verified KasWare wallet address
+2. **Quiz attempt is validated server-side** — Answers are scored against correct answers on the server
+3. **Payout job is enqueued & processed by worker** — Reward job added to queue and executed by background worker
+4. **Payout status is confirmed and displayed** — Transaction is confirmed and status visible to user
+
 ## How It Works
 
 ### 1. Quiz Initialization
@@ -47,17 +56,42 @@ User submits answers → Server validates:
 - Replay attacks (attempt tokens are single-use)
 - Bot farming (rate limiting by wallet address)
 
-### 4. Score Calculation
+### 4. Score Calculation & Reward Eligibility
 
 ```
 Score = (Correct Answers / Total Questions) × 100
+Payout job enqueued → reward_queue
 ```
 
+**Step 1: Wallet Authentication**
+- User must have authenticated wallet via KasWare
+- Wallet address stored and verified in database
+- Required before any reward processing begins
+
+**Step 2: Server-Side Validation**
+- Attempt token verified (HMAC signature)
+- Time elapsed validated (must be realistic)
+- Each answer checked against correct answers
+- Score calculated: `scorePct = (correct / total) × 100`
+- Reward job enqueued to Redis: `reward_queue`
+
+**Step 3: Worker Processing**
 Rewards triggered only if:
 - `Score >= MIN_SCORE_FOR_REWARD` (default: 70%)
-- User has valid KasWare signature
-- User holds minimum $GEEK tokens (configurable)
+- User has valid wallet address
 - No duplicate reward for same attempt
+- Amount calculated: `correct × REWARD_SATS_PER_CORRECT`
+
+Worker creates reward record with status:
+- `PENDING` → Initial creation
+- `SENT` → Transaction broadcast (simulated or real)
+- `CONFIRMED` → Transaction confirmed on-chain
+
+**Step 4: Status Display**
+- Reward status tracked in database
+- Status queryable via API endpoints
+- User sees confirmation in dashboard
+- Transaction hash visible (when applicable)
 
 ### 5. Reward Proof
 

@@ -109,8 +109,29 @@ What This Is](#what-this-is)
 
 ---
 
-## Try It Now (5 Minutes)y](#community)
-- [License](#license)
+## 🚀 Live Demo & Proof Links
+
+**Want to see it in action?**
+
+- **Demo Mode:** [Coming Soon - demo.geekprotocol.xyz](#)
+- **Quick Demo Video:** [Coming Soon - 2-minute walkthrough](#)
+- **Screenshots:** [View the flow](#)
+
+### What You'll See
+- Practice mode without wallet (instant access)
+- Full quiz-to-earn flow with mocked rewards
+- Real-time leaderboard rankings
+- Reward status tracking (PENDING → SENT → CONFIRMED)
+
+### Production Testnet (Beta Access)
+- Real Kaspa testnet payouts
+- Live transaction confirmation
+- Blockchain-verified rewards
+- **Request access:** [Telegram Community](https://t.me/GEEKonKAScommunity)
+
+---
+
+## Try It Now (5 Minutes)
 
 ---
 
@@ -121,6 +142,23 @@ What This Is](#what-this-is)
 This repository contains the alpha release featuring a production-ready monorepo architecture with enterprise-grade security, real-time leaderboards, automated reward distribution, and comprehensive testing infrastructure.
 
 ## Core Features
+
+### 🔐 Proof-of-Learning (Cryptographic Validation)
+
+**A user earns $GEEK rewards only when ALL four conditions are met:**
+
+1. **Wallet is authenticated** — User must have a verified KasWare wallet address
+2. **Quiz attempt is validated server-side** — Answers scored against correct answers with HMAC token verification
+3. **Payout job is enqueued & processed by worker** — Reward job added to Redis queue and executed by background worker
+4. **Payout status is confirmed and displayed** — Transaction confirmed on-chain and status visible to user
+
+**Why this matters:**
+- No client-side manipulation possible
+- Every reward tied to cryptographic proof
+- Complete audit trail (attempt → score → TX hash → confirmation)
+- Transparent, verifiable, fair
+
+See [docs/PROOF_OF_LEARNING.md](docs/PROOF_OF_LEARNING.md) for complete technical details.
 
 ### 🎮 Geek Gauntlet Quiz Engine
 - **Dynamic Challenge System:** 10-question competitive runs with intelligent 15-second time limits per question
@@ -459,10 +497,15 @@ For production, create an override file (for example `docker-compose.prod.yml`) 
 
 ## Strategic Docs
 
-📚 **Deep Dives**
-- [Proof of Learning](docs/PROOF_OF_LEARNING.md) - How we validate knowledge and prevent gaming
+📚 **Technical Deep Dives**
+- [Proof of Learning](docs/PROOF_OF_LEARNING.md) - Cryptographic validation & anti-cheat
 - [Token Flow](docs/TOKEN_FLOW.md) - Complete reward distribution architecture
 - [MVP Scope](docs/MVP_SCOPE.md) - What's in Alpha vs. Mainnet
+
+🚀 **Funding & Growth**
+- [Funding-Ready Strategy](FUNDING_READY_STRATEGY.md) - Investor demo preparation guide
+- [Deployment Guide](DEPLOYMENT.md) - Production deployment & treasury setup
+- [Grant Proposal Template](docs/GRANT_PROPOSAL.md) - DAO/foundation pitch materials
 
 📖 **Additional Resources**
 - [Litepaper](https://geek-litepaper-nu.vercel.app) - Vision and tokenomics
