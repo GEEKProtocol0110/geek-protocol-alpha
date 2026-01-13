@@ -43,4 +43,10 @@ Once a fix is ready:
 2. CVE filing (if applicable) will credit the reporter unless anonymity is requested.
 3. Public disclosure (release notes, advisories) will occur only after patches are available.
 
+## Pre-Audit Status
+
+**⚠️ Important:** This project is currently in Alpha and has not yet undergone a third-party security audit. While we have implemented production-oriented security measures (HMAC validation, JWT authentication, rate limiting, etc.), mainnet reward distribution remains disabled until audit completion.
+
+**Responsible Testing:** If you discover a vulnerability in our testnet or demo environments, please report it through the process above rather than exploiting it. We appreciate your cooperation in keeping the Kaspa community and our Alpha testers safe.
+
 Thank you for helping keep Geek Protocol and the Kaspa community safe. 🚀
