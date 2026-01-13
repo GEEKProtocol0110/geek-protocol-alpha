@@ -41,22 +41,22 @@ const FLOW_STEPS = [
 
 const STORY_SECTIONS = [
   {
-    icon: "🌐",
-    title: "The Old Net (The Fall)",
-    description: "The Old Net decayed into misinformation, distraction algorithms, and entropy—the Age of Noise, where truth lost authority and knowledge lost value. Your expertise became noise, captured and sold, never returned.",
-    highlight: "The collapse demanded a new foundation."
+    icon: "�",
+    title: "The Problem",
+    description: "Your knowledge and expertise have value, but there's no simple way to prove what you know and get rewarded for it. Current platforms optimize for engagement, not learning.",
+    highlight: "We needed a better system."
   },
   {
     icon: "⚡",
-    title: "The Kaspa Foundation",
-    description: "From the collapse emerged the Kaspa Graph—the Velocity Layer of the New Net: fast, fair, scalable, resistant to stagnation. A protocol that runs on proof, not promises.",
-    highlight: "Speed without compromise. Truth without intermediaries."
+    title: "Built on Kaspa",
+    description: "Fast, fair, and decentralized. Kaspa's blockDAG architecture gives us sub-second settlements and low fees—perfect for instant knowledge-based rewards.",
+    highlight: "Speed without compromise."
   },
   {
-    icon: "🏙️",
-    title: "The Omniscient Grid",
-    description: "Geek Protocol exists inside the Omniscient Grid—a neon, Kaspa-blue City of Light where XP flows like energy, knowledge nodes glow, and every correct answer strengthens reality. The Gauntlet is your gateway.",
-    highlight: "Enter as a Seeker. Prove yourself. Become Cognoscenti."
+    icon: "🎮",
+    title: "How It Works",
+    description: "Answer questions correctly under time pressure. Earn $GEEK tokens and XP. Build your on-chain reputation. Compete on global leaderboards. Simple as that.",
+    highlight: "Prove what you know. Get rewarded instantly."
   }
 ];
 

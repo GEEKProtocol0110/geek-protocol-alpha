@@ -129,7 +129,7 @@ export function LandingHero() {
         <div className="flex justify-center mb-12 animate-slide-in">
           <div className="group relative inline-flex items-center gap-2 rounded-full border border-cyan-500/50 bg-cyan-500/10 px-6 py-3 backdrop-blur-sm hover:border-cyan-400/80 hover:bg-cyan-400/15 transition-all duration-300 animate-glow-ring">
             <span className="size-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
-            <span className="text-sm font-bold text-cyan-300 tracking-wide uppercase">Enter the Omniscient Grid • All Hope, No Hype</span>
+            <span className="text-sm font-bold text-cyan-300 tracking-wide uppercase">Proof-of-Learning on Kaspa • All Hope, No Hype</span>
             <div className="absolute inset-0 rounded-full animate-shimmer opacity-50" />
           </div>
         </div>
