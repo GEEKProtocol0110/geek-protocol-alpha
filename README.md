@@ -17,30 +17,99 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/STATUS-Testnet_MVP_(Proof--of--Learning)-orange?style=for-the-badge" alt="Status"/>
+  <img src="https://img.shields.io/badge/Network-Kaspa_Testnet-blueviolet?style=for-the-badge&logo=bitcoin" alt="Network"/>
+</p>
+
+<p align="center">
   <a href="https://github.com/GEEKProtocol0110/geek-protocol-alpha/actions/workflows/ci.yml"><img src="https://github.com/GEEKProtocol0110/geek-protocol-alpha/actions/workflows/ci.yml/badge.svg" alt="CI Status"/></a>
   <img src="https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=node.js" alt="Node.js"/>
   <img src="https://img.shields.io/badge/TypeScript-5+-3178C6?style=flat-square&logo=typescript" alt="TypeScript"/>
   <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js" alt="Next.js"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License"/>
 </p>
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#overview)
+What This Is](#what-this-is)
+- [What Works Today](#what-works-today)
+- [What Is Stubbed](#what-is-stubbed)
+- [Try It Now (5 Minutes)](#try-it-now-5-minutes)
 - [Core Features](#core-features)
 - [Technology Stack](#technology-stack)
-- [Quick Start](#quick-start)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Development](#development)
 - [Project Structure](#project-structure)
+- [Architecture](#architecture)
 - [Configuration](#configuration)
 - [Testing](#testing)
 - [Deployment](#deployment)
+- [Strategic Docs](#strategic-docs)
 - [Contributing](#contributing)
 - [Community](#community)
+- [License](#license)
+
+---
+
+## What This Is
+
+**Geek Protocol MVP** is a functional proof-of-learning platform demonstrating:
+- ✅ Quiz-to-earn mechanics on Kaspa testnet
+- ✅ Server-side anti-cheat validation
+- ✅ Automated reward distribution queue
+- ✅ Real wallet integration (KasWare)
+
+**This is NOT vaporware.** It's an unfinished but operational product skeleton ready for:
+- Community testing
+- Developer contributions
+- Investor demonstrations
+- Kaspa ecosystem integration
+
+---
+
+## What Works Today
+
+✅ **Wallet Authentication**
+- KasWare wallet connection
+- Cryptographic signature verification
+- Session management with JWT
+
+✅ **Quiz Engine**
+- 10-question competitive runs
+- 8 knowledge categories
+- Server-side answer validation
+- Real-time scoring with HMAC tokens
+
+✅ **Reward System**
+- Redis-backed job queue
+- Multi-state tracking (PENDING → SENT → CONFIRMED)
+- Configurable reward economics
+- Admin dashboard for monitoring
+
+✅ **Infrastructure**
+- Monorepo with Turborepo
+- PostgreSQL + Prisma ORM
+- Docker Compose for local dev
+- CI/CD with GitHub Actions
+
+---
+
+## What Is Stubbed
+
+⚠️ **Testnet Only**
+- Real Kaspa mainnet integration pending
+- Treasury management system in design
+- Token launch mechanics TBD
+
+🚧 **Under Development**
+- Mobile app (planned Q2 2026)
+- Tournament/multiplayer modes
+- NFT achievement system
+- Advanced anti-cheat (device fingerprinting, proof-of-attention)
+
+📝 **Content Needs**
+- Question bank expansion (currently ~50 questions)
+- Category balancing
+- Difficulty tuning
+
+---
+
+## Try It Now (5 Minutes)y](#community)
 - [License](#license)
 
 ---
@@ -70,7 +139,73 @@ This repository contains the alpha release featuring a production-ready monorepo
 ### 🏆 Advanced Leaderboard System
 - **Live Rankings:** Real-time leaderboard updates powered by PostgreSQL with efficient indexing
 - **Comprehensive Metrics:** Track XP, user levels, win streaks, total attempts, and average performance
-- **User Profiles:** Detailed personal dashboards with complete attempt history and achievement tracking
+**Prdocs/                    # Strategic documentation
+│   ├── PROOF_OF_LEARNING.md
+│   ├── TOKEN_FLOW.md
+│   └── MVP_SCOPE.md
+├── .github/
+│   └── workflows/           # CI/CD pipelines
+└── docker-compose.yml       # Local infrastructure
+```
+
+## Architecture
+
+### Layer Separation
+
+| Layer | Purpose | Status |
+|-------|---------|--------|
+| **Geek Protocol Core** | Quiz engine + reward distribution | ✅ Alpha |
+| **Geek Games** | Gauntlet, Royale, Mini-games | 🚧 Planned |
+| **Geek Jr** | Child-safe, education-focused | 📝 Design |
+| **DAO Layer** | Governance + treasury management | 🔜 Q2 2026 |
+
+### Reward Flow
+
+```
+User Completes Quiz
+  ↓
+Server Validates Answers
+  ↓
+Score Meets Threshold?
+  ↓ YES
+Reward Job Enqueued (Redis)
+  ↓
+Worker Processes Job
+  ↓
+Kaspa TX Broadcast
+  ↓
+TX Hash Stored + User Notified
+  ↓
+Blockchain Confirmation
+  ↓
+Status: CONFIRMED
+```
+
+See [docs/TOKEN_FLOW.md](docs/TOKEN_FLOW.md) for complete technical details.. Clone and install
+git clone https://github.com/GEEKProtocol0110/geek-protocol-alpha.git
+cd geek-protocol-alpha
+npm install
+
+# 2. Start infrastructure
+docker-compose up -d
+
+# 3. Configure environment
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+
+# 4. Initialize database
+cd apps/api && npm run prisma:push && npm run seed && cd ../..
+
+# 5. Start dev servers
+npm run dev
+```
+
+**Access:** http://localhost:3000 → Connect wallet → Play quiz → Earn rewards
+
+---
+
+## Core Featuresles:** Detailed personal dashboards with complete attempt history and achievement tracking
 - **Global Competition:** Compare performance against the entire community
 
 ### 🔐 Secure Wallet Integration
@@ -239,7 +374,16 @@ HMAC_SECRET="your-secure-hmac-secret-here"
 ENABLE_REWARDS="true"
 MIN_SCORE_FOR_REWARD="70"
 REWARD_SATS_PER_CORRECT="750"
+
+# Demo Mode (for testing without real TX)
+DEMO_MODE="false"
 ```
+
+**Demo Mode:** Set `DEMO_MODE=true` to:
+- Use fixed question set
+- Simulate rewards (no actual blockchain TX)
+- Skip wallet requirements
+- Perfect for investor demos and testing
 
 See [.env.example](.env.example) for workspace-wide defaults, [apps/api/.env.example](apps/api/.env.example#L1-L75) for backend-specific knobs, and [apps/web/.env.example](apps/web/.env.example) for frontend variables.
 
@@ -312,6 +456,18 @@ docker-compose up --build -d
 ```
 
 For production, create an override file (for example `docker-compose.prod.yml`) with hardened settings, secrets, and scaling directives.
+
+## Strategic Docs
+
+📚 **Deep Dives**
+- [Proof of Learning](docs/PROOF_OF_LEARNING.md) - How we validate knowledge and prevent gaming
+- [Token Flow](docs/TOKEN_FLOW.md) - Complete reward distribution architecture
+- [MVP Scope](docs/MVP_SCOPE.md) - What's in Alpha vs. Mainnet
+
+📖 **Additional Resources**
+- [Litepaper](https://geek-litepaper-nu.vercel.app) - Vision and tokenomics
+- [Quick Reference](QUICK_REFERENCE.md) - API endpoints and data models
+- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) - Production launch guide
 
 ## Community & Support
 
