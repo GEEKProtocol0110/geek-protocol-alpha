@@ -33,7 +33,7 @@
 
 > **⚠️ Note:** This Alpha has not yet undergone a third-party security audit.
 
-What This Is](#what-this-is)
+- [What This Is](#what-this-is)
 - [What Works Today](#what-works-today)
 - [What Is Stubbed](#what-is-stubbed)
 - [Try It Now (5 Minutes)](#try-it-now-5-minutes)
