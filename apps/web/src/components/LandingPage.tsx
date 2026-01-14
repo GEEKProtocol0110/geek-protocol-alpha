@@ -37,20 +37,6 @@ const FLOW_STEPS = [
   }
 ];
 
-const STORY_SECTIONS = [
-  {
-    icon: "�",
-    title: "The Mission",
-    description: "Turn knowledge into progression. Prove what you know and get rewarded for it.",
-    highlight: "Simple, fair, instant."
-  },
-  {
-    icon: "⚡",
-    title: "Built on Kaspa",
-    description: "Sub-second settlements and low fees. Perfect for instant knowledge-based rewards.",
-    highlight: "Speed without compromise."
-  }
-];
 
 const FEATURES = [
   {
@@ -111,30 +97,6 @@ export function StorySection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        {/* Story sections */}
-        <div className="mb-24 space-y-8">
-          {STORY_SECTIONS.map((section, idx) => (
-            <div key={idx} className="group grid md:grid-cols-[120px_1fr] gap-6 md:gap-12 items-start p-8 rounded-2xl border border-white/5 hover:border-cyan-500/30 bg-gradient-to-br from-white/2 to-transparent hover:from-cyan-500/5 transition-all duration-500 hover:shadow-[0_0_40px_rgba(34,197,94,0.1)]">
-              <div className="text-5xl md:text-6xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">{section.icon}</div>
-              <div className="space-y-4">
-                <h3 className="text-3xl md:text-5xl font-black text-white group-hover:text-cyan-400 transition-colors duration-300">{section.title}</h3>
-                <p className="text-lg md:text-xl text-white/70 leading-relaxed group-hover:text-white/90 transition-colors">{section.description}</p>
-                <p className="text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">{section.highlight}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* The Core Value */}
-        <div className="my-24">
-          <div className="p-10 md:p-12 rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-500">
-            <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-6">All Hope, No Hype</h2>
-            <p className="text-lg text-white/70 leading-relaxed">
-              Clear mechanics. Transparent rewards. Real-time settlements. Just a protocol that does what it promises.
-            </p>
-          </div>
-        </div>
-
         {/* Core Features */}
         <div>
           <div className="mb-20 text-center">
