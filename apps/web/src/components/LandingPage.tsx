@@ -40,21 +40,15 @@ const FLOW_STEPS = [
 const STORY_SECTIONS = [
   {
     icon: "�",
-    title: "The Problem",
-    description: "Your knowledge and expertise have value, but there's no simple way to prove what you know and get rewarded for it. Current platforms optimize for engagement, not learning.",
-    highlight: "We needed a better system."
+    title: "The Mission",
+    description: "Turn knowledge into progression. Prove what you know and get rewarded for it.",
+    highlight: "Simple, fair, instant."
   },
   {
     icon: "⚡",
     title: "Built on Kaspa",
-    description: "Fast, fair, and decentralized. Kaspa's blockDAG architecture gives us sub-second settlements and low fees—perfect for instant knowledge-based rewards.",
+    description: "Sub-second settlements and low fees. Perfect for instant knowledge-based rewards.",
     highlight: "Speed without compromise."
-  },
-  {
-    icon: "🎮",
-    title: "How It Works",
-    description: "Answer questions correctly under time pressure. Earn $GEEK tokens and XP. Build your on-chain reputation. Compete on global leaderboards. Simple as that.",
-    highlight: "Prove what you know. Get rewarded instantly."
   }
 ];
 
@@ -131,56 +125,13 @@ export function StorySection() {
           ))}
         </div>
 
-        {/* The Core Law & Characters */}
-        <div className="my-24 space-y-12">
-          {/* Core Law */}
-          <div className="p-10 md:p-16 rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 via-emerald-500/5 to-purple-500/10 backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_60px_rgba(34,197,94,0.3)]">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-shimmer" />
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-8 relative z-10">All Hope, No Hype</h2>
-            <p className="text-lg text-white/70 leading-relaxed mb-6">
-              This isn&rsquo;t a tagline. It&rsquo;s an operating rule. No empty promises. No manipulation. No artificial scarcity. No click-to-earn deception.
-            </p>
-            <p className="text-lg text-white/70 leading-relaxed mb-6">
-              Only: <span className="text-cyan-400 font-bold">learning → proof → progress → truth</span>
-            </p>
+        {/* The Core Value */}
+        <div className="my-24">
+          <div className="p-10 md:p-12 rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/50 transition-all duration-500">
+            <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-6">All Hope, No Hype</h2>
             <p className="text-lg text-white/70 leading-relaxed">
-              Kaspa gave us a blockchain that actually works. Sub-second blocks. No compromise on decentralization. Geek Protocol mirrors that philosophy. Clear mechanics. Transparent rewards. Real-time settlements. Just a protocol that does what it promises.
+              Clear mechanics. Transparent rewards. Real-time settlements. Just a protocol that does what it promises.
             </p>
-          </div>
-
-          {/* The Foundational Beings */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* GIGA */}
-            <div className="p-8 rounded-2xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 to-transparent hover:border-yellow-400/60 transition-all duration-500 hover:shadow-[0_0_40px_rgba(234,179,8,0.2)]">
-              <div className="text-5xl mb-4">🤖</div>
-              <h3 className="text-3xl font-black text-yellow-400 mb-4">GIGA — The Heart</h3>
-              <p className="text-white/70 leading-relaxed mb-4">
-                The golden, glitchy welcoming force. Optimism, onboarding, identity, and community warmth.
-              </p>
-              <p className="text-yellow-300 italic text-sm">
-                &ldquo;Where systems grow cold, GIGA stays warm.&rdquo;
-              </p>
-            </div>
-
-            {/* A.C.E. */}
-            <div className="p-8 rounded-2xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-transparent hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-              <div className="text-5xl mb-4">🔷</div>
-              <h3 className="text-3xl font-black text-cyan-400 mb-4">A.C.E. — The Mind</h3>
-              <p className="text-white/70 leading-relaxed mb-4">
-                The cold precision. Adjudication, analytics, difficulty, legitimacy, and permanent memory.
-              </p>
-              <p className="text-cyan-300 italic text-sm">
-                &ldquo;Emerged from corrupted trivia files. Haunts the Gauntlet. Adapts to intellect.&rdquo;
-              </p>
-            </div>
-          </div>
-
-          {/* The Prime Directive */}
-          <div className="text-center p-12 rounded-2xl border border-white/20 bg-gradient-to-b from-white/5 to-transparent">
-            <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-purple-400">
-              &ldquo;Rebuild the collective mind. Reward the knowing.&rdquo;
-            </p>
-            <p className="text-white/50 mt-4 text-sm uppercase tracking-wider">The Prime Directive</p>
           </div>
         </div>
 
