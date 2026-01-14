@@ -156,11 +156,9 @@ export function LandingHero() {
             </span>
           </h1>
           <p className="text-xl md:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed animate-slide-in font-light" style={{animationDelay: "0.3s"}}>
-            The Old Net collapsed into noise. The Kaspa Graph rose as foundation.
+            Quiz2Earn platform on Kaspa. Prove your knowledge, earn $GEEK tokens.
             <br />
-            Now: the <span className="font-bold text-cyan-400">Omniscient Grid</span>—where knowledge strengthens reality.
-            <br />
-            <span className="text-white/70 text-lg md:text-xl">Enter as a Seeker. Prove mastery. Earn $GEEK. Become Cognoscenti.</span>
+            <span className="text-white/70 text-lg md:text-xl">Fast. Fair. Instant settlements.</span>
           </p>
         </div>
 

@@ -3,7 +3,6 @@
 import { LandingFooter } from "@/components/LandingFooter";
 import { LandingHero } from "@/components/LandingHero";
 import {
-  StorySection,
   CategoriesSection,
   RoadmapSection,
   KaspaHonorSection,
@@ -18,7 +17,6 @@ export default function LandingPage() {
     <main className="w-full bg-black text-white">
       {/* Dedicated landing alias at /landing */}
       <LandingHero />
-      <StorySection />
       <ImpactSection />
       <CategoriesSection />
       <RoadmapSection />
