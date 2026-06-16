@@ -11,104 +11,744 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  walletAddress String   @unique
-  xp            Int      @default(0)
-  level         Int      @default(1)
-  streak        Int      @default(0)
-  lastAttemptAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                        Int       @id @default(autoincrement())
+  username                  String    @unique
+  email                     String    @unique
+  passwordHash              String
+  walletAddress             String?
+  points                    Int       @default(0)
+  geekBalance               Float     @default(0)
+  xp                        Int       @default(0)
+  level                     Int       @default(1)
+  currentStreak             Int       @default(0)
+  longestStreak             Int       @default(0)
+  lastLoginDate             DateTime?
+  streakMilestoneRewards    String    @default("[]") // JSON array
+  role                      String    @default("player")
+  isAdmin                   Boolean   @default(false)
+  dateCreated               DateTime  @default(now())
+  reputationScore           Float     @default(100)
+  totalEarnedGeek           Float     @default(0)
+  questionsSubmitted        Int       @default(0)
+  questionsApproved         Int       @default(0)
+  questionsRejected         Int       @default(0)
+  reviewsCompleted          Int       @default(0)
+  reviewAccuracy            Float     @default(0)
+  streakBonusMultiplier     Float     @default(1)
+  favoriteCharacter         String    @default("GIGA")
+  characterAffinityGiga     Float     @default(50)
+  characterAffinityAce      Float     @default(50)
+  lastCharacterInteraction  DateTime?
+  preferredDifficulty       String    @default("mixed")
+  averageResponseTime       Float     @default(15)
+  categoryAccuracies        String    @default("{}") // JSON object
+  learningStyle             String    @default("balanced")
+  wordChallengeWins         Int       @default(0)
+  wordChallengeLosses       Int       @default(0)
+  wordChallengeHighScore    Int       @default(0)
+  wordChallengeTotalScore   Int       @default(0)
+  wordChallengeBingos       Int       @default(0)
+  aiInteractionCount        Int       @default(0)
+  lastAiRecommendation      String?   @db.Text
+  characterInteractionHistory String  @default("[]") @db.Text
+  wordChallengeDraws        Int       @default(0)
+  wordChallengeLongestWord  String?
+  wordChallengeFavoriteLetter String?
 
-  attempts Attempt[]
-  rewards  Reward[]
+  // Relations
+  createdQuestions         Question[]              @relation("CreatedBy")
+  approvedQuestions        Question[]              @relation("ApprovedBy")
+  validatedQuestions       Question[]              @relation("ValidatedBy")
+  validations              QuestionValidation[]
+  attempts                 Attempt[]
+  userAchievements         UserAchievement[]
+  userStickers             UserSticker[]
+  stickerPacks             StickerPack[]
+  geekDust                 GeekDust?
+  dustTransactions         DustTransaction[]
+  seriesCompletions        SeriesCompletion[]
+  creatorEarnings          CreatorEarning[]        @relation("CreatorEarnings")
+  playedEarnings           CreatorEarning[]        @relation("PlayedEarnings")
+  rewards                  Reward[]
+  conversionTransactions   PointsConversionTransaction[]
+  purchaseTransactions     StickerPurchaseTransaction[]
+  exchangeListings         ExchangeListing[]       @relation("Seller")
+  completedListings        ExchangeListing[]       @relation("CompletedBy")
+  exchangeOffers           ExchangeOffer[]
+  sellerTransactions       ExchangeTransaction[]   @relation("Seller")
+  buyerTransactions        ExchangeTransaction[]   @relation("Buyer")
+  notifications            UserNotification[]
+  gauntletClaims           GauntletClaim[]
+  gauntletRuns             GauntletRun[]
+  characterInteractions    CharacterInteraction[]
+  aiRecommendations        AIRecommendation[]
+  aiMessageHistory         AIMessageHistory[]
+  kaspaPayments            KaspaPayment[]
+  wordChallengesWon        WordChallenge[]         @relation("Winner")
+  wordChallengePlayers     WordChallengePlayer[]
+  wordChallengeChats       WordChallengeChat[]
+  wordChallengeInvitesSent WordChallengeInvite[]   @relation("Inviter")
+  wordChallengeInvitesRecv WordChallengeInvite[]   @relation("Invitee")
+  wordChallengeProgress    WordChallengeUserProgress[]
 
-  @@index([walletAddress])
   @@map("users")
+  @@index([id])
+}
+
+model Topic {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  icon        String?
+  isActive    Boolean  @default(true)
+  dateCreated DateTime @default(now())
+
+  questions   Question[]
+
+  @@map("topics")
 }
 
 model Question {
-  id        String   @id @default(cuid())
-  category  String
-  prompt    String
-  options   String[] // JSON-serialized array
-  correctIndex Int
-  difficulty String   @default("medium") // easy, medium, hard
-  tags      String[] @default([])
-  version   Int      @default(1)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  Int       @id @default(autoincrement())
+  question            String    @db.Text
+  option1             String
+  option2             String
+  option3             String
+  option4             String
+  correctOption       Int
+  difficulty          String    @default("easy")
+  topicId             Int
+  createdBy           Int?
+  status              String    @default("pending")
+  approvedBy          Int?
+  validatedBy         Int?
+  dateCreated         DateTime  @default(now())
+  sourceLink          String?   @db.Text
+  subtopic            String?
+  funFact             String?   @db.Text
+  approvalsCount      Int       @default(0)
+  rejectionsCount     Int       @default(0)
+  totalReviews        Int       @default(0)
+  dateApproved        DateTime?
+  totalServes         Int       @default(0)
+  totalEarned         Float     @default(0)
+  averageTimeToAnswer Float     @default(0)
+  skipRate            Float     @default(0)
+  playerRating        Float     @default(0)
+  aiDifficultyScore   Float     @default(0)
+  topicTags           String    @default("[]") // JSON array
+  yearReleased        Int?
+  dateFirstServed     DateTime?
+  dateLastServed      DateTime?
 
-  attempts AttemptQuestion[]
+  // Relations
+  topic               Topic                 @relation(fields: [topicId], references: [id])
+  creator             User?                 @relation("CreatedBy", fields: [createdBy], references: [id])
+  approver            User?                 @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  validator           User?                 @relation("ValidatedBy", fields: [validatedBy], references: [id])
+  validations         QuestionValidation[]
+  creatorEarnings     CreatorEarning[]
+  reviewQueueEntries  ReviewQueue[]
+  attempts            Attempt[]
 
-  @@index([category, active])
   @@map("questions")
+  @@index([topicId])
+  @@index([status])
+}
+
+model QuestionValidation {
+  id              Int      @id @default(autoincrement())
+  questionId      Int
+  validatorId     Int
+  action          String
+  pointsAwarded   Int      @default(0)
+  geekAwarded     Float    @default(0.1)
+  timestamp       DateTime @default(now())
+  reviewTime      Float    @default(0)
+  detailedFeedback String?  @db.Text
+
+  question        Question @relation(fields: [questionId], references: [id])
+  validator       User     @relation(fields: [validatorId], references: [id])
+
+  @@map("question_validations")
 }
 
 model Attempt {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category   String
-  questionIds String[] // JSON-serialized array
-  answers    Int[]    // JSON-serialized array (indices into choices)
-  correctAnswers Int[] @default([]) // JSON-serialized array
-  score      Int
-  scorePct   Int      @default(0) // 0-100
-  startedAt  DateTime
-  finishedAt DateTime
-  timeSeconds Int     @default(0)
-  flags      String[] @default([]) // suspicious activity flags
-  createdAt  DateTime @default(now())
+  id                  Int       @id @default(autoincrement())
+  userId              Int
+  questionId          Int
+  selectedOption      Int
+  isCorrect           Boolean
+  timeTaken           Float     @default(15)
+  sessionId           String?
+  dateAttempted       DateTime  @default(now())
+  wasSkipped          Boolean   @default(false)
+  questionRating      Int?
+  streakBonusApplied  Float     @default(1)
+  characterPresent    String?
+  characterMessageShown String? @db.Text
+  confidenceLevel     Int?
+  deviceType          String?
+  hourOfDay           Int?
+  dayOfWeek           Int?
 
-  questions AttemptQuestion[]
-  reward    Reward?
+  user                User      @relation(fields: [userId], references: [id])
+  question            Question  @relation(fields: [questionId], references: [id])
 
-  @@unique([id])
-  @@index([userId, finishedAt])
   @@map("attempts")
+  @@index([userId])
+  @@index([sessionId])
 }
 
-model AttemptQuestion {
-  id         String   @id @default(cuid())
-  attemptId  String
-  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  questionId String
-  question   Question @relation(fields: [questionId], references: [id])
-  answer     Int      @default(-1)
-  correct    Boolean  @default(false)
+model Achievement {
+  id                      Int      @id @default(autoincrement())
+  name                    String
+  description             String   @db.Text
+  icon                    String
+  criteriaType            String
+  criteriaValue           Int
+  nftTokenId              String?
+  badgeRarity             String   @default("common")
+  badgeFrame              String   @default("bronze")
+  badgeXpBonus            Int      @default(5)
+  badgeTokenReward        Float    @default(0)
+  tier                    String   @default("bronze")
+  tierOrder               Int      @default(1)
+  trackName               String?
+  isHidden                String   @default("false")
+  isSecret                Boolean  @default(false)
+  prerequisiteAchievementId Int?
+  unlockAnimation         String   @default("standard")
+  geekReward              Float    @default(0)
+  xpReward                Int      @default(0)
+  stickerPackReward       Int      @default(0)
 
-  @@unique([attemptId, questionId])
-  @@map("attempt_questions")
+  // Relations
+  prerequisite            Achievement?      @relation("Prerequisite", fields: [prerequisiteAchievementId], references: [id])
+  dependentAchievements   Achievement[]     @relation("Prerequisite")
+  userAchievements        UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  achievementId     Int
+  dateUnlocked      DateTime @default(now())
+  tierReached       String   @default("bronze")
+  wasHidden         Boolean  @default(false)
+  notificationShown Boolean  @default(false)
+
+  user              User     @relation(fields: [userId], references: [id])
+  achievement       Achievement @relation(fields: [achievementId], references: [id])
+
+  @@map("user_achievements")
+  @@index([userId])
+}
+
+model StickerSeries {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?  @db.Text
+  totalStickers Int
+  isActive      Boolean  @default(true)
+
+  stickers      Sticker[]
+  stickerPacks  StickerPack[]
+  completions   SeriesCompletion[]
+
+  @@map("sticker_series")
+}
+
+model Sticker {
+  id        Int      @id @default(autoincrement())
+  seriesId  Int
+  name      String
+  image     String
+  rarity    String   @default("common")
+  number    Int
+
+  series    StickerSeries @relation(fields: [seriesId], references: [id])
+  userStickers UserSticker[]
+  dustTransactions DustTransaction[]
+  purchaseTransactions StickerPurchaseTransaction[]
+  exchangeListings ExchangeListing[]
+  exchangeTransactions ExchangeTransaction[]
+
+  @@map("stickers")
+}
+
+model UserSticker {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  stickerId     Int
+  isDuplicate   Boolean  @default(false)
+  dateAcquired  DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  sticker       Sticker  @relation(fields: [stickerId], references: [id])
+  exchangeListings ExchangeListing[]
+
+  @@map("user_stickers")
+  @@index([userId])
+}
+
+model StickerPack {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  packType          String    @default("standard")
+  seriesId          Int?
+  stickersPerPack   Int       @default(5)
+  guaranteedRarity  String?
+  source            String?
+  sourceDetail      String?
+  createdAt         DateTime  @default(now())
+  openedAt          DateTime?
+  isOpened          Boolean   @default(false)
+
+  user              User      @relation(fields: [userId], references: [id])
+  series            StickerSeries? @relation(fields: [seriesId], references: [id])
+
+  @@map("sticker_packs")
+  @@index([userId])
+  @@index([isOpened])
+}
+
+model GeekDust {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  amount      Int      @default(0)
+  totalEarned Int      @default(0)
+  totalSpent  Int      @default(0)
+  updatedAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("geek_dust")
+  @@index([userId])
+}
+
+model DustTransaction {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  amount      Int
+  reason      String
+  stickerId   Int?
+  timestamp   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+  sticker     Sticker? @relation(fields: [stickerId], references: [id])
+
+  @@map("dust_transactions")
+  @@index([userId])
+}
+
+model SeriesCompletion {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  seriesId      Int
+  dateCompleted DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  series        StickerSeries @relation(fields: [seriesId], references: [id])
+
+  @@map("series_completions")
+}
+
+model GauntletRun {
+  id                  Int       @id @default(autoincrement())
+  userId              Int
+  highestRound        Int       @default(0)
+  totalCorrect        Int       @default(0)
+  totalQuestions      Int       @default(0)
+  totalGeekEarned     Float     @default(0)
+  totalXpEarned       Int       @default(0)
+  selectedTopics      String?   @db.Text // JSON
+  completed           Boolean   @default(false)
+  activeRound         Int?
+  activeState         String?   @db.Text // JSON
+  activeStateUpdatedAt DateTime?
+  dateStarted         DateTime  @default(now())
+  dateCompleted       DateTime?
+
+  user                User      @relation(fields: [userId], references: [id])
+  claims              GauntletClaim[]
+
+  @@map("gauntlet_runs")
+  @@index([userId])
+  @@index([completed])
+}
+
+model GauntletClaim {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  runId     Int
+  amount    Float
+  status    String   @default("claimed")
+  timestamp DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  run       GauntletRun @relation(fields: [runId], references: [id])
+
+  @@map("gauntlet_claims")
+}
+
+model WordChallenge {
+  id            Int       @id @default(autoincrement())
+  challengeType String    @default("friend")
+  status        String    @default("waiting")
+  boardState    String    @db.Text // JSON
+  tileBag       String    @db.Text // JSON
+  createdAt     DateTime  @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  currentTurn   Int?
+  turnExpiry    DateTime?
+  winnerId      Int?
+  passCount     Int       @default(0)
+  maxPasses     Int       @default(3)
+
+  winner        User?     @relation("Winner", fields: [winnerId], references: [id])
+  players       WordChallengePlayer[]
+  moves         WordChallengeMove[]
+  chats         WordChallengeChat[]
+  invites       WordChallengeInvite[]
+
+  @@map("word_challenges")
+  @@index([status])
+}
+
+model WordChallengePlayer {
+  id            Int      @id @default(autoincrement())
+  challengeId   Int
+  userId        Int
+  playerNumber  Int
+  score         Int      @default(0)
+  rack          String   @default("[]") @db.Text // JSON
+  isReady       Boolean  @default(false)
+  isTurn        Boolean  @default(false)
+  turnOrder     Int      @default(0)
+  joinedAt      DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  challenge     WordChallenge @relation(fields: [challengeId], references: [id])
+  moves         WordChallengeMove[]
+
+  @@map("word_challenge_players")
+  @@index([userId])
+}
+
+model WordChallengeMove {
+  id          Int      @id @default(autoincrement())
+  challengeId Int
+  playerId    Int
+  wordPlayed  String
+  positions   String   @db.Text // JSON
+  score       Int
+  tilesUsed   Int
+  isBingo     Boolean  @default(false)
+  moveNumber  Int
+  timestamp   DateTime @default(now())
+
+  player      WordChallengePlayer @relation(fields: [playerId], references: [id])
+  challenge   WordChallenge @relation(fields: [challengeId], references: [id])
+
+  @@map("word_challenge_moves")
+}
+
+model WordChallengeChat {
+  id          Int      @id @default(autoincrement())
+  challengeId Int
+  userId      Int
+  message     String   @db.Text
+  timestamp   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+  challenge   WordChallenge @relation(fields: [challengeId], references: [id])
+
+  @@map("word_challenge_chats")
+}
+
+model WordChallengeInvite {
+  id          Int      @id @default(autoincrement())
+  challengeId Int
+  inviterId   Int
+  inviteeId   Int
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  challenge   WordChallenge @relation(fields: [challengeId], references: [id])
+  inviter     User     @relation("Inviter", fields: [inviterId], references: [id])
+  invitee     User     @relation("Invitee", fields: [inviteeId], references: [id])
+
+  @@map("word_challenge_invites")
+}
+
+model WordChallengeDailyChallenge {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @unique @db.Date
+  targetScore Int
+  targetWords Int
+  bonusGeek   Float    @default(5.0)
+  bonusXp     Int      @default(50)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  progress    WordChallengeUserProgress[]
+
+  @@map("word_challenge_daily_challenges")
+}
+
+model WordChallengeUserProgress {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  challengeId     Int
+  challengesPlayed Int     @default(0)
+  totalScore      Int      @default(0)
+  totalWords      Int      @default(0)
+  completed       Boolean  @default(false)
+  rewardClaimed   Boolean  @default(false)
+  lastUpdated     DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id])
+  challenge       WordChallengeDailyChallenge @relation(fields: [challengeId], references: [id])
+
+  @@map("word_challenge_user_progress")
+  @@index([userId])
+}
+
+model KaspaPayment {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  transactionId     String    @unique
+  kaspaAmount       Float
+  geekAmount        Float
+  rate              Float
+  status            String    @default("pending")
+  walletAddress     String
+  confirmations     Int       @default(0)
+  createdAt         DateTime  @default(now())
+  confirmedAt       DateTime?
+  paymentReference  String?   @unique
+  expiresAt         DateTime?
+  sompiAmount       BigInt?
+
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@map("kaspa_payments")
+  @@index([userId])
+}
+
+model KaspaPrice {
+  id          Int      @id @default(autoincrement())
+  usdPrice    Float    @default(0.04)
+  geekPerKas  Float    @default(25)
+  updatedAt   DateTime @default(now())
+
+  @@map("kaspa_prices")
+}
+
+model ExchangeListing {
+  id                      Int       @id @default(autoincrement())
+  sellerId                Int
+  sellerUserStickerId     Int
+  stickerId               Int
+  askPriceGeek            Float?
+  requestedStickerIdsJson String?   @db.Text
+  status                  String    @default("active")
+  createdAt               DateTime  @default(now())
+  expiresAt               DateTime
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  completedById           Int?
+
+  seller                  User      @relation("Seller", fields: [sellerId], references: [id])
+  completedBy             User?     @relation("CompletedBy", fields: [completedById], references: [id])
+  userSticker             UserSticker @relation(fields: [sellerUserStickerId], references: [id])
+  sticker                 Sticker   @relation(fields: [stickerId], references: [id])
+  offers                  ExchangeOffer[]
+  transactions            ExchangeTransaction[]
+
+  @@map("exchange_listings")
+  @@index([sellerId])
+  @@index([status])
+}
+
+model ExchangeOffer {
+  id                      Int      @id @default(autoincrement())
+  listingId               Int
+  offererId               Int
+  offeredUserStickerIdsJson String  @db.Text
+  note                    String?
+  status                  String   @default("pending")
+  createdAt               DateTime @default(now())
+
+  listing                 ExchangeListing @relation(fields: [listingId], references: [id])
+  offerer                 User     @relation(fields: [offererId], references: [id])
+
+  @@map("exchange_offers")
+  @@index([offererId])
+}
+
+model ExchangeTransaction {
+  id                    Int      @id @default(autoincrement())
+  listingId             Int
+  sellerId              Int
+  buyerId               Int
+  txType                String
+  geekAmount            Float    @default(0)
+  sellerStickerId       Int
+  buyerStickerIdsJson   String?  @db.Text
+  createdAt             DateTime @default(now())
+
+  listing               ExchangeListing @relation(fields: [listingId], references: [id])
+  seller                User     @relation("Seller", fields: [sellerId], references: [id])
+  buyer                 User     @relation("Buyer", fields: [buyerId], references: [id])
+  sellerSticker         Sticker  @relation(fields: [sellerStickerId], references: [id])
+
+  @@map("exchange_transactions")
+  @@index([sellerId])
+  @@index([buyerId])
+}
+
+model UserNotification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String   @db.Text
+  category  String   @default("exchange")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_notifications")
+  @@index([userId])
+}
+
+model EconomyConfig {
+  id                          Int      @id @default(autoincrement())
+  pointsPerGeek               Int      @default(100)
+  minimumPoints               Int      @default(100)
+  exchangeListingExpiryHours  Int      @default(72)
+  updatedAt                   DateTime @default(now())
+
+  @@map("economy_config")
+}
+
+model PointsConversionTransaction {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  pointsSpent       Int
+  geekReceived      Float
+  ratePointsPerGeek Int
+  createdAt         DateTime @default(now())
+
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("points_conversion_transactions")
+  @@index([userId])
+}
+
+model StickerPurchaseTransaction {
+  id            Int      @id @default(autoincrement())
+  buyerId       Int
+  stickerId     Int
+  priceGeek     Float
+  wasDuplicate  Boolean  @default(false)
+  dustAwarded   Int      @default(0)
+  source        String   @default("direct_shop")
+  createdAt     DateTime @default(now())
+
+  buyer         User     @relation(fields: [buyerId], references: [id])
+  sticker       Sticker  @relation(fields: [stickerId], references: [id])
+
+  @@map("sticker_purchase_transactions")
+}
+
+model CreatorEarning {
+  id          Int      @id @default(autoincrement())
+  creatorId   Int
+  questionId  Int
+  amount      Float    @default(0)
+  timestamp   DateTime @default(now())
+  sessionId   String?
+  playerId    Int?
+
+  creator     User     @relation("CreatorEarnings", fields: [creatorId], references: [id])
+  question    Question @relation(fields: [questionId], references: [id])
+  player      User?    @relation("PlayedEarnings", fields: [playerId], references: [id])
+
+  @@map("creator_earnings")
+}
+
+model ReviewQueue {
+  id          Int       @id @default(autoincrement())
+  questionId  Int
+  dateAdded   DateTime  @default(now())
+  priority    Int       @default(0)
+  lastShown   DateTime?
+
+  question    Question  @relation(fields: [questionId], references: [id])
+
+  @@map("review_queue")
+}
+
+model CharacterInteraction {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  character       String
+  interactionType String
+  message         String   @db.Text
+  context         String?
+  timestamp       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@map("character_interactions")
+  @@index([userId])
+}
+
+model AIRecommendation {
+  id                  Int      @id @default(autoincrement())
+  userId              Int
+  recommendationType  String
+  content             String   @db.Text
+  context             String?
+  timestamp           DateTime @default(now())
+  wasActedUpon        Boolean  @default(false)
+
+  user                User     @relation(fields: [userId], references: [id])
+
+  @@map("ai_recommendations")
+  @@index([userId])
+}
+
+model AIMessageHistory {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  character     String
+  message       String   @db.Text
+  context       String?
+  userSentiment String?
+  timestamp     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("ai_message_history")
+  @@index([userId])
 }
 
 model Reward {
-  id        String   @id @default(cuid())
-  attemptId String   @unique
-  attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount    BigInt   // in satoshis
-  status    String   @default("PENDING") // PENDING, SENT, CONFIRMED, FAILED
-  txid      String?  // Kaspa transaction ID
-  error     String?  // error message if failed
-  createdAt DateTime @default(now())
-  confirmedAt DateTime?
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  pointsSpent   Int
+  tokenRewarded Float
+  timestamp     DateTime @default(now())
 
-  @@index([userId, status])
-  @@index([attemptId])
+  user          User     @relation(fields: [userId], references: [id])
+
   @@map("rewards")
-}
-
-model Nonce {
-  id        String   @id @default(cuid())
-  nonce     String   @unique
-  walletAddress String
-  used      Boolean  @default(false)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([walletAddress, expiresAt])
-  @@map("nonces")
 }

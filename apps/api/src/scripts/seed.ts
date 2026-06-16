@@ -416,27 +416,46 @@ async function seed() {
   console.log("🌱 Starting seed...");
 
   try {
-    // Clear existing questions
-    const deleted = await prisma.question.deleteMany({});
-    console.log(`Deleted ${deleted.count} existing questions`);
+    // Clear existing data
+    await prisma.questionValidation.deleteMany({});
+    await prisma.attempt.deleteMany({});
+    await prisma.question.deleteMany({});
+    await prisma.topic.deleteMany({});
+    console.log("Cleared existing questions and topics");
+
+    // Create topics
+    const topicMap: Record<string, number> = {};
+    for (const category of GEEK_CATEGORIES) {
+      const topic = await prisma.topic.create({
+        data: {
+          name: category,
+          description: `${category} related questions`,
+        },
+      });
+      topicMap[category] = topic.id;
+    }
+    console.log(`Seeded ${GEEK_CATEGORIES.length} topics`);
 
     // Insert new questions
     for (const q of questions) {
       await prisma.question.create({
         data: {
-          category: q.category,
-          prompt: q.prompt,
-          options: q.options,
-          correctIndex: q.correctIndex,
+          question: q.prompt,
+          option1: q.options[0],
+          option2: q.options[1],
+          option3: q.options[2],
+          option4: q.options[3],
+          correctOption: q.correctIndex + 1, // 1-based index
           difficulty: q.difficulty,
-          tags: q.tags,
-          active: true,
+          topicId: topicMap[q.category],
+          status: "approved",
+          dateApproved: new Date(),
+          topicTags: JSON.stringify(q.tags),
         },
       });
     }
 
-    console.log(`✅ Seeded ${questions.length} questions across ${GEEK_CATEGORIES.length} categories`);
-    console.log(`Categories: ${GEEK_CATEGORIES.join(", ")}`);
+    console.log(`✅ Seeded ${questions.length} questions`);
   } catch (err) {
     console.error("❌ Seed error:", err);
     process.exit(1);

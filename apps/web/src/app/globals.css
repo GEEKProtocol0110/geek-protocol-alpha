@@ -28,8 +28,11 @@
 @theme inline {
   --color-background: var(--surface-0);
   --color-foreground: var(--text-1);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-league-spartan);
+  --font-bebas: var(--font-bebas-neue);
+  --font-archivo: var(--font-archivo-black);
 }
 
 * {
@@ -44,14 +47,14 @@ body {
   background-color: var(--surface-0);
   color: var(--text-1);
   min-height: 100vh;
-  font-family: var(--font-geist-sans), var(--font-display), "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  font-feature-settings: "ss03" on, "liga" off;
+  font-family: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  font-optical-sizing: auto;
   overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display), var(--font-geist-sans), "Space Grotesk", sans-serif;
+  font-family: var(--font-league-spartan), "League Spartan", sans-serif;
+  font-optical-sizing: auto;
   letter-spacing: -0.02em;
 }
 

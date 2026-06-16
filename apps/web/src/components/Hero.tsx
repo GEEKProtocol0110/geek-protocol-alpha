@@ -16,94 +16,174 @@ const SIGNALS = [
 export function Hero() {
   return (
     <section className="relative isolate overflow-hidden px-6 pb-24 pt-16 md:pt-24">
+      {/* PCB-style background with scanlines */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <div className="absolute inset-0 bg-[#0a0e0a]" />
+        {/* Scanlines effect */}
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.18)_2px,rgba(0,0,0,0.18)_4px)]" />
+        {/* Circuit traces - decorative lines */}
+        <div className="absolute top-20 left-10 h-[2px] w-32 bg-[#2a1a3a]" />
+        <div className="absolute top-40 left-24 h-[2px] w-48 bg-[#2a1a3a]" />
+        <div className="absolute bottom-40 right-10 h-[2px] w-56 bg-[#2a1a3a]" />
+        <div className="absolute bottom-20 right-24 h-[2px] w-40 bg-[#2a1a3a]" />
+        {/* Decorative nodes */}
+        <div className="absolute top-32 left-8 size-3 rounded-full border border-[#c0c0a0] bg-[#2a1a3a]" />
+        <div className="absolute bottom-32 right-8 size-3 rounded-full border border-[#c0c0a0] bg-[#2a1a3a]" />
+        <div className="absolute top-1/2 left-1/2 size-4 rounded-full border border-[#c0c0a0] bg-[#2a1a3a]" />
         <div className="glow-ring -left-20 top-10" />
         <div className="glow-ring -right-10 bottom-0" />
-        <div className="grid-overlay" />
       </div>
 
       <div className="relative z-10 mx-auto grid max-w-6xl gap-16 lg:grid-cols-2">
         <div className="space-y-8">
-          <span className="badge-pill text-xs text-[var(--brand-primary)]">
-            <span className="size-2 rounded-full bg-[var(--brand-primary)]" />
-            Kaspa-Native Quiz2Earn
-          </span>
+          <div className="inline-flex items-center gap-3 border border-[#b87333] px-3 py-1.5 text-xs tracking-widest text-[#b87333] font-mono">
+            <span className="size-2 animate-pulse rounded-full bg-[#cc44ff]" />
+            LIVE ON KASPA · KRC-20 NATIVE
+          </div>
 
           <div className="space-y-6">
-            <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-              Enter the Omniscient Grid. Your knowledge becomes measurable power.
+            <h1 className="font-['Syncopate',sans-serif] text-4xl font-bold leading-tight text-[#f0e8ff] sm:text-5xl lg:text-6xl">
+              <span className="block">PROOF-OF-</span>
+              <span className="block text-[#cc44ff]">LEARNING</span>
+              <span className="block text-2xl text-[#ff2d78] sm:text-3xl">ON KASPA</span>
             </h1>
-            <p className="text-lg text-[var(--text-2)]">
-              Built on Kaspa, charged by the $GEEK KRC-20 economy, and judged by the A.C.E. intelligence layer. Step out of the Age of Noise. Become a Seeker. Prove signal. Let the protocol settle payouts without the hype.
+            <p className="text-lg text-white leading-relaxed">
+              The first decentralized <strong className="text-[#00e5ff]">Quiz2Earn ecosystem</strong> where knowledge is proven through performance, not claims. Earn <strong className="text-[#ff2d78]">$GEEK tokens</strong> by demonstrating your expertise.
             </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <span className="border border-[#2a1a3a] px-3 py-1 font-mono text-xs tracking-wider text-[#7a5a9a]">
+              ALL HOPE. NO HYPE.
+            </span>
+            <span className="border border-[#2a1a3a] px-3 py-1 font-mono text-xs tracking-wider text-[#7a5a9a]">
+              KRC-20
+            </span>
+            <span className="border border-[#2a1a3a] px-3 py-1 font-mono text-xs tracking-wider text-[#7a5a9a]">
+              QUIZ2EARN
+            </span>
+            <span className="border border-[#2a1a3a] px-3 py-1 font-mono text-xs tracking-wider text-[#7a5a9a]">
+              PROOF-OF-LEARNING
+            </span>
           </div>
 
           <div className="flex flex-wrap gap-4">
             <Link
               href="/play"
-              className="rounded-2xl bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-secondary)] to-[var(--brand-tertiary)] px-8 py-4 text-sm font-semibold uppercase tracking-wide text-black shadow-[0_20px_40px_rgba(55,248,255,0.25)] transition hover:scale-[1.01]"
+              className="relative overflow-hidden bg-[#ff2d78] px-8 py-4 font-['Syncopate',sans-serif] text-sm font-bold uppercase tracking-wider text-white transition hover:shadow-[0_0_24px_rgba(255,45,120,0.5)]"
             >
-              Launch Geek Gauntlet
+              <span className="relative z-10">Play Gauntlet</span>
             </Link>
-            <a
-              href="/litepaper"
-              className="rounded-2xl border border-white/15 px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/5"
+            <Link
+              href="/dashboard"
+              className="border border-[#00e5ff] px-8 py-4 font-['Syncopate',sans-serif] text-sm font-bold uppercase tracking-wider text-[#00e5ff] transition hover:bg-[#00e5ff]/10"
             >
-              Read the Litepaper
-            </a>
-            <a
-              href="https://t.me/GEEKonKAScommunity"
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-2xl border border-white/15 px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/5"
-            >
-              Community Briefing
-            </a>
+              Dashboard
+            </Link>
           </div>
 
-          <dl className="grid grid-cols-2 gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-px rounded-sm border border-[#2a1a3a] bg-[#2a1a3a] sm:grid-cols-4">
             {STATS.map((stat) => (
-              <div key={stat.label}>
-                <dt className="text-xs uppercase tracking-wide text-white/50">{stat.label}</dt>
-                <dd className="text-2xl font-semibold text-white">{stat.value}</dd>
+              <div key={stat.label} className="bg-[#0d120d] p-4 text-center">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-wider text-[#7a5a9a]">{stat.label}</dt>
+                <dd className="font-mono text-2xl font-semibold text-[#f0e8ff]">{stat.value}</dd>
               </div>
             ))}
           </dl>
         </div>
 
         <div className="relative">
-          <div className="layer-card relative overflow-hidden p-8">
-            <div className="flex items-center justify-between text-sm text-white/70">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-white/40">A.C.E. Console</div>
-                <div className="font-semibold text-white">Run Integrity Monitor</div>
+          <div className="relative border border-[#2a1a3a] bg-[#0d120d] p-6">
+            {/* Corner decorations */}
+            <div className="absolute -left-px -top-px size-5 border-l-2 border-t-2 border-[#b87333]" />
+            <div className="absolute -right-px -top-px size-5 border-r-2 border-t-2 border-[#b87333]" />
+            <div className="absolute -bottom-px -left-px size-5 border-b-2 border-l-2 border-[#b87333]" />
+            <div className="absolute -bottom-px -right-px size-5 border-b-2 border-r-2 border-[#b87333]" />
+
+            {/* Floating chips */}
+            <div className="absolute -top-3 right-6 border border-[#ff2d78] bg-[#ff2d78] px-3 py-1 font-mono text-xs font-bold tracking-wider text-white animate-float">
+              LIVE ON KASPA
+            </div>
+            <div className="absolute -bottom-3 left-6 border border-[#00e5ff] bg-[#00e5ff] px-3 py-1 font-mono text-xs font-bold tracking-wider text-[#0a0e0a] animate-float" style={{ animationDelay: "0.5s" }}>
+              KRC-20
+            </div>
+
+            <div className="flex items-center justify-between border-b border-[#2a1a3a] pb-4">
+              <div className="font-mono text-xs tracking-widest text-[#7a5a9a]">// SYS_PANEL_001 · GEEK_PROTOCOL</div>
+              <div className="flex items-center gap-2 font-mono text-xs text-[#cc44ff]">
+                <span className="size-1.5 animate-pulse rounded-full bg-[#cc44ff]" />
+                ONLINE
               </div>
-              <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/70">Alpha • Live</span>
             </div>
 
-            <div className="mt-6 space-y-4">
-              {SIGNALS.map((signal) => (
-                <div key={signal.title} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="font-semibold text-white">{signal.title}</div>
-                    <span className="text-xs text-white/50">{signal.meta}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-white/70">{signal.detail}</p>
+            <div className="grid grid-cols-2 gap-px bg-[#2a1a3a]">
+              <div className="bg-[#0a0e0a] p-4 text-center">
+                <span className="block font-mono text-2xl text-[#ff2d78]">144B</span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-wider text-[#7a5a9a]">Total Supply</span>
+              </div>
+              <div className="bg-[#0a0e0a] p-4 text-center">
+                <span className="block font-mono text-2xl text-[#00e5ff]">30%</span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-wider text-[#7a5a9a]">Quiz Rewards</span>
+              </div>
+              <div className="bg-[#0a0e0a] p-4 text-center">
+                <span className="block font-mono text-2xl text-[#cc44ff]">10</span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-wider text-[#7a5a9a]">Gauntlet Rounds</span>
+              </div>
+              <div className="bg-[#0a0e0a] p-4 text-center">
+                <span className="block font-mono text-2xl text-[#ffaa00]">1KAS</span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-wider text-[#7a5a9a]">= 100K GEEK</span>
+              </div>
+            </div>
+
+            <div className="mt-px space-y-px bg-[#2a1a3a]">
+              <div className="flex items-center justify-between bg-[#0a0e0a] px-4 py-3">
+                <span className="font-['Rajdhani',sans-serif] font-semibold text-[#d8c8ff]">Round 10 Max Earnings</span>
+                <span className="font-mono text-[#ff2d78]">10,000 GEEK</span>
+              </div>
+              <div className="flex items-center justify-between bg-[#0a0e0a] px-4 py-3">
+                <span className="font-['Rajdhani',sans-serif] font-semibold text-[#d8c8ff]">Creator Earnings</span>
+                <span className="font-mono text-[#00e5ff]">0.5 GEEK / Q</span>
+              </div>
+              <div className="flex items-center justify-between bg-[#0a0e0a] px-4 py-3">
+                <span className="font-['Rajdhani',sans-serif] font-semibold text-[#d8c8ff]">Lifetime Cap / Question</span>
+                <span className="font-mono text-[#cc44ff]">1,000 GEEK</span>
+              </div>
+            </div>
+
+            <div className="mt-px border-t border-[#2a1a3a] bg-[#0a0e0a] p-4">
+              <div className="mb-3 font-mono text-[0.62rem] tracking-widest text-[#7a5a9a]">// YOUR_PROGRESS</div>
+              <div className="grid grid-cols-4 gap-px bg-[#2a1a3a]">
+                <div className="bg-[#0d120d] py-2 text-center">
+                  <span className="block font-mono text-lg text-[#ff2d78]">1</span>
+                  <span className="font-mono text-[0.55rem] uppercase tracking-wider text-[#7a5a9a]">Level</span>
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-[var(--brand-secondary)]/20 to-transparent p-5">
-              <div className="text-xs uppercase tracking-wide text-white/60">Mantra</div>
-              <div className="mt-2 text-xl font-semibold text-white">All hope, no hype.</div>
-              <p className="mt-2 text-sm text-white/70">Proof of attention, proof of learning, proof of play.</p>
+                <div className="bg-[#0d120d] py-2 text-center">
+                  <span className="block font-mono text-lg text-[#00e5ff]">0</span>
+                  <span className="font-mono text-[0.55rem] uppercase tracking-wider text-[#7a5a9a]">XP</span>
+                </div>
+                <div className="bg-[#0d120d] py-2 text-center">
+                  <span className="block font-mono text-lg text-[#ffaa00]">0</span>
+                  <span className="font-mono text-[0.55rem] uppercase tracking-wider text-[#7a5a9a]">Streak</span>
+                </div>
+                <div className="bg-[#0d120d] py-2 text-center">
+                  <span className="block font-mono text-lg text-[#cc44ff]">0.00</span>
+                  <span className="font-mono text-[0.55rem] uppercase tracking-wider text-[#7a5a9a]">GEEK</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="absolute -bottom-12 right-4 w-64 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-white/80 shadow-[0_25px_45px_rgba(0,0,0,0.45)] animate-float">
-            <div className="text-xs uppercase tracking-wide text-white/50">Health Feed</div>
-            <p className="mt-2 font-semibold text-white">Worker heartbeat synced.</p>
-            <p className="text-xs text-white/60">Redis queue balanced • Reward latency &lt; 7s.</p>
+          {/* Signal cards */}
+          <div className="mt-4 space-y-2">
+            {SIGNALS.map((signal) => (
+              <div key={signal.title} className="border border-[#2a1a3a] bg-[#0d120d] p-4 transition hover:bg-[#111811]">
+                <div className="flex items-center justify-between">
+                  <div className="font-['Rajdhani',sans-serif] font-semibold text-[#d8c8ff]">{signal.title}</div>
+                  <span className="font-mono text-xs text-[#7a5a9a]">{signal.meta}</span>
+                </div>
+                <p className="mt-1 text-sm text-[#7a5a9a]">{signal.detail}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
