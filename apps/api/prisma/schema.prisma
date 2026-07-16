@@ -15,9 +15,10 @@ model User {
   username                  String    @unique
   email                     String    @unique
   passwordHash              String
-  walletAddress             String?
+  walletAddress             String?   @unique
+  encryptedPrivKey          String?   @db.Text
   points                    Int       @default(0)
-  geekBalance               Float     @default(0)
+  geekBalance               Decimal   @default(0) @db.Decimal(20, 8)
   xp                        Int       @default(0)
   level                     Int       @default(1)
   currentStreak             Int       @default(0)
@@ -26,9 +27,10 @@ model User {
   streakMilestoneRewards    String    @default("[]") // JSON array
   role                      String    @default("player")
   isAdmin                   Boolean   @default(false)
+  kycVerified               Boolean   @default(false)
   dateCreated               DateTime  @default(now())
   reputationScore           Float     @default(100)
-  totalEarnedGeek           Float     @default(0)
+  totalEarnedGeek           Decimal   @default(0) @db.Decimal(20, 8)
   questionsSubmitted        Int       @default(0)
   questionsApproved         Int       @default(0)
   questionsRejected         Int       @default(0)
@@ -87,9 +89,13 @@ model User {
   wordChallengesWon        WordChallenge[]         @relation("Winner")
   wordChallengePlayers     WordChallengePlayer[]
   wordChallengeChats       WordChallengeChat[]
-  wordChallengeInvitesSent WordChallengeInvite[]   @relation("Inviter")
-  wordChallengeInvitesRecv WordChallengeInvite[]   @relation("Invitee")
+  wordChallengeInvitesSent WordChallengeInvite[] @relation("Inviter")
+  wordChallengeInvitesRecv WordChallengeInvite[] @relation("Invitee")
   wordChallengeProgress    WordChallengeUserProgress[]
+  quizAttempts             QuizAttempt[]
+  purchases                Purchase[]
+  withdrawals              Withdrawal[]
+  kyc                      KYC?
 
   @@map("users")
   @@index([id])
@@ -741,14 +747,114 @@ model AIMessageHistory {
   @@index([userId])
 }
 
+model QuizAttempt {
+  id             Int       @id @default(autoincrement())
+  attemptId      String    @unique
+  userId         Int
+  attemptToken   String
+  round          Int
+  correctCount   Int
+  score          Int
+  rewardAmount   Decimal   @db.Decimal(20, 8)
+  status         String    @default("pending")
+  createdAt      DateTime  @default(now())
+
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@map("quiz_attempts")
+  @@index([userId])
+  @@index([attemptId])
+}
+
+model Purchase {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  fiatAmount        Decimal   @db.Decimal(20, 2)
+  fiatCurrency      String
+  kasEquivalent     Decimal   @db.Decimal(20, 8)
+  geekAmount        Decimal   @db.Decimal(20, 8)
+  stripeSessionId   String    @unique
+  status            String    @default("pending")
+  lockedRate        Decimal   @db.Decimal(20, 8)
+  createdAt         DateTime  @default(now())
+
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@map("purchases")
+  @@index([userId])
+  @@index([stripeSessionId])
+}
+
+model Withdrawal {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  toAddress      String
+  amount         Decimal   @db.Decimal(20, 8)
+  txid           String?
+  status         String    @default("pending")
+  createdAt      DateTime  @default(now())
+
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@map("withdrawals")
+  @@index([userId])
+}
+
+model KYC {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  status         String    @default("pending") // pending, approved, rejected, under_review
+  provider       String?   // e.g., "sumsub", "persona"
+  providerId     String?   // Provider-specific ID
+  firstName      String?
+  lastName       String?
+  email          String?
+  phone          String?
+  dateOfBirth    DateTime?
+  address        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String?
+  idDocumentType String?   // e.g., "passport", "driver_license", "national_id"
+  idDocumentUrl  String?
+  submittedAt    DateTime?
+  reviewedAt     DateTime?
+  reviewedBy     Int?
+  rejectionReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@map("kyc_verifications")
+}
+
+model TreasuryLedger {
+  id             Int       @id @default(autoincrement())
+  amount         Decimal   @db.Decimal(20, 8)
+  reason         String
+  recipient      String?
+  triggeringId   String?
+  createdAt      DateTime  @default(now())
+
+  @@map("treasury_ledger")
+}
+
 model Reward {
   id            Int      @id @default(autoincrement())
+  attemptId     String?  @unique
   userId        Int
-  pointsSpent   Int
-  tokenRewarded Float
-  timestamp     DateTime @default(now())
+  amount        Decimal  @db.Decimal(20, 8)
+  status        String   @default("pending")
+  txid          String?
+  error         String?  @db.Text
+  createdAt     DateTime @default(now())
+  confirmedAt   DateTime?
 
   user          User     @relation(fields: [userId], references: [id])
 
   @@map("rewards")
+  @@index([userId])
+  @@index([status])
 }

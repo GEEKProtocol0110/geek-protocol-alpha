@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { logger } from "../lib/logger";
 import { verifyKaspaSignature } from "../lib/kasware";
+import { generateKaspaWallet } from "../lib/kaspa";
+import { encryptPrivateKey } from "../lib/security";
 
 const SECRET_KEY = new TextEncoder().encode(
   process.env.SECRET_KEY || "dev-secret-key-change-in-production"
@@ -14,8 +16,9 @@ const COOKIE_NAME = "gp_session";
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict" as const,
+  sameSite: process.env.NODE_ENV === "production" ? ("strict" as const) : ("lax" as const),
   maxAge: 7 * 24 * 60 * 60,
+  path: "/",
 };
 
 // ── Zod schemas ──────────────────────────────────────────────────────────────
@@ -121,6 +124,10 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // Generate custodial wallet
+    const { address, privateKey } = await generateKaspaWallet();
+    const encryptedPrivKey = encryptPrivateKey(privateKey);
+
     const totalUsers = await fastify.prisma.user.count();
     const isFirst = totalUsers === 0;
 
@@ -129,6 +136,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         username,
         email,
         passwordHash,
+        walletAddress: address,
+        encryptedPrivKey,
         role: isFirst ? "admin" : "player",
         isAdmin: isFirst,
       },

@@ -3,6 +3,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: geek-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: geek
       POSTGRES_PASSWORD: geekpass
@@ -20,6 +21,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: geek-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]

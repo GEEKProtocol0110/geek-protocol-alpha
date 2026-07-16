@@ -15,6 +15,9 @@ import {
   register,
   walletLogin,
   authLogout,
+  saveToken,
+  loadToken,
+  clearToken,
   AuthUser,
   AuthError,
 } from "@/lib/auth-api";
@@ -75,6 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Bootstrap: detect wallet + try to restore session ───────────────────
 
   const refreshUser = useCallback(async () => {
+    const stored = loadToken();
+    if (stored) setToken(stored);
     try {
       setStatus("loading");
       const u = await getMe();
@@ -83,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setUser(null);
       setToken(null);
+      clearToken();
       setStatus("unauthenticated");
     }
   }, []);
@@ -145,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus("loading");
     try {
       const data = await login(credential, password);
+      saveToken(data.token);
       setToken(data.token);
       setUser(data);
       setStatus("authenticated");
@@ -159,8 +166,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStatus("loading");
       try {
         await register(username, email, password);
-        // Auto-login after registration
         const data = await login(email, password);
+        saveToken(data.token);
         setToken(data.token);
         setUser(data);
         setStatus("authenticated");
@@ -174,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     await authLogout().catch(() => {});
+    clearToken();
     setUser(null);
     setToken(null);
     setStatus("unauthenticated");
@@ -221,12 +229,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await walletLogin(addr, message, signature);
+      saveToken(data.token);
       setToken(data.token);
       setUser(data);
       setStatus("authenticated");
     } catch (e) {
-      // Non-fatal: user can still use practice mode
-      console.warn("Wallet auth failed", e);
+      setWalletConnecting(false);
+      throw e;
     } finally {
       setWalletConnecting(false);
     }
@@ -235,6 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const disconnectWallet = useCallback(async () => {
     await kaswareDisconnect().catch(() => {});
     await authLogout().catch(() => {});
+    clearToken();
     setWalletAddress(null);
     setUser(null);
     setToken(null);

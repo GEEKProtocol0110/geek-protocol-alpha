@@ -1,143 +1,181 @@
-import { StartQuizRequestSchema, QuestionPublicSchema, SubmitQuizRequestSchema } from "@geek/shared";
+import { z } from "zod";
 import { makeAttemptToken, verifyAttemptToken } from "../lib/security";
-import { authMiddleware } from "../lib/auth-middleware";
-const RUN_LENGTH = 10;
-const ATTEMPT_TTL_SECONDS = 15 * 60; // 15 minutes window
+import { QUIZ_REWARD_TABLE } from "../config/quizRewards";
+import { Queue } from "bullmq";
+import Redis from "ioredis";
+const QUESTION_TTL = 15 * 60; // 15 minutes
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const rewardQueue = new Queue("reward-processing", { connection: redis });
+// Zod schemas
+const StartQuizSchema = z.object({
+    round: z.number().int().min(1).max(10),
+});
+const SubmitQuizSchema = z.object({
+    attemptToken: z.string(),
+    answers: z.array(z.number()),
+    timeTakenPerQuestion: z.array(z.number()),
+});
+// Helpers
+function getDailyTheme() {
+    const themes = [
+        "Video Games", "Sci-Fi & Fantasy", "Movies & TV",
+        "Comics", "Anime & Manga", "Tech & Programming",
+        "History", "Pop Culture",
+    ];
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    return themes[dayOfYear % themes.length];
+}
+function shuffleOptions(q) {
+    const options = [q.option1, q.option2, q.option3, q.option4];
+    const correctText = options[q.correctOption - 1];
+    // Fisher-Yates shuffle
+    for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+    }
+    const newCorrectIndex = options.indexOf(correctText); // 0-based after shuffle
+    return { options, correctIndex: newCorrectIndex };
+}
+// Routes
 export async function quizRoutes(fastify) {
-    // Start quiz attempt
-    fastify.post("/start", async (request, reply) => {
-        try {
-            await authMiddleware(request);
-            const body = StartQuizRequestSchema.parse(request.body);
-            const category = body.category || "General Geek";
-            const userId = request.userId || "temp-user";
-            const questions = await fastify.prisma.question.findMany({
-                where: { category, active: true },
-                orderBy: { createdAt: "desc" },
-                take: RUN_LENGTH * 3,
-            });
-            if (!questions.length) {
-                return reply.code(400).send({ success: false, error: "No questions available" });
-            }
-            for (let i = questions.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [questions[i], questions[j]] = [questions[j], questions[i]];
-            }
-            const selected = questions.slice(0, RUN_LENGTH);
-            const now = new Date();
-            const attempt = await fastify.prisma.attempt.create({
-                data: {
-                    userId,
-                    category,
-                    questionIds: selected.map((q) => q.id),
-                    answers: [],
-                    correctAnswers: selected.map((q) => q.correctIndex),
-                    score: 0,
-                    scorePct: 0,
-                    startedAt: now,
-                    finishedAt: now,
-                },
-            });
-            const token = makeAttemptToken({ attemptId: attempt.id }, ATTEMPT_TTL_SECONDS);
-            const publicQuestions = selected.map((q) => QuestionPublicSchema.parse({
-                id: q.id,
-                category: q.category,
-                prompt: q.prompt,
-                options: q.options,
-                correctIndex: q.correctIndex,
-                difficulty: q.difficulty || "medium",
-                tags: q.tags,
-                version: q.version,
-                active: q.active,
-                createdAt: q.createdAt,
-            }));
-            return reply.send({
-                success: true,
-                data: {
-                    attemptId: attempt.id,
-                    attemptToken: token,
-                    expiresAt: Math.floor(Date.now() / 1000) + ATTEMPT_TTL_SECONDS,
-                    questions: publicQuestions,
-                },
-            });
+    // POST /api/quiz/start - Start a new quiz round
+    fastify.post("/start", { preHandler: fastify.authenticate }, async (req, reply) => {
+        const parse = StartQuizSchema.safeParse(req.body);
+        if (!parse.success) {
+            return reply.code(400).send({ success: false, error: parse.error.flatten() });
         }
-        catch (err) {
-            request.log.error({ err }, "quiz.start_failed");
-            const message = err instanceof Error ? err.message : "Bad request";
-            return reply.code(400).send({ success: false, error: message });
-        }
-    });
-    // Submit attempt for server-side scoring
-    fastify.post("/submit", async (request, reply) => {
-        try {
-            const parsed = SubmitQuizRequestSchema.safeParse(request.body);
-            if (!parsed.success) {
-                return reply.code(400).send({ success: false, error: "Invalid payload" });
-            }
-            const { attemptId, attemptToken, answers } = parsed.data;
-            const verified = verifyAttemptToken(attemptToken);
-            if (!verified.ok || verified.data.attemptId !== attemptId) {
-                return reply.code(401).send({ success: false, error: "Invalid token" });
-            }
-            const attempt = await fastify.prisma.attempt.findUnique({ where: { id: attemptId } });
-            if (!attempt) {
-                return reply.code(404).send({ success: false, error: "Attempt not found" });
-            }
-            const correct = attempt.correctAnswers || [];
-            if (answers.length !== correct.length) {
-                return reply.code(400).send({ success: false, error: "Answers length mismatch" });
-            }
-            let score = 0;
-            const perQuestion = [];
-            for (let i = 0; i < answers.length; i++) {
-                const isCorrect = Number(answers[i]) === Number(correct[i]);
-                if (isCorrect)
-                    score++;
-                perQuestion.push({ questionId: attempt.questionIds[i], correct: isCorrect, answer: Number(answers[i]) });
-            }
-            const scorePct = Math.round((score / answers.length) * 100);
-            const finishedAt = new Date();
-            const timeSeconds = Math.max(0, Math.floor((finishedAt.getTime() - new Date(attempt.startedAt).getTime()) / 1000));
-            await fastify.prisma.attempt.update({
-                where: { id: attemptId },
-                data: {
-                    answers: answers.map((x) => Number(x)),
-                    score,
-                    scorePct,
-                    finishedAt,
-                    timeSeconds,
-                },
-            });
-            await Promise.all(perQuestion.map((aq) => fastify.prisma.attemptQuestion.upsert({
-                where: { attemptId_questionId: { attemptId, questionId: aq.questionId } },
-                create: { attemptId, questionId: aq.questionId, answer: aq.answer, correct: aq.correct },
-                update: { answer: aq.answer, correct: aq.correct },
-            })));
-            await fastify.redis.lpush("reward_queue", JSON.stringify({ attemptId }));
-            return reply.send({
-                success: true,
-                data: {
-                    attemptId,
-                    score,
-                    scorePct,
-                    timeSeconds,
-                },
-            });
-        }
-        catch (err) {
-            request.log.error({ err }, "quiz.submit_failed");
-            const message = err instanceof Error ? err.message : "Server error";
-            return reply.code(500).send({ success: false, error: message });
-        }
-    });
-    // Get a user's attempt history (basic)
-    fastify.get("/history/:userId", async (request, reply) => {
-        const { userId } = request.params;
-        const attempts = await fastify.prisma.attempt.findMany({
-            where: { userId },
-            orderBy: { finishedAt: "desc" },
+        const { round } = parse.data;
+        const userId = req.jwtUser.userId;
+        const theme = getDailyTheme();
+        const questions = await fastify.prisma.question.findMany({
+            where: { status: "approved", topic: { name: theme } },
+            include: { topic: true },
+            orderBy: { dateCreated: "desc" },
             take: 50,
         });
-        return reply.send({ success: true, data: attempts });
+        // Fallback to any approved questions
+        const pool = questions.length >= 10 ? questions : await fastify.prisma.question.findMany({
+            where: { status: "approved" },
+            include: { topic: true },
+            take: 50,
+        });
+        if (!pool.length) {
+            return reply.code(404).send({ success: false, error: "No questions available" });
+        }
+        // Shuffle and pick 10 questions
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const selected = pool.slice(0, 10);
+        // Prepare question data and correct answers
+        const questionData = selected.map(q => {
+            const { options, correctIndex } = shuffleOptions(q);
+            return {
+                id: q.id,
+                question: q.question,
+                options,
+                difficulty: q.difficulty,
+                topic: q.topic.name,
+                funFact: q.funFact ?? null,
+            };
+        });
+        const correctAnswers = selected.map(q => q.correctOption - 1); // 0-based
+        const questionIds = selected.map(q => q.id);
+        const attemptId = `quiz_${userId}_${Date.now()}`;
+        // Generate signed attempt token
+        const attemptToken = makeAttemptToken({
+            attemptId,
+            userId,
+            round,
+            questionIds: JSON.stringify(questionIds),
+            correctAnswers: JSON.stringify(correctAnswers),
+        }, QUESTION_TTL);
+        return reply.send({
+            success: true,
+            data: {
+                attemptToken,
+                round,
+                questions: questionData,
+                expiresAt: Math.floor(Date.now() / 1000) + QUESTION_TTL,
+            },
+        });
+    });
+    // POST /api/quiz/submit - Submit quiz answers
+    fastify.post("/submit", { preHandler: fastify.authenticate }, async (req, reply) => {
+        const parse = SubmitQuizSchema.safeParse(req.body);
+        if (!parse.success) {
+            return reply.code(400).send({ success: false, error: parse.error.flatten() });
+        }
+        const { attemptToken, answers, timeTakenPerQuestion } = parse.data;
+        const userId = req.jwtUser.userId;
+        // Verify attempt token
+        const verified = verifyAttemptToken(attemptToken);
+        if (!verified.ok) {
+            return reply.code(401).send({ success: false, error: verified.error });
+        }
+        const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson } = verified.data;
+        const questionIds = JSON.parse(questionIdsJson);
+        const correctAnswers = JSON.parse(correctAnswersJson);
+        // Validate answers array length
+        if (answers.length !== questionIds.length) {
+            return reply.code(400).send({ success: false, error: "Answer count mismatch" });
+        }
+        // Calculate score server-side
+        let correctCount = 0;
+        let score = 0;
+        const results = answers.map((answer, idx) => {
+            const isCorrect = answer === correctAnswers[idx];
+            const timeTaken = timeTakenPerQuestion[idx] || 15;
+            const timeBonus = isCorrect ? Math.max(0, (15 - timeTaken) * 10) : 0;
+            const basePoints = isCorrect ? 100 : 0;
+            const totalPoints = basePoints + timeBonus;
+            if (isCorrect)
+                correctCount++;
+            score += totalPoints;
+            return {
+                questionId: questionIds[idx],
+                isCorrect,
+                answer,
+                correctAnswer: correctAnswers[idx],
+                timeTaken,
+                points: totalPoints,
+            };
+        });
+        // Calculate reward amount
+        const roundConfig = QUIZ_REWARD_TABLE[round];
+        const rewardAmount = Math.min(correctCount * roundConfig.rewardPerQuestion, roundConfig.maxEarn);
+        // Create QuizAttempt
+        const quizAttempt = await fastify.prisma.quizAttempt.create({
+            data: {
+                attemptId,
+                userId,
+                attemptToken,
+                round: round,
+                correctCount,
+                score,
+                rewardAmount,
+                status: "pending",
+            },
+        });
+        // Enqueue reward job
+        await rewardQueue.add("process-reward", {
+            attemptId,
+            userId,
+            rewardAmount,
+            type: "quiz_reward",
+        });
+        return reply.send({
+            success: true,
+            data: {
+                attemptId,
+                status: "settling",
+                correctCount,
+                totalQuestions: questionIds.length,
+                score,
+                rewardAmount,
+                results,
+            },
+        });
     });
 }

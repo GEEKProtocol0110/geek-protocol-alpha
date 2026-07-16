@@ -6,7 +6,8 @@ export class QuizService {
   async getGauntletQuestions(category: string) {
     // Logic for 10-round Geek Gauntlet
     return this.prisma.question.findMany({
-      where: { category, active: true },
+      where: { topic: { name: category }, status: "approved" },
+      include: { topic: true },
       take: 10,
     });
   }

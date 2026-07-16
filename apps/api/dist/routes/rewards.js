@@ -1,5 +1,10 @@
-import { RewardLookupParamsSchema, RewardAttemptParamsSchema } from "@geek/shared";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
+const RewardLookupParamsSchema = z.object({
+    userId: z.coerce.number().int().positive(),
+});
+const RewardAttemptParamsSchema = z.object({
+    attemptId: z.string().trim().min(1),
+});
 function serializeReward(reward) {
     return {
         id: reward.id,

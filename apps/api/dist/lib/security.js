@@ -1,5 +1,28 @@
 import crypto from "crypto";
 const HMAC_SECRET = process.env.HMAC_SECRET || "dev-hmac-secret-change";
+const WALLET_ENCRYPTION_KEY = process.env.WALLET_ENCRYPTION_KEY || "dev-wallet-encryption-key-change-32chars!!"; // Must be 32 bytes for AES-256
+// Encrypt a private key using AES-256-CBC
+export function encryptPrivateKey(privateKey) {
+    const iv = crypto.randomBytes(16); // 16 bytes for AES
+    const key = Buffer.from(WALLET_ENCRYPTION_KEY, "utf8").slice(0, 32); // Ensure 32 bytes
+    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+    let encrypted = cipher.update(privateKey, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    return `${iv.toString("hex")}:${encrypted}`;
+}
+// Decrypt an encrypted private key
+export function decryptPrivateKey(encrypted) {
+    const [ivHex, encryptedHex] = encrypted.split(":");
+    if (!ivHex || !encryptedHex) {
+        throw new Error("Invalid encrypted private key format");
+    }
+    const iv = Buffer.from(ivHex, "hex");
+    const key = Buffer.from(WALLET_ENCRYPTION_KEY, "utf8").slice(0, 32);
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+}
 export function makeAttemptToken(payload, ttlSeconds) {
     const data = { ...payload, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
     const json = JSON.stringify(data);

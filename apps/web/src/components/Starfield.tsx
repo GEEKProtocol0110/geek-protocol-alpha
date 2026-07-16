@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { CSSProperties } from "react";
 
 type StarStyle = CSSProperties & {
@@ -175,24 +175,36 @@ const createShootingStars = (rng: () => number): ShootingInstance[] =>
 
 export function Starfield() {
   const [shootingSeed, setShootingSeed] = useState(0);
+  const [stars, setStars] = useState<StarInstance[]>([]);
+  const [shootingStars, setShootingStars] = useState<ShootingInstance[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  const seed = useId();
+
+  // Only generate stars on the client to avoid SSR/hydration mismatch
+  useEffect(() => {
+    const rng = createRng(`${seed}-base`);
+    const generated = STAR_LAYERS.flatMap((layer, index) => {
+      const offset = STAR_LAYERS.slice(0, index).reduce((sum, l) => sum + l.count, 0);
+      return createStars(rng, layer, offset);
+    });
+    setStars(generated);
+    setMounted(true);
+  }, [seed]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const shootingRng = createRng(`${seed}-shooting-${shootingSeed}`);
+    setShootingStars(createShootingStars(shootingRng));
+  }, [seed, shootingSeed, mounted]);
 
   useEffect(() => {
     const id = setInterval(() => setShootingSeed((s) => s + 1), 5000);
     return () => clearInterval(id);
   }, []);
 
-  const seed = useId();
-  const rng = useMemo(() => createRng(`${seed}-base`), [seed]);
-  const shootingRng = useMemo(() => createRng(`${seed}-shooting-${shootingSeed}`), [seed, shootingSeed]);
-
-  const stars = useMemo(() => {
-    return STAR_LAYERS.flatMap((layer, index) => {
-      const offset = STAR_LAYERS.slice(0, index).reduce((sum, l) => sum + l.count, 0);
-      return createStars(rng, layer, offset);
-    });
-  }, [rng]);
-
-  const shootingStars = useMemo(() => createShootingStars(shootingRng), [shootingRng]);
+  // Render nothing on the server — avoids the hydration diff entirely
+  if (!mounted) return null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 opacity-80 mix-blend-screen" aria-hidden="true">

@@ -3,7 +3,7 @@ import fastifyHelmet from "@fastify/helmet";
 import fastifyCors from "@fastify/cors";
 import fastifyCookie from "@fastify/cookie";
 import fastifyRateLimit from "@fastify/rate-limit";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import Redis from "ioredis";
 import { logger } from "./lib/logger";
 import authPlugin from "./middleware/auth";
@@ -12,8 +12,22 @@ import { quizRoutes } from "./routes/quiz";
 import { rewardRoutes } from "./routes/rewards";
 import { leaderboardRoutes } from "./routes/leaderboard";
 import { adminRoutes } from "./routes/admin";
+import { gauntletRoutes } from "./routes/gauntlet";
 import { healthRoutes } from "./routes/health";
+import { cceRoutes } from "./routes/cce";
+import { stickerRoutes } from "./routes/stickers";
+import { tokenRoutes } from "./routes/token";
+import { purchaseRoutes } from "./routes/purchase";
+import { withdrawalRoutes } from "./routes/withdrawal";
+import { kycRoutes } from "./routes/kyc";
 import { Worker } from "bullmq";
+
+// Decimal fields (geekBalance, totalEarnedGeek) serialize as strings by
+// default; every consumer (frontend + this API's own routes) treats them
+// as numbers, so normalize at the JSON boundary.
+(Prisma.Decimal.prototype as unknown as { toJSON(): number }).toJSON = function (this: Prisma.Decimal) {
+  return this.toNumber();
+};
 
 // Initialize Prisma
 const prisma = new PrismaClient();
@@ -25,6 +39,7 @@ const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
 
 const fastify = Fastify({
   logger: process.env.NODE_ENV === "development",
+  bodyLimit: 20 * 1024 * 1024, // 20MB - bulk question imports can run to thousands of rows
 });
 
 // Decorate fastify with prisma and redis
@@ -34,7 +49,26 @@ fastify.decorate("redis", redis);
 // Register plugins
 fastify.register(fastifyHelmet);
 fastify.register(fastifyCors, {
-  origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+  origin: (origin, cb) => {
+    // Allow requests with no origin (curl, server-to-server) and any localhost/LAN origin
+    if (!origin) return cb(null, true);
+    const allowed = (process.env.FRONTEND_ORIGIN || "http://localhost:3000")
+      .split(",")
+      .map((o) => o.trim());
+    // Also allow the same host on any port (handles LAN IP access)
+    const url = new URL(origin);
+    const lanIp = process.env.LAN_IP || "";
+    if (
+      allowed.includes(origin) ||
+      url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      (lanIp && url.hostname === lanIp) ||
+      /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(url.hostname)
+    ) {
+      return cb(null, true);
+    }
+    cb(new Error("CORS: origin not allowed"), false);
+  },
   credentials: true,
 });
 fastify.register(fastifyCookie, {
@@ -55,39 +89,33 @@ fastify.register(fastifyRateLimit, {
 fastify.register(healthRoutes, { prefix: "/health" });
 
 // API Routes
-fastify.register(
-  async (instance) => {
-    // Stricter rate limits for auth and payment routes
-    instance.register(authRoutes, {
-      prefix: "/auth",
-      config: {
-        rateLimit: {
-          max: 5,
-          timeWindow: "1 minute",
+  fastify.register(
+    async (instance) => {
+      // Stricter rate limits for auth and payment routes
+      instance.register(authRoutes, {
+        prefix: "/auth",
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: "1 minute",
+          },
         },
-      },
-    });
+      });
 
-    instance.register(quizRoutes, { prefix: "/quiz" });
-    instance.register(rewardRoutes, { prefix: "/rewards" });
-    instance.register(leaderboardRoutes, { prefix: "/leaderboard" });
-    instance.register(adminRoutes, { prefix: "/admin" });
-
-    // Payment routes placeholder (stricter rate limit)
-    instance.post("/payment/buy-geek", {
-      config: {
-        rateLimit: {
-          max: 3,
-          timeWindow: "1 minute",
-        },
-      },
-      handler: async (request, reply) => {
-        return { message: "Payment integration coming soon" };
-      },
-    });
-  },
-  { prefix: "/api" }
-);
+      instance.register(quizRoutes, { prefix: "/quiz" });
+      instance.register(rewardRoutes, { prefix: "/rewards" });
+      instance.register(leaderboardRoutes, { prefix: "/leaderboard" });
+      instance.register(adminRoutes, { prefix: "/admin" });
+      instance.register(gauntletRoutes, { prefix: "/gauntlet" });
+      instance.register(cceRoutes, { prefix: "/cce" });
+      instance.register(stickerRoutes, { prefix: "/stickers" });
+      instance.register(tokenRoutes, { prefix: "/token" });
+      instance.register(purchaseRoutes, { prefix: "/purchase" });
+      instance.register(withdrawalRoutes, { prefix: "/wallet" });
+      instance.register(kycRoutes, { prefix: "/kyc" });
+    },
+    { prefix: "/api" }
+  );
 
 // Start BullMQ Worker for reward processing
 const rewardWorker = new Worker(

@@ -7,9 +7,10 @@ const PUBLIC_PATHS = [
   "/leaderboard",
   "/litepaper",
   "/play",
+  "/quiz",
 ];
 
-const PROTECTED_PATHS = ["/dashboard", "/profile", "/admin"];
+const PROTECTED_PATHS = ["/dashboard", "/profile", "/admin", "/gauntlet"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

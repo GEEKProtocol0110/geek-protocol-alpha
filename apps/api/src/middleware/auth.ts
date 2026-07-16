@@ -24,9 +24,7 @@ async function authPlugin(fastify: FastifyInstance) {
           ? authHeader.slice(7)
           : undefined;
 
-        const cookieToken = request.cookies?.gp_session
-          ? fastify.unsignCookie(request.cookies.gp_session)?.value ?? undefined
-          : undefined;
+        const cookieToken = request.cookies?.gp_session ?? undefined;
 
         const token = bearerToken ?? cookieToken;
 
@@ -49,6 +47,37 @@ async function authPlugin(fastify: FastifyInstance) {
         request.jwtUser = payload as unknown as JWTPayload;
       } catch {
         return reply.code(401).send({ error: "Invalid or expired token" });
+      }
+    }
+  );
+
+  fastify.decorate(
+    "authenticateOptional",
+    async (request: FastifyRequest, _reply: FastifyReply) => {
+      try {
+        const authHeader = request.headers.authorization;
+        const bearerToken = authHeader?.startsWith("Bearer ")
+          ? authHeader.slice(7)
+          : undefined;
+
+        const cookieToken = request.cookies?.gp_session ?? undefined;
+
+        const token = bearerToken ?? cookieToken;
+        if (!token) return;
+
+        const { payload } = await jwtVerify(token, SECRET_KEY);
+
+        if (
+          typeof payload.userId === "number" &&
+          typeof payload.email === "string" &&
+          typeof payload.username === "string" &&
+          typeof payload.role === "string" &&
+          typeof payload.isAdmin === "boolean"
+        ) {
+          request.jwtUser = payload as unknown as JWTPayload;
+        }
+      } catch {
+        // Anonymous - leave request.jwtUser unset
       }
     }
   );

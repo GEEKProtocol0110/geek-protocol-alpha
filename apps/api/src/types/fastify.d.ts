@@ -8,6 +8,7 @@ declare module "fastify" {
     prisma: PrismaClient;
     redis: Redis;
     authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+    authenticateOptional(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   }
 
   interface FastifyRequest {

@@ -64,44 +64,36 @@ export default function RegisterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0e0a] text-white flex items-center justify-center px-4 py-16 relative overflow-hidden">
-      {/* Background grid */}
-      <div className="absolute inset-0 opacity-10"
-        style={{ backgroundImage: "linear-gradient(#2a1a3a 1px, transparent 1px), linear-gradient(90deg, #2a1a3a 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-
-      {/* Glow orbs */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative w-full max-w-4xl z-10 grid md:grid-cols-2 gap-8 items-start">
+    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)] flex items-center justify-center px-4 py-16">
+      <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-8 items-start">
 
         {/* Left — perks */}
         <div className="hidden md:flex flex-col justify-center py-8">
-          <div className="inline-flex items-center gap-2 border border-[#b87333] px-3 py-1 font-mono text-xs text-[#b87333] mb-6 w-fit">
-            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
-            PROOF-OF-LEARNING PROTOCOL
+          <div className="badge-pill text-[var(--brand-primary)] mb-6 w-fit">
+            <span className="w-1.5 h-1.5 bg-[var(--brand-primary)] rounded-full animate-pulse" />
+            Proof-of-Learning Protocol
           </div>
-          <h2 className="font-bebas tracking-widest text-5xl text-white leading-tight mb-4">
-            TURN YOUR<br />
-            <span className="text-pink-600">KNOWLEDGE</span><br />
-            INTO ASSETS
+          <h2 className="font-extrabold text-5xl text-[var(--text-1)] leading-tight mb-4">
+            Turn your<br />
+            <span className="text-[var(--brand-primary)]">knowledge</span><br />
+            into assets
           </h2>
-          <p className="text-white/50 text-sm font-mono mb-8 leading-relaxed">
+          <p className="text-[var(--text-3)] text-sm mb-8 leading-relaxed">
             Join the first Quiz2Earn platform on Kaspa.<br />
             Prove what you know. Get rewarded instantly.
           </p>
 
           <div className="space-y-3">
             {perks.map((perk, i) => (
-              <div key={i} className="flex items-start gap-3 border border-[#2a1a3a] bg-[#0d120d] px-4 py-3">
-                <FaCheckCircle className="text-cyan-400 mt-0.5 shrink-0" />
-                <span className="text-white/70 text-sm">{perk}</span>
+              <div key={i} className="flex items-start gap-3 soft-card px-4 py-3">
+                <FaCheckCircle className="text-[var(--brand-secondary)] mt-0.5 shrink-0" />
+                <span className="text-[var(--text-2)] text-sm font-medium">{perk}</span>
               </div>
             ))}
           </div>
 
-          <div className="mt-8 border-t border-[#2a1a3a] pt-6">
-            <p className="font-mono text-[10px] tracking-widest text-white/20">
+          <div className="mt-8 border-t border-[var(--border-soft)] pt-6">
+            <p className="text-[10px] tracking-widest text-[var(--text-3)] font-semibold uppercase">
               Built on Kaspa · KRC-20 Native · Open Source
             </p>
           </div>
@@ -112,53 +104,47 @@ export default function RegisterPage() {
           {/* Logo */}
           <div className="text-center mb-6">
             <a href="/" className="inline-flex items-center gap-3 mb-4">
-              <span className="font-bebas tracking-widest text-3xl text-pink-600">GP</span>
-              <span className="font-sans font-bold text-sm tracking-widest text-white/50">GEEK PROTOCOL</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand-primary)] font-extrabold text-white">GP</span>
+              <span className="font-bold text-sm text-[var(--text-2)]">GEEK PROTOCOL</span>
             </a>
-            <h1 className="font-bebas tracking-widest text-4xl text-white">CREATE ACCOUNT</h1>
-            <p className="text-white/40 text-sm mt-1 font-mono">Join the Proof-of-Learning movement</p>
+            <h1 className="font-extrabold text-4xl text-[var(--text-1)]">Create Account</h1>
+            <p className="text-[var(--text-3)] text-sm mt-1">Join the Proof-of-Learning movement</p>
           </div>
 
           {/* Card */}
-          <div className="relative border border-[#2a1a3a] bg-[#0d120d] p-8">
-            {/* Corner accents */}
-            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#b87333]" />
-            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#b87333]" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#b87333]" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#b87333]" />
-
+          <div className="soft-card p-8">
             {/* Wallet register */}
             <button
               onClick={handleWalletRegister}
               disabled={!kaswareInstalled || walletConnecting}
-              className="w-full flex items-center justify-center gap-3 border border-cyan-400/40 bg-cyan-400/5 hover:bg-cyan-400/10 text-cyan-400 font-bold text-sm tracking-wider px-4 py-3 transition disabled:opacity-40 disabled:cursor-not-allowed mb-6 font-mono"
+              className="w-full flex items-center justify-center gap-3 rounded-2xl border border-[var(--brand-primary)]/30 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--brand-primary)] font-bold text-sm px-4 py-3 transition disabled:opacity-40 disabled:cursor-not-allowed mb-6"
             >
               <FaWallet />
-              {walletConnecting ? "CONNECTING…" : kaswareInstalled ? "REGISTER WITH KASWARE" : "INSTALL KASWARE FIRST"}
+              {walletConnecting ? "Connecting…" : kaswareInstalled ? "Register With Kasware" : "Install Kasware First"}
             </button>
 
             {/* Divider */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex-1 h-px bg-[#2a1a3a]" />
-              <span className="font-mono text-[10px] tracking-widest text-white/30">OR USE EMAIL</span>
-              <div className="flex-1 h-px bg-[#2a1a3a]" />
+              <div className="flex-1 h-px bg-[var(--border-soft)]" />
+              <span className="text-[10px] tracking-widest text-[var(--text-3)] font-semibold uppercase">Or use email</span>
+              <div className="flex-1 h-px bg-[var(--border-soft)]" />
             </div>
 
             {/* Error */}
             {error && (
-              <div className="mb-5 border border-pink-500/30 bg-pink-500/10 px-4 py-3 font-mono text-xs text-pink-400 flex items-center gap-2">
-                <span className="text-pink-500">✗</span> {error}
+              <div className="mb-5 rounded-2xl border border-[var(--brand-tertiary)]/30 bg-[var(--brand-tertiary)]/10 px-4 py-3 text-xs text-[var(--brand-tertiary)] flex items-center gap-2 font-semibold">
+                <span>✗</span> {error}
               </div>
             )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block font-mono text-[10px] tracking-widest text-[#b87333] mb-2 uppercase">
+                <label className="block text-xs font-bold text-[var(--text-2)] mb-2 uppercase tracking-wide">
                   Username
                 </label>
                 <div className="relative">
-                  <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs" />
+                  <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs" />
                   <input
                     type="text"
                     value={username}
@@ -166,18 +152,18 @@ export default function RegisterPage() {
                     placeholder="geek_legend"
                     autoComplete="username"
                     required
-                    className="w-full bg-[#0a0e0a] border border-[#2a1a3a] focus:border-cyan-400/50 text-white text-sm pl-9 pr-4 py-3 outline-none transition font-mono placeholder-white/20"
+                    className="w-full rounded-full bg-[var(--surface-2)] border border-transparent focus:border-[var(--brand-primary)] text-[var(--text-1)] text-sm pl-10 pr-4 py-3 outline-none transition placeholder-[var(--text-3)]"
                   />
                 </div>
-                <p className="mt-1 font-mono text-[10px] text-white/25">3–50 chars · letters, numbers, _ or -</p>
+                <p className="mt-1 text-[10px] text-[var(--text-3)] pl-2">3–50 chars · letters, numbers, _ or -</p>
               </div>
 
               <div>
-                <label className="block font-mono text-[10px] tracking-widest text-[#b87333] mb-2 uppercase">
+                <label className="block text-xs font-bold text-[var(--text-2)] mb-2 uppercase tracking-wide">
                   Email
                 </label>
                 <div className="relative">
-                  <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs" />
+                  <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs" />
                   <input
                     type="email"
                     value={email}
@@ -185,17 +171,17 @@ export default function RegisterPage() {
                     placeholder="you@example.com"
                     autoComplete="email"
                     required
-                    className="w-full bg-[#0a0e0a] border border-[#2a1a3a] focus:border-cyan-400/50 text-white text-sm pl-9 pr-4 py-3 outline-none transition font-mono placeholder-white/20"
+                    className="w-full rounded-full bg-[var(--surface-2)] border border-transparent focus:border-[var(--brand-primary)] text-[var(--text-1)] text-sm pl-10 pr-4 py-3 outline-none transition placeholder-[var(--text-3)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-mono text-[10px] tracking-widest text-[#b87333] mb-2 uppercase">
+                <label className="block text-xs font-bold text-[var(--text-2)] mb-2 uppercase tracking-wide">
                   Password
                 </label>
                 <div className="relative">
-                  <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs" />
+                  <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs" />
                   <input
                     type="password"
                     value={password}
@@ -203,7 +189,7 @@ export default function RegisterPage() {
                     placeholder="Min 8 characters"
                     autoComplete="new-password"
                     required
-                    className="w-full bg-[#0a0e0a] border border-[#2a1a3a] focus:border-cyan-400/50 text-white text-sm pl-9 pr-4 py-3 outline-none transition font-mono placeholder-white/20"
+                    className="w-full rounded-full bg-[var(--surface-2)] border border-transparent focus:border-[var(--brand-primary)] text-[var(--text-1)] text-sm pl-10 pr-4 py-3 outline-none transition placeholder-[var(--text-3)]"
                   />
                 </div>
               </div>
@@ -211,18 +197,18 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-pink-600 hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bebas tracking-widest text-lg px-4 py-3 transition flex items-center justify-center gap-2 mt-2"
+                className="pill-btn pill-btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed text-base py-3 mt-2"
               >
                 <FaUserPlus />
-                {loading ? "CREATING ACCOUNT…" : "CREATE ACCOUNT"}
+                {loading ? "Creating Account…" : "Create Account"}
               </button>
             </form>
 
             {/* Footer link */}
-            <div className="mt-6 pt-6 border-t border-[#2a1a3a] text-center">
-              <p className="font-mono text-xs text-white/30">
+            <div className="mt-6 pt-6 border-t border-[var(--border-soft)] text-center">
+              <p className="text-xs text-[var(--text-3)]">
                 Already a Geek?{" "}
-                <Link href="/auth/login" className="text-cyan-400 hover:text-cyan-300 transition font-bold">
+                <Link href="/auth/login" className="text-[var(--brand-primary)] hover:opacity-80 transition font-bold">
                   Sign in here
                 </Link>
               </p>
@@ -230,10 +216,10 @@ export default function RegisterPage() {
           </div>
 
           {/* Tagline */}
-          <p className="text-center font-mono text-[10px] tracking-widest text-white/20 mt-6 flex items-center justify-center gap-2">
-            <FaBolt className="text-[#b87333]" />
-            ALL HOPE. NO HYPE. — GEEK PROTOCOL
-            <FaBolt className="text-[#b87333]" />
+          <p className="text-center text-[10px] tracking-widest text-[var(--text-3)] mt-6 flex items-center justify-center gap-2 font-semibold uppercase">
+            <FaBolt className="text-[var(--brand-accent)]" />
+            All hope. No hype. — Geek Protocol
+            <FaBolt className="text-[var(--brand-accent)]" />
           </p>
         </div>
       </div>

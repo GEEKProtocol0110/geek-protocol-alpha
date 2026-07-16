@@ -1,28 +1,39 @@
 /**
- * KasWare Signature Verification
- * Verifies Schnorr signatures from the KasWare wallet extension
+ * Kaspa Schnorr signature verification.
+ *
+ * In DEMO_MODE (env DEMO_MODE=true) real verification is skipped so the
+ * full flow can be exercised without the @kaspa/core native binaries.
+ *
+ * In production the function derives the 32-byte x-only public key from the
+ * Kaspa bech32 address payload and verifies a Schnorr signature with
+ * @noble/curves (which ships as a transitive dep of several Kaspa packages).
  */
-export function verifyKasWareSignature(message, signature, walletAddress) {
-    if (!message) {
+const DEMO_MODE = process.env.DEMO_MODE === "true";
+export async function verifyKaspaSignature(walletAddress, message, signature) {
+    if (DEMO_MODE)
+        return true;
+    try {
+        // @kaspa/core is an optional peer – load dynamically so the module
+        // compiles cleanly even when the native binary is absent.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const kaspaCore = await (Function('return m => import(m)')())('@kaspa/core').catch(() => null);
+        if (!kaspaCore)
+            return false;
+        // Decode bech32 address → 33-byte compressed public key → drop version byte
+        const parsed = kaspaCore.Address.fromString(walletAddress);
+        const pubKeyBytes = parsed.payload.slice(1); // 32-byte x-only key
+        // Hash the UTF-8 message with SHA-256
+        const msgBytes = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", msgBytes);
+        const msgHash = new Uint8Array(hashBuffer);
+        // Decode hex signature
+        const sigBytes = new Uint8Array(signature.match(/.{1,2}/g).map((b) => parseInt(b, 16)));
+        // Verify Schnorr signature using @noble/curves (BIP-340 compatible)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { schnorr } = await (Function('return m => import(m)')())('@noble/curves/secp256k1');
+        return schnorr.verify(sigBytes, msgHash, pubKeyBytes);
+    }
+    catch {
         return false;
     }
-    // Dev mode: accept any non-empty valid hex signature from KasWare
-    // In production, this would validate against the wallet's public key using Schnorr verification
-    if (!signature || signature.length < 64) {
-        return false;
-    }
-    // Validate hex encoding
-    if (!/^[0-9a-fA-F]+$/.test(signature)) {
-        return false;
-    }
-    if (!walletAddress || walletAddress.length < 10) {
-        return false;
-    }
-    // KasWare extension guarantees wallet ownership, so we accept the signature
-    // In production: would derive pubkey from walletAddress and verify Schnorr signature
-    return true;
-}
-export function verifyKasWareSignatureDev(message, signature, walletAddress) {
-    // Loose dev mode for testing - accepts any non-empty values
-    return Boolean(message && signature && walletAddress);
 }

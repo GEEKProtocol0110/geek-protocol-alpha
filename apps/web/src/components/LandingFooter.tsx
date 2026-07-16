@@ -29,23 +29,20 @@ const FOOTER_LINKS = [
 
 export function LandingFooter() {
   return (
-    <footer className="relative border-t border-white/5 bg-[rgba(0,0,0,0.7)] py-16">
-      <div className="pointer-events-none absolute inset-0 opacity-30" aria-hidden>
-        <div className="grid-overlay" />
-      </div>
+    <footer className="relative border-t border-[var(--border-soft)] bg-white py-16">
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="grid gap-10 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <div className="grid size-12 place-items-center rounded-3xl border border-white/10 bg-white/5 text-sm font-bold text-[var(--brand-primary)]">
+              <div className="grid size-12 place-items-center rounded-3xl bg-[var(--brand-primary)] text-sm font-bold text-white">
                 GP
               </div>
               <div>
-                <p className="text-lg font-semibold text-white">Geek Protocol</p>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">All hope, no hype.</p>
+                <p className="text-lg font-extrabold text-[var(--text-1)]">Geek Protocol</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-3)]">All hope, no hype.</p>
               </div>
             </div>
-            <p className="text-sm text-white/65">
+            <p className="text-sm text-[var(--text-3)]">
               A Kaspa-native play layer converting knowledge into programmable, measurable rewards. Built for founders, creators, and the ecosystems they galvanize.
             </p>
             <div className="flex gap-3">
@@ -53,7 +50,7 @@ export function LandingFooter() {
                 href="https://x.com/geekonkas"
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-white/15 px-4 py-2 text-xs uppercase tracking-wide text-white/70 transition hover:bg-white/5"
+                className="rounded-full border border-[var(--border-soft)] px-4 py-2 text-xs uppercase tracking-wide text-[var(--text-2)] transition hover:bg-[var(--surface-2)]"
               >
                 X
               </a>
@@ -61,7 +58,7 @@ export function LandingFooter() {
                 href="https://t.me/GEEKonKAScommunity"
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-white/15 px-4 py-2 text-xs uppercase tracking-wide text-white/70 transition hover:bg-white/5"
+                className="rounded-full border border-[var(--border-soft)] px-4 py-2 text-xs uppercase tracking-wide text-[var(--text-2)] transition hover:bg-[var(--surface-2)]"
               >
                 Telegram
               </a>
@@ -70,8 +67,8 @@ export function LandingFooter() {
 
           {FOOTER_LINKS.map((column) => (
             <div key={column.title} className="space-y-4">
-              <h4 className="text-sm font-semibold uppercase tracking-wide text-white/60">{column.title}</h4>
-              <ul className="space-y-2 text-sm text-white/70">
+              <h4 className="text-sm font-bold uppercase tracking-wide text-[var(--brand-primary)]">{column.title}</h4>
+              <ul className="space-y-2 text-sm text-[var(--text-3)]">
                 {column.links.map((link) => (
                   <li key={link.label}>
                     {link.external ? (
@@ -79,12 +76,12 @@ export function LandingFooter() {
                         href={link.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="transition hover:text-white"
+                        className="transition hover:text-[var(--brand-primary)]"
                       >
                         {link.label}
                       </a>
                     ) : (
-                      <Link href={link.href} className="transition hover:text-white">
+                      <Link href={link.href} className="transition hover:text-[var(--brand-primary)]">
                         {link.label}
                       </Link>
                     )}
@@ -95,16 +92,16 @@ export function LandingFooter() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-white/60 md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-4 border-t border-[var(--border-soft)] pt-6 text-sm text-[var(--text-3)] md:flex-row md:items-center md:justify-between">
           <div>© {new Date().getFullYear()} Geek Protocol. All rights reserved.</div>
           <div className="flex flex-wrap gap-4">
-            <Link href="/" className="hover:text-white">
+            <Link href="/" className="hover:text-[var(--brand-primary)]">
               Terms
             </Link>
-            <Link href="/" className="hover:text-white">
+            <Link href="/" className="hover:text-[var(--brand-primary)]">
               Privacy
             </Link>
-            <span className="text-white/40">Kaspa mainnet ready</span>
+            <span className="text-[var(--brand-secondary)] font-semibold">Kaspa mainnet ready</span>
           </div>
         </div>
       </div>

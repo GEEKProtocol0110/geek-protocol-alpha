@@ -1,7 +1,14 @@
 import { FastifyInstance } from "fastify";
-import { RewardLookupParamsSchema, RewardAttemptParamsSchema } from "@geek/shared";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import type { Reward } from "@prisma/client";
+
+const RewardLookupParamsSchema = z.object({
+  userId: z.coerce.number().int().positive(),
+});
+
+const RewardAttemptParamsSchema = z.object({
+  attemptId: z.string().trim().min(1),
+});
 
 function serializeReward(reward: Reward) {
   return {
