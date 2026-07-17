@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { TopBar } from "@/components/TopBar";
-import { WalletProvider } from "@/components/WalletProvider";
-import { Starfield } from "@/components/Starfield";
+import { AuthProvider } from "@/context/AuthContext";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
   title: "Geek Protocol",
@@ -44,18 +40,14 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${display.variable} antialiased font-sans`}>
-        <WalletProvider>
-          <div className="relative min-h-screen overflow-hidden bg-[var(--surface-0)] text-[var(--text-1)]">
-            <div className="absolute inset-0 bg-[var(--surface-gradient)]" aria-hidden />
-            <div className="absolute inset-0 bg-[var(--noise-image)] opacity-30 mix-blend-screen" aria-hidden />
-            <Starfield />
+      <body className={`${jakarta.variable} antialiased`}>
+        <AuthProvider>
+          <div className="relative min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
             <div className="relative z-10 flex min-h-screen flex-col">
-              <TopBar />
               <div className="flex-1">{children}</div>
             </div>
           </div>
-        </WalletProvider>
+        </AuthProvider>
       </body>
     </html>
   );

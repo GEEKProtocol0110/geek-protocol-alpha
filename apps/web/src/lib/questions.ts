@@ -100,5 +100,6 @@ export const mvpQuestions: Question[] = [
 
 export function getMvpRound() {
   // In production, randomize and pull from DB.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return mvpQuestions.map(({ answerIndex, ...clientSafe }) => clientSafe);
 }

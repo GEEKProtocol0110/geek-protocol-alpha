@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import {
   isKaswareInstalled,
   kaswareConnect,
@@ -72,7 +72,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  async function connect() {
+  const connect = useCallback(async () => {
     if (!installed) return;
     setConnecting(true);
     try {
@@ -96,16 +96,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setConnecting(false);
     }
-  }
+  }, [installed]);
 
-  async function disconnect() {
+  const disconnect = useCallback(async () => {
     await kaswareDisconnect();
     try {
       await logout();
     } catch {}
     setAddress(null);
     setSessionVersion(0);
-  }
+  }, []);
 
   const value = useMemo<WalletState>(() => {
     const mode: WalletState["mode"] = address ? "earn" : "practice";

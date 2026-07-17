@@ -26,7 +26,7 @@ export const SessionSchema = z.object({
     issuedAt: z.number(),
     expiresAt: z.number(),
 });
-// ============ USER ============
+// ============ USER & PROGRESS ============
 export const UserSchema = z.object({
     id: z.string(),
     walletAddress: z.string(),
@@ -37,7 +37,7 @@ export const UserSchema = z.object({
     createdAt: z.date(),
     updatedAt: z.date(),
 });
-// ============ QUIZ ============
+// ============ QUIZ (GEEK GAUNTLET) ============
 export const QuestionSchema = z.object({
     id: z.string(),
     category: z.string(),
@@ -65,51 +65,65 @@ export const SubmitQuizRequestSchema = z.object({
     attemptToken: z.string(),
     answers: z.array(z.number()),
 });
-export const AttemptResultSchema = z.object({
-    attemptId: z.string(),
-    userId: z.string(),
-    category: z.string(),
-    questionIds: z.array(z.string()),
-    answers: z.array(z.number()),
-    correctAnswers: z.array(z.number()),
-    score: z.number(),
-    scorePct: z.number(),
-    startedAt: z.date(),
-    finishedAt: z.date(),
-    timeSeconds: z.number(),
-    flags: z.array(z.string()).default([]),
-});
-// ============ REWARDS ============
-export const RewardStatusSchema = z.enum([
-    "PENDING",
-    "SENT",
-    "CONFIRMED",
-    "FAILED",
+// ============ STICKER COLLECTION ============
+export const StickerSeriesSchema = z.enum([
+    "Genesis",
+    "Cyberpunk",
+    "Fantasy",
+    "Space",
+    "Retro",
+    "Modern",
+    "Abstract",
+    "Nature",
 ]);
-export const RewardSchema = z.object({
+export const StickerSchema = z.object({
     id: z.string(),
-    attemptId: z.string(),
-    userId: z.string(),
-    amount: z.number(), // in satoshis or smallest unit
-    status: RewardStatusSchema,
-    txid: z.string().nullable(),
-    error: z.string().nullable(),
-    createdAt: z.date(),
-    confirmedAt: z.date().nullable(),
+    series: StickerSeriesSchema,
+    name: z.string(),
+    rarity: z.enum(["Common", "Uncommon", "Rare", "Epic", "Legendary"]),
+    imageUrl: z.string(),
 });
-// ============ LEADERBOARD ============
-export const LeaderboardEntrySchema = z.object({
-    rank: z.number(),
+export const UserStickerSchema = z.object({
     userId: z.string(),
+    stickerId: z.string(),
+    count: z.number().default(1),
+});
+// ============ KASPA PAYMENTS ============
+export const BuyGeekRequestSchema = z.object({
+    amountKas: z.number().positive(),
     walletAddress: z.string(),
-    xp: z.number(),
-    score: z.number(),
-    attempts: z.number(),
 });
-// ============ API RESPONSE WRAPPER ============
-export const ApiResponseSchema = (schema) => z.object({
-    success: z.boolean(),
-    data: schema.optional(),
-    error: z.string().optional(),
+export const BuyGeekResponseSchema = z.object({
+    paymentId: z.string(),
+    depositAddress: z.string(),
+    amountKas: z.number(),
+    geekToReceive: z.number(),
+    status: z.enum(["PENDING", "CONFIRMED", "FAILED"]),
+});
+// ============ COMMUNITY CONTENT ENGINE (CCE) ============
+export const SubmitQuestionSchema = z.object({
+    category: z.string(),
+    prompt: z.string(),
+    options: z.array(z.string()).length(4),
+    correctIndex: z.number().min(0).max(3),
+    difficulty: z.enum(["easy", "medium", "hard"]),
+});
+// ============ AI COMPANIONS ============
+export const CompanionTypeSchema = z.enum(["GIGA", "A.C.E"]);
+export const ChatRequestSchema = z.object({
+    companionId: CompanionTypeSchema,
+    message: z.string(),
+});
+// ============ ADMIN QUERIES ==========
+const PaginationQuerySchema = z.object({
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+});
+export const AdminAttemptsQuerySchema = PaginationQuerySchema.extend({
+    userId: z.string().trim().optional(),
+    wallet: z.string().trim().optional(),
+});
+export const AdminRewardsQuerySchema = PaginationQuerySchema.extend({
+    status: z.string().trim().optional(),
 });
 //# sourceMappingURL=index.js.map

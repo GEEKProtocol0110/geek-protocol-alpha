@@ -58,6 +58,13 @@ export function Hero() {
               </a>
 
               <a
+                href="/stickers"
+                className="px-8 py-4 font-semibold border border-purple-400/50 text-purple-300 rounded-xl hover:bg-purple-400/10 transition-all duration-300"
+              >
+                🃏 Sticker Hub
+              </a>
+
+              <a
                 href="https://t.me/GEEKonKAScommunity"
                 target="_blank"
                 rel="noreferrer"
@@ -92,6 +99,7 @@ export function Hero() {
                   <PreviewItem icon="🎯" label="Mode" value="Geek Gauntlet" />
                   <PreviewItem icon="📋" label="Questions" value="10 Timed Rounds" />
                   <PreviewItem icon="🏆" label="Rewards" value="$GEEK Tokens" />
+                  <PreviewItem icon="🃏" label="Stickers" value="Collect & Trade" />
                   <PreviewItem icon="🔐" label="Network" value="Kaspa Blockchain" />
                 </div>
 

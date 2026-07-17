@@ -1,155 +1,148 @@
 import { FastifyInstance } from "fastify";
-import {
-  AdminAttemptsQuerySchema,
-  AdminRewardsQuerySchema,
-  AdminQuestionImportRequestSchema,
-} from "@geek/shared";
-import { ZodError } from "zod";
-import { Prisma } from "@prisma/client";
+import { z } from "zod";
+import { logger } from "../lib/logger";
 
-type AttemptsQuery = {
-  limit?: string;
-  offset?: string;
-  userId?: string;
-  wallet?: string;
-};
+const BulkQuestionSchema = z.object({
+  category: z.string().min(1),
+  question: z.string().min(1),
+  options: z.array(z.string().min(1)).length(4),
+  correctIndex: z.number().int().min(0).max(3),
+  difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
+  funFact: z.string().optional(),
+  sourceLink: z.string().optional(),
+  subtopic: z.string().optional(),
+  tags: z.array(z.string()).optional().default([]),
+  yearReleased: z.number().int().optional(),
+});
 
-type RewardsQuery = {
-  limit?: string;
-  offset?: string;
-  status?: string;
-  userId?: string;
-  wallet?: string;
-};
+const BulkImportSchema = z.object({
+  questions: z.array(BulkQuestionSchema).min(1).max(5000),
+});
 
 export async function adminRoutes(fastify: FastifyInstance) {
-  // Attempts listing with basic pagination and filters
-  fastify.get<{ Querystring: AttemptsQuery }>("/attempts", async (request, reply) => {
-    try {
-      const { limit, offset, userId, wallet } = AdminAttemptsQuerySchema.parse(request.query);
-      const take = limit;
-      const skip = offset;
+  async function requireAdmin(userId: number) {
+    const user = await fastify.prisma.user.findUnique({ where: { id: userId } });
+    return user?.isAdmin ? user : null;
+  }
 
-      const where: Prisma.AttemptWhereInput = {};
-      if (userId) where.userId = userId;
-      if (wallet) where.user = { walletAddress: wallet };
+  // GET /api/admin/questions/topics - List topics with question counts (admin only)
+  fastify.get("/questions/topics",
+    { preHandler: fastify.authenticate },
+    async (req, reply) => {
+      const admin = await requireAdmin(req.jwtUser!.userId);
+      if (!admin) return reply.code(403).send({ success: false, error: "Admin access required" });
 
-      const items = await fastify.prisma.attempt.findMany({
-        where,
-        orderBy: { finishedAt: "desc" },
-        take,
-        skip,
-        include: {
-          user: { select: { walletAddress: true, id: true } },
-          reward: { select: { status: true, amount: true, txid: true, id: true } },
-        },
+      const topics = await fastify.prisma.topic.findMany({
+        orderBy: { name: "asc" },
+        include: { _count: { select: { questions: true } } },
       });
 
-      const data = items.map((a) => ({
-        id: a.id,
-        userId: a.userId,
-        walletAddress: a.user.walletAddress,
-        category: a.category,
-        score: a.score,
-        scorePct: a.scorePct,
-        timeSeconds: a.timeSeconds,
-        finishedAt: a.finishedAt,
-        flags: a.flags,
-        reward: a.reward
-          ? {
-              id: a.reward.id,
-              status: a.reward.status,
-              amount: Number(a.reward.amount),
-              txid: a.reward.txid || null,
-            }
-          : null,
-      }));
+      return reply.send({
+        success: true,
+        data: topics.map((t) => ({
+          id: t.id,
+          name: t.name,
+          isActive: t.isActive,
+          questionCount: t._count.questions,
+        })),
+      });
+    });
 
-      return reply.send({ success: true, data });
-    } catch (err) {
-      request.log.error({ err }, "admin.attempts_list_failed");
-      return reply.code(500).send({ success: false, error: "Failed to list attempts" });
-    }
-  });
+  // POST /api/admin/questions/bulk - Bulk-create questions from a JSON array (admin only)
+  fastify.post("/questions/bulk",
+    { preHandler: fastify.authenticate },
+    async (req, reply) => {
+      const admin = await requireAdmin(req.jwtUser!.userId);
+      if (!admin) return reply.code(403).send({ success: false, error: "Admin access required" });
 
-  // Rewards listing with status filter
-  fastify.get<{ Querystring: RewardsQuery }>("/rewards", async (request, reply) => {
-    try {
-      const { limit, offset, status, userId, wallet } = AdminRewardsQuerySchema.parse(request.query);
-      const take = limit;
-      const skip = offset;
+      const parse = BulkImportSchema.safeParse(req.body);
+      if (!parse.success) {
+        return reply.code(400).send({ success: false, error: parse.error.flatten() });
+      }
+      const { questions } = parse.data;
 
-      const where: Prisma.RewardWhereInput = {};
-      if (status) where.status = status;
-      if (userId) where.userId = userId;
-      if (wallet) where.user = { walletAddress: wallet };
+      const topics = await fastify.prisma.topic.findMany();
+      const topicByName = new Map(topics.map((t) => [t.name.trim().toLowerCase(), t]));
+      const validCategories = topics.map((t) => t.name);
 
-      const items = await fastify.prisma.reward.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take,
-        skip,
-        include: {
-          user: { select: { walletAddress: true, id: true } },
-          attempt: { select: { id: true, score: true, scorePct: true, finishedAt: true } },
-        },
+      const toInsert: {
+        question: string;
+        option1: string;
+        option2: string;
+        option3: string;
+        option4: string;
+        correctOption: number;
+        difficulty: string;
+        topicId: number;
+        createdBy: number;
+        approvedBy: number;
+        status: string;
+        dateApproved: Date;
+        subtopic?: string;
+        sourceLink?: string;
+        funFact?: string;
+        topicTags: string;
+        yearReleased?: number;
+      }[] = [];
+      const failed: Array<{ index: number; error: string }> = [];
+
+      questions.forEach((q, index) => {
+        const topic = topicByName.get(q.category.trim().toLowerCase());
+        if (!topic) {
+          failed.push({
+            index,
+            error: `Unknown category "${q.category}". Valid categories: ${validCategories.join(", ")}`,
+          });
+          return;
+        }
+
+        const trimmedOptions = q.options.map((o) => o.trim());
+        const uniqueOptions = new Set(trimmedOptions.map((o) => o.toLowerCase()));
+        if (uniqueOptions.size !== 4) {
+          failed.push({ index, error: "Options must be 4 distinct, non-empty strings" });
+          return;
+        }
+
+        toInsert.push({
+          question: q.question.trim(),
+          option1: trimmedOptions[0],
+          option2: trimmedOptions[1],
+          option3: trimmedOptions[2],
+          option4: trimmedOptions[3],
+          correctOption: q.correctIndex + 1,
+          difficulty: q.difficulty,
+          topicId: topic.id,
+          createdBy: req.jwtUser!.userId,
+          approvedBy: req.jwtUser!.userId,
+          status: "approved",
+          dateApproved: new Date(),
+          subtopic: q.subtopic,
+          sourceLink: q.sourceLink,
+          funFact: q.funFact,
+          topicTags: JSON.stringify(q.tags ?? []),
+          yearReleased: q.yearReleased,
+        });
       });
 
-      const data = items.map((r) => ({
-        id: r.id,
-        attemptId: r.attemptId,
-        userId: r.userId,
-        walletAddress: r.user.walletAddress,
-        amount: Number(r.amount),
-        status: r.status,
-        txid: r.txid || null,
-        error: r.error || null,
-        createdAt: r.createdAt,
-        confirmedAt: r.confirmedAt || null,
-        attempt: r.attempt,
-      }));
+      let insertedCount = 0;
+      if (toInsert.length) {
+        const result = await fastify.prisma.question.createMany({ data: toInsert });
+        insertedCount = result.count;
+      }
 
-      return reply.send({ success: true, data });
-    } catch (err) {
-      request.log.error({ err }, "admin.rewards_list_failed");
-      return reply.code(500).send({ success: false, error: "Failed to list rewards" });
-    }
-  });
-
-  // Bulk import questions (admin-only manual tool)
-  fastify.post<{ Body: unknown }>("/questions/import", async (request, reply) => {
-    try {
-      const rawBody = request.body;
-      const normalized = Array.isArray(rawBody)
-        ? { questions: rawBody }
-        : typeof rawBody === "object" && rawBody !== null
-        ? (rawBody as Record<string, unknown>)
-        : undefined;
-      const { questions } = AdminQuestionImportRequestSchema.parse(normalized);
-
-      const created = await fastify.prisma.$transaction(
-        questions.map((q) =>
-          fastify.prisma.question.create({
-            data: {
-              category: q.category,
-              prompt: q.prompt,
-              options: q.options,
-              correctIndex: q.correctIndex,
-              difficulty: q.difficulty,
-              tags: q.tags,
-              version: q.version,
-              active: q.active,
-            },
-          })
-        )
+      logger.info(
+        { adminId: req.jwtUser!.userId, requested: questions.length, inserted: insertedCount, failed: failed.length },
+        "Bulk question import"
       );
 
-      return reply.send({ success: true, data: { created: created.length } });
-    } catch (err) {
-      request.log.error({ err }, "admin.question_import_failed");
-      const statusCode = err instanceof ZodError ? 400 : 500;
-      const errorMessage = statusCode === 400 ? "Invalid question payload" : "Failed to import questions";
-      return reply.code(statusCode).send({ success: false, error: errorMessage });
-    }
-  });
+      return reply.send({
+        success: true,
+        data: {
+          requested: questions.length,
+          inserted: insertedCount,
+          failedCount: failed.length,
+          failed,
+        },
+      });
+    });
 }

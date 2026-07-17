@@ -1,5 +1,4 @@
 /* scripts/make-assets.cjs */
-/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");

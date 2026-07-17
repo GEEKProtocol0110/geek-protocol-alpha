@@ -6,6 +6,8 @@ import Link from "next/link";
 import { startQuiz, submitQuiz, type StartQuizResponse } from "@/lib/api";
 import { mvpQuestions as questionBank, type Question as LocalQuestion } from "@/lib/questions";
 import { useWallet } from "@/components/WalletProvider";
+import { SfxToggle } from "@/components/SfxToggle";
+import { playSfx } from "@/lib/sfx";
 
 type Choice = { id: string; text: string };
 type Q = {
@@ -92,6 +94,7 @@ export default function PlayClient() {
       setQuestionSecondsLeft((s) => {
         const next = s - 1;
         if (next <= 0) return 0;
+        if (next <= 5) playSfx("tick");
         return next;
       });
     }, 1000);
@@ -135,6 +138,7 @@ export default function PlayClient() {
   }, [questionSecondsLeft, phase]);
 
   function startRun() {
+    playSfx("start");
     setPhase("run");
     setIdx(0);
     setSelectedId(null);
@@ -179,11 +183,13 @@ export default function PlayClient() {
     (async () => {
       try {
         const resp = await submitQuiz(attemptId, attemptToken, answers);
+        playSfx("fanfare", { success: resp.scorePct >= 60 });
         router.push(
           `/result?correct=${resp.score}&total=${total}&score=${resp.scorePct}&time=${resp.timeSeconds}&attempt=${attemptId}`
         );
       } catch {
         const scorePct = Math.round((correctCount / total) * 100);
+        playSfx("fanfare", { success: scorePct >= 60 });
         router.push(
           `/result?correct=${correctCount}&total=${total}&score=${scorePct}&time=${RUN_SECONDS - secondsLeft}`
         );
@@ -194,6 +200,7 @@ export default function PlayClient() {
   function choose(choiceId: string) {
     if (phase !== "run" || locked) return;
 
+    playSfx("click");
     setSelectedId(choiceId);
     setLocked(true);
     const selectedIdx = Number(choiceId);
@@ -204,6 +211,9 @@ export default function PlayClient() {
     });
     if (current?.answerId && choiceId === current.answerId) {
       setCorrectCount((c) => c + 1);
+      playSfx("correct");
+    } else {
+      playSfx("wrong");
     }
   }
 
@@ -236,9 +246,12 @@ export default function PlayClient() {
       <div className="space-y-6">
         <div className="layer-card flex flex-col gap-6 p-8 md:flex-row md:items-center">
           <div className="flex-1 space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-white/60">
-              <span className="size-2 rounded-full bg-[var(--brand-primary)]" />
-              Geek Gauntlet • Alpha
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-white/60">
+                <span className="size-2 rounded-full bg-[var(--brand-primary)]" />
+                Geek Gauntlet • Alpha
+              </div>
+              <SfxToggle className="bg-white/5 hover:bg-white/10 text-white/70" />
             </div>
             <h1 className="text-3xl font-semibold text-white md:text-4xl">
               {RUN_LENGTH} questions. {RUN_SECONDS} seconds. Earn-mode integrity baked in.
@@ -316,11 +329,12 @@ export default function PlayClient() {
               Question {idx + 1} of {total}
             </h2>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <HudMetric label="Time Left" value={`${secondsLeft}s`} detail="Total run" />
             <HudMetric label="Question" value={`${questionSecondsLeft}s`} detail="Card timer" variant={questionSecondsLeft <= 5 ? "alert" : undefined} />
             <HudMetric label="Correct" value={`${correctCount}`} detail={`${clamp(scorePct, 0, 100)}%`} />
             <HudMetric label="Worker" value={workerAlive === null ? "…" : workerAlive ? "Stable" : "Idle"} detail="Rewards" />
+            <SfxToggle className="bg-white/5 hover:bg-white/10 text-white/70" />
           </div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/10">

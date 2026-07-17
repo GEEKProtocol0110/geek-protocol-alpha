@@ -1,0 +1,58 @@
+{
+  "_help": "Duplicate the objects in 'questions' below to add more. Delete this _help block before uploading if you like - it's ignored either way. Upload this whole file in the Admin > Bulk Add Questions panel, or POST it as-is to /api/admin/questions/bulk.",
+  "_validCategories": [
+    "Video Games",
+    "Sci-Fi & Fantasy",
+    "Movies & TV",
+    "Comics",
+    "Anime & Manga",
+    "Tech & Programming",
+    "History",
+    "Pop Culture"
+  ],
+  "_fieldNotes": {
+    "category": "Must exactly match one of _validCategories above (case-insensitive).",
+    "question": "The question text.",
+    "options": "Exactly 4 distinct answer strings.",
+    "correctIndex": "0-based index into options for the correct answer (0, 1, 2, or 3).",
+    "difficulty": "One of: easy, medium, hard. Defaults to easy if omitted.",
+    "funFact": "Optional - shown to the player after they answer.",
+    "sourceLink": "Optional - URL backing the answer, for fact-checking.",
+    "subtopic": "Optional - finer-grained label within the category.",
+    "tags": "Optional array of free-form tag strings.",
+    "yearReleased": "Optional integer, e.g. for a game/movie/show release year."
+  },
+  "questions": [
+    {
+      "category": "Video Games",
+      "question": "Which studio developed Elden Ring?",
+      "options": ["FromSoftware", "Bethesda", "CD Projekt Red", "Naughty Dog"],
+      "correctIndex": 0,
+      "difficulty": "easy",
+      "funFact": "Elden Ring's world was co-written with fantasy author George R. R. Martin.",
+      "tags": ["RPG", "2020s"],
+      "yearReleased": 2022
+    },
+    {
+      "category": "Sci-Fi & Fantasy",
+      "question": "In 'Dune', what is the name of the giant sandworms' home planet?",
+      "options": ["Arrakis", "Caladan", "Giedi Prime", "Kaitain"],
+      "correctIndex": 0,
+      "difficulty": "medium",
+      "tags": ["Dune", "Books"]
+    },
+    {
+      "category": "Tech & Programming",
+      "question": "What does the acronym 'API' stand for?",
+      "options": [
+        "Application Programming Interface",
+        "Automated Program Integration",
+        "Application Process Instruction",
+        "Advanced Programming Index"
+      ],
+      "correctIndex": 0,
+      "difficulty": "easy",
+      "tags": ["Basics"]
+    }
+  ]
+}

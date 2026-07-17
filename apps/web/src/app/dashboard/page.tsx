@@ -1,126 +1,176 @@
 "use client";
 
-import { LandingFooter } from "@/components/LandingFooter";
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
-export default function DashboardLanding() {
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+
+const THEMES = [
+  "Video Games","Sci-Fi & Fantasy","Movies & TV",
+  "Comics","Anime & Manga","Tech & Programming","History","Pop Culture",
+];
+function getTodayTheme() {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000);
+  return THEMES[dayOfYear % THEMES.length];
+}
+
+const TILE_COLORS = ["var(--brand-primary)", "var(--brand-secondary)", "var(--brand-accent)", "var(--brand-tertiary)", "var(--brand-primary-light)"];
+
+export default function DashboardPage() {
+  const { user, status } = useAuth();
+  const router = useRouter();
+  const todayTheme = getTodayTheme();
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.replace("/auth/login");
+  }, [status, router]);
+
+  useEffect(() => {
+    fetch(`${API}/health`, { credentials: "include" })
+      .then((r) => r.json())
+      .catch(() => null);
+  }, []);
+
+  if (status === "idle" || status === "loading") {
+    return (
+      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return null;
+
+  const xpForLevel = (lvl: number) => lvl * 1000;
+  const xpPct = Math.min(100, Math.round(
+    ((user.xp - xpForLevel(user.level)) / (xpForLevel(user.level + 1) - xpForLevel(user.level))) * 100
+  ));
+
   return (
-    <main className="w-full min-h-screen bg-black text-white">
-      {/* Hero Section with Lore */}
-      <section className="relative overflow-hidden border-b border-purple-500/20">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-cyan-900/20"></div>
-        <div className="relative max-w-6xl mx-auto px-6 py-24">
-          <div className="text-center space-y-6">
-            <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              Welcome, Geek
+    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+      <Navbar />
+
+      <div className="max-w-5xl mx-auto px-4 py-12">
+
+        {/* Welcome */}
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-[var(--text-3)] mb-1">Good to see you!</p>
+            <h1 className="font-extrabold text-4xl text-[var(--text-1)]">
+              Hey, <span className="text-[var(--brand-primary)]">{user.username}</span>
             </h1>
-            <p className="text-2xl md:text-3xl text-purple-200 font-light">
-              Your Knowledge Arsenal
+            <p className="text-sm text-[var(--text-3)] mt-1">
+              Level {user.level} · {user.xp.toLocaleString()} XP · 🔥 {user.currentStreak} day streak
             </p>
-            <div className="h-1 w-32 mx-auto bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"></div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 rounded-full bg-[#2a1a5e] px-4 py-2 text-white font-bold text-sm shadow-[var(--shadow-brand)]">
+            💎 {user.points.toLocaleString()}
           </div>
         </div>
-      </section>
 
-      {/* Lore Section */}
-      <section className="relative py-20 border-b border-purple-500/20">
-        <div className="max-w-5xl mx-auto px-6 space-y-12">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-4xl font-bold text-purple-300">The Legend Begins</h2>
-            <div className="h-1 w-24 mx-auto bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"></div>
+        {/* XP bar */}
+        <div className="soft-card p-5 mb-8">
+          <div className="flex justify-between text-xs font-semibold text-[var(--text-3)] mb-2">
+            <span>LEVEL {user.level}</span>
+            <span>{xpPct}% TO LEVEL {user.level + 1}</span>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Lore Card 1 */}
-            <div className="group relative bg-gradient-to-br from-purple-950/50 to-cyan-950/50 p-8 rounded-2xl border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-cyan-500/0 group-hover:from-purple-500/10 group-hover:to-cyan-500/10 rounded-2xl transition-all duration-300"></div>
-              <div className="relative space-y-4">
-                <div className="text-4xl mb-4">⚡</div>
-                <h3 className="text-2xl font-bold text-purple-300">The Awakening</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  In the digital age, knowledge became fragmented—scattered across endless feeds, buried in noise. 
-                  But the wise knew: true power lies not in what you scroll, but in what you <span className="text-purple-400 font-semibold">master</span>.
-                </p>
-                <p className="text-gray-400 italic text-sm">
-                  "The first Geeks emerged not from schools, but from late-night wikis, from speedruns, from Easter eggs hidden in forgotten code."
-                </p>
-              </div>
-            </div>
-
-            {/* Lore Card 2 */}
-            <div className="group relative bg-gradient-to-br from-pink-950/50 to-purple-950/50 p-8 rounded-2xl border border-pink-500/20 hover:border-pink-400/40 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/0 to-purple-500/0 group-hover:from-pink-500/10 group-hover:to-purple-500/10 rounded-2xl transition-all duration-300"></div>
-              <div className="relative space-y-4">
-                <div className="text-4xl mb-4">🎮</div>
-                <h3 className="text-2xl font-bold text-pink-300">The Gauntlet</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Legends speak of the <span className="text-pink-400 font-semibold">Geek Gauntlet</span>—ten trials of wit, 
-                  where only those who truly know can claim their reward. Each category a realm, each question a boss fight.
-                </p>
-                <p className="text-gray-400 italic text-sm">
-                  "Speed matters. Accuracy is king. But wisdom? Wisdom is what separates the casual from the legendary."
-                </p>
-              </div>
-            </div>
-
-            {/* Lore Card 3 */}
-            <div className="group relative bg-gradient-to-br from-cyan-950/50 to-blue-950/50 p-8 rounded-2xl border border-cyan-500/20 hover:border-cyan-400/40 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-blue-500/0 group-hover:from-cyan-500/10 group-hover:to-blue-500/10 rounded-2xl transition-all duration-300"></div>
-              <div className="relative space-y-4">
-                <div className="text-4xl mb-4">💎</div>
-                <h3 className="text-2xl font-bold text-cyan-300">The Protocol</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Built on Kaspa's lightning foundation, the <span className="text-cyan-400 font-semibold">Geek Protocol</span> transforms 
-                  neurons into tokens. Your mind becomes your treasury. Your knowledge, liquid.
-                </p>
-                <p className="text-gray-400 italic text-sm">
-                  "In the old world, you studied for grades. In the new world, you earn while you master the lore."
-                </p>
-              </div>
-            </div>
-
-            {/* Lore Card 4 */}
-            <div className="group relative bg-gradient-to-br from-purple-950/50 to-pink-950/50 p-8 rounded-2xl border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10 rounded-2xl transition-all duration-300"></div>
-              <div className="relative space-y-4">
-                <div className="text-4xl mb-4">🏆</div>
-                <h3 className="text-2xl font-bold text-purple-300">Your Legacy</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Every correct answer writes your name in the ledger. Every streak builds your legend. 
-                  The <span className="text-purple-400 font-semibold">leaderboard</span> remembers. The blockchain never forgets.
-                </p>
-                <p className="text-gray-400 italic text-sm">
-                  "They say the top Geeks don't just play for rewards—they play for immortality. Their scores,永遠に eternal."
-                </p>
-              </div>
-            </div>
+          <div className="h-2.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+            <div className="h-full rounded-full bg-[var(--brand-secondary)] transition-all" style={{ width: `${xpPct}%` }} />
           </div>
+        </div>
 
-          {/* Quote Section */}
-          <div className="mt-16 text-center space-y-6 p-12 bg-gradient-to-r from-purple-900/20 via-pink-900/20 to-cyan-900/20 rounded-3xl border border-purple-500/30">
-            <div className="text-6xl mb-4">🌟</div>
-            <blockquote className="text-2xl md:text-3xl font-light text-purple-200 leading-relaxed">
-              "In the age of information,<br />
-              <span className="text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text font-semibold">
-                knowledge is the only true currency.
-              </span>"
-            </blockquote>
-            <p className="text-cyan-400 text-sm tracking-widest uppercase">— The Geek Manifesto</p>
-          </div>
+        {/* Daily Quiz — Hero CTA */}
+        <div className="relative rounded-3xl bg-[var(--brand-accent)] border-[3px] border-[var(--ink)] p-8 mb-8 overflow-hidden shadow-[var(--shadow-soft)]">
+          <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/15" aria-hidden />
+          <div className="absolute right-16 bottom-0 w-20 h-20 rounded-full bg-white/10" aria-hidden />
 
-          {/* CTA */}
-          <div className="text-center pt-12">
-            <a
-              href="/play"
-              className="inline-block px-12 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xl font-bold rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 hover:scale-105"
+          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <div className="text-xs font-bold tracking-wide text-white/80 mb-2 uppercase">
+                Today · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+              </div>
+              <h2 className="font-extrabold text-4xl text-white mb-1">Daily Quiz</h2>
+              <div className="font-bold text-xl text-white/90 mb-3">Theme: {todayTheme}</div>
+              <div className="flex flex-wrap gap-3 text-xs text-white/80 font-semibold">
+                <span>10 Questions</span>
+                <span>·</span>
+                <span>15s per question</span>
+                <span>·</span>
+                <span>Speed + combo bonuses</span>
+              </div>
+            </div>
+            <Link
+              href="/quiz/daily"
+              className="pill-btn pill-btn-white shrink-0 text-lg px-8 py-3"
             >
-              Enter the Gauntlet
-            </a>
-            <p className="mt-4 text-gray-400 text-sm">Your legend awaits.</p>
+              Play Now →
+            </Link>
           </div>
         </div>
-      </section>
 
-      <LandingFooter />
-    </main>
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: "Points",       value: user.points.toLocaleString(), color: "var(--brand-primary)" },
+            { label: "$GEEK Balance", value: user.geekBalance.toFixed(2), color: "var(--brand-secondary)" },
+            { label: "Streak",       value: `${user.currentStreak}🔥`, color: "var(--brand-accent)" },
+            { label: "Multiplier",   value: `×${user.streakBonusMultiplier.toFixed(2)}`, color: "var(--brand-tertiary)" },
+          ].map((s) => (
+            <div key={s.label} className="stat-tile p-5" style={{ background: s.color }}>
+              <div className="text-[11px] tracking-wide text-white/80 uppercase mb-1 font-semibold">{s.label}</div>
+              <div className="font-extrabold text-2xl text-white">{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick links */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { href: "/leaderboard",  label: "Leaderboard", icon: "🏆", desc: "See global rankings" },
+            { href: "/profile",     label: "Profile",     icon: "👤", desc: "Your stats & achievements" },
+            { href: "/gauntlet/setup", label: "Gauntlet", icon: "⚔️",  desc: "Full 10-round competitive run" },
+            { href: "/token",        label: "$GEEK Market", icon: "💱", desc: "Buy, sell & trade tokens" },
+            { href: "/cce",         label: "CCE",         icon: "✍️", desc: user.level >= 10 ? "Create & review questions" : `Unlocks at Level 10 (you: ${user.level})` },
+          ].map((l, i) => (
+            <Link key={l.href} href={l.href} className="soft-card p-5 transition hover:-translate-y-0.5 group">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl mb-3"
+                style={{ background: TILE_COLORS[i % TILE_COLORS.length] }}
+              >
+                {l.icon}
+              </div>
+              <div className="font-extrabold text-lg text-[var(--text-1)] group-hover:text-[var(--brand-primary)] transition">{l.label}</div>
+              <div className="text-xs text-[var(--text-3)] mt-1">{l.desc}</div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Character affinities */}
+        <div className="soft-card p-6">
+          <div className="text-xs font-bold tracking-wide text-[var(--text-3)] uppercase mb-4">Character Affinities</div>
+          <div className="space-y-4">
+            {[
+              { name: "GIGA", value: user.characterAffinityGiga, color: "var(--brand-accent)", icon: "🤖" },
+              { name: "A.C.E", value: user.characterAffinityAce, color: "var(--brand-primary)", icon: "🧠" },
+            ].map((c) => (
+              <div key={c.name}>
+                <div className="flex justify-between text-xs font-semibold mb-1">
+                  <span className="text-[var(--text-2)]">{c.icon} {c.name}</span>
+                  <span className="text-[var(--text-3)]">{Math.round(c.value)}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${c.value}%`, background: c.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
   );
 }

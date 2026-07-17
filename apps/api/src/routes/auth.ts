@@ -1,177 +1,277 @@
 import { FastifyInstance } from "fastify";
-import { SignJWT, jwtVerify } from "jose";
-import { NonceResponseSchema, VerifySignatureSchema } from "@geek/shared";
-import { logger } from "../lib/logger";
-import { verifyKasWareSignature } from "../lib/kasware";
-import { getJwtSecret, SESSION_COOKIE_NAME } from "../lib/jwt";
+import { z } from "zod";
+import { SignJWT } from "jose";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { logger } from "../lib/logger";
+import { verifyKaspaSignature } from "../lib/kasware";
+import { generateKaspaWallet } from "../lib/kaspa";
+import { encryptPrivateKey } from "../lib/security";
 
-const JWT_SECRET = getJwtSecret();
+const SECRET_KEY = new TextEncoder().encode(
+  process.env.SECRET_KEY || "dev-secret-key-change-in-production"
+);
 
-export async function authRoutes(fastify: FastifyInstance) {
-  // Generate nonce
-  fastify.post<{ Body: unknown }>("/nonce", async (request, reply) => {
-    try {
-      const nonce = crypto.randomBytes(32).toString("hex");
-      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+const COOKIE_NAME = "gp_session";
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? ("strict" as const) : ("lax" as const),
+  maxAge: 7 * 24 * 60 * 60,
+  path: "/",
+};
 
-      // Store nonce in Redis with TTL
-      await fastify.redis.setex(
-        `nonce:${nonce}`,
-        600, // 10 minutes in seconds
-        JSON.stringify({ used: false, expiresAt })
-      );
+// ── Zod schemas ──────────────────────────────────────────────────────────────
 
-      const response = NonceResponseSchema.parse({
-        nonce,
-        expiresAt,
-      });
+const RegisterSchema = z.object({
+  username: z
+    .string()
+    .min(3)
+    .max(50)
+    .regex(/^[a-zA-Z0-9_-]+$/, "Only letters, numbers, underscores and hyphens"),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
 
-      return reply.send({ success: true, data: response });
-    } catch (err) {
-      logger.error(err, "Failed to generate nonce");
-      return reply.code(500).send({ success: false, error: "Failed to generate nonce" });
+const LoginSchema = z.object({
+  email: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string(),
+});
+
+const WalletLoginSchema = z.object({
+  walletAddress: z.string(),
+  message: z.string(),
+  signature: z.string(),
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function publicUser(user: Record<string, unknown>) {
+  const { passwordHash, ...pub } = user;
+  void passwordHash;
+  return pub;
+}
+
+async function issueSession(fastify: FastifyInstance, userId: number) {
+  const user = await fastify.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+  const token = await new SignJWT({
+    userId: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    isAdmin: user.isAdmin,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("7d")
+    .sign(SECRET_KEY);
+
+  return { user, token };
+}
+
+async function updateStreak(fastify: FastifyInstance, userId: number) {
+  const user = await fastify.prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+
+  const now = new Date();
+  const last = user.lastLoginDate;
+  let streak = user.currentStreak;
+
+  if (last) {
+    const diffDays = Math.floor((now.getTime() - last.getTime()) / 86_400_000);
+    if (diffDays === 1) {
+      streak += 1;
+    } else if (diffDays > 1) {
+      streak = 1;
     }
-  });
+  } else {
+    streak = 1;
+  }
 
-  // Verify signature and issue session
-  fastify.post<{ Body: unknown }>("/verify", async (request, reply) => {
-    try {
-      const body = VerifySignatureSchema.parse(request.body);
-      const { walletAddress, signature, nonce } = body;
-
-      // Check nonce validity
-      const nonceData = await fastify.redis.get(`nonce:${nonce}`);
-      if (!nonceData) {
-        return reply.code(400).send({
-          success: false,
-          error: "Invalid or expired nonce",
-        });
-      }
-
-      const parsed = JSON.parse(nonceData);
-      if (parsed.used) {
-        return reply.code(400).send({
-          success: false,
-          error: "Nonce already used",
-        });
-      }
-
-      // Verify signature with KasWare
-      const isValidSignature = verifyKasWareSignature(nonce, signature, walletAddress);
-      if (!isValidSignature) {
-        return reply.code(401).send({
-          success: false,
-          error: "Invalid signature",
-        });
-      }
-
-      await fastify.redis.setex(`nonce:${nonce}`, 600, JSON.stringify({ used: true }));
-
-      // Get or create user
-      let user = await fastify.prisma.user.findUnique({
-        where: { walletAddress },
-      });
-
-      if (!user) {
-        user = await fastify.prisma.user.create({
-          data: { walletAddress },
-        });
-      }
-
-      // Issue JWT
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-      const token = await new SignJWT({
-        userId: user.id,
-        walletAddress: user.walletAddress,
-      })
-        .setProtectedHeader({ alg: "HS256" })
-        .setIssuedAt()
-        .setExpirationTime(expiresAt)
-        .sign(JWT_SECRET);
-
-      return reply
-        .cookie(SESSION_COOKIE_NAME, token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 7 * 24 * 60 * 60, // 7 days
-        })
-        .send({
-          success: true,
-          data: {
-            userId: user.id,
-            walletAddress: user.walletAddress,
-            token,
-          },
-        });
-    } catch (err) {
-      logger.error(err, "Failed to verify signature");
-      return reply.code(400).send({
-        success: false,
-        error: "Invalid request or signature verification failed",
-      });
-    }
-  });
-
-  // Get current user profile
-  fastify.get<{ Body: unknown }>("/me", async (request, reply) => {
-    try {
-      const token =
-        request.cookies[SESSION_COOKIE_NAME] || extractBearerToken(request.headers.authorization);
-      if (!token) {
-        return reply.code(401).send({
-          success: false,
-          error: "No session token",
-        });
-      }
-
-      const verified = await jwtVerify(token, JWT_SECRET);
-      const userId = verified.payload.userId as string;
-
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        return reply.code(404).send({
-          success: false,
-          error: "User not found",
-        });
-      }
-
-      return reply.send({
-        success: true,
-        data: {
-          id: user.id,
-          walletAddress: user.walletAddress,
-          xp: user.xp,
-          level: user.level,
-          streak: user.streak,
-        },
-      });
-    } catch (err) {
-      logger.error(err, "Failed to get user profile");
-      return reply.code(401).send({
-        success: false,
-        error: "Invalid or expired session",
-      });
-    }
-  });
-
-  // Logout
-  fastify.post<{ Body: unknown }>("/logout", async (request, reply) => {
-    return reply
-      .clearCookie(SESSION_COOKIE_NAME)
-      .send({ success: true, data: { message: "Logged out" } });
+  await fastify.prisma.user.update({
+    where: { id: userId },
+    data: {
+      currentStreak: streak,
+      longestStreak: Math.max(streak, user.longestStreak),
+      lastLoginDate: now,
+      streakBonusMultiplier: Math.min(2.0, 1.0 + streak * 0.1),
+    },
   });
 }
 
-function extractBearerToken(authHeader?: string): string | null {
-  if (!authHeader) return null;
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") return null;
-  return parts[1];
+// ── Route plugin ──────────────────────────────────────────────────────────────
+
+export async function authRoutes(fastify: FastifyInstance) {
+  // POST /api/auth/register
+  fastify.post("/register", async (req, reply) => {
+    const parse = RegisterSchema.safeParse(req.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: parse.error.flatten() });
+    }
+    const { username, email, password } = parse.data;
+
+    const existing = await fastify.prisma.user.findFirst({
+      where: { OR: [{ username }, { email }] },
+      select: { username: true, email: true },
+    });
+
+    if (existing) {
+      const field = existing.email === email ? "email" : "username";
+      return reply.code(409).send({ error: `${field} already taken` });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    // Generate custodial wallet
+    const { address, privateKey } = await generateKaspaWallet();
+    const encryptedPrivKey = encryptPrivateKey(privateKey);
+
+    const totalUsers = await fastify.prisma.user.count();
+    const isFirst = totalUsers === 0;
+
+    const user = await fastify.prisma.user.create({
+      data: {
+        username,
+        email,
+        passwordHash,
+        walletAddress: address,
+        encryptedPrivKey,
+        role: isFirst ? "admin" : "player",
+        isAdmin: isFirst,
+      },
+    });
+
+    return reply.code(201).send({ data: publicUser(user as unknown as Record<string, unknown>) });
+  });
+
+  // POST /api/auth/login
+  fastify.post("/login", async (req, reply) => {
+    const parse = LoginSchema.safeParse(req.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: parse.error.flatten() });
+    }
+    const { email, username, password } = parse.data;
+
+    if (!email && !username) {
+      return reply.code(400).send({ error: "email or username required" });
+    }
+
+    const user = await fastify.prisma.user.findFirst({
+      where: email ? { email } : { username },
+    });
+
+    const validPassword =
+      user && (await bcrypt.compare(password, user.passwordHash));
+
+    if (!user || !validPassword) {
+      return reply.code(401).send({ error: "Invalid credentials" });
+    }
+
+    await updateStreak(fastify, user.id);
+    const { user: fresh, token } = await issueSession(fastify, user.id);
+
+    return reply
+      .cookie(COOKIE_NAME, token, COOKIE_OPTS)
+      .send({ data: { ...publicUser(fresh as unknown as Record<string, unknown>), token } });
+  });
+
+  // POST /api/auth/wallet-login
+  fastify.post("/wallet-login", async (req, reply) => {
+    const parse = WalletLoginSchema.safeParse(req.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: parse.error.flatten() });
+    }
+    const { walletAddress, message, signature } = parse.data;
+
+    // Validate message format: "Geek Protocol Login\n<address>\n<timestamp>"
+    const msgRegex = /^Geek Protocol Login\n(.+)\n(\d+)$/;
+    const match = message.match(msgRegex);
+    if (!match || match[1] !== walletAddress) {
+      return reply.code(400).send({ error: "Invalid message format" });
+    }
+
+    const timestamp = parseInt(match[2], 10);
+    const ageSec = (Date.now() - timestamp) / 1000;
+    if (ageSec < 0 || ageSec > 300) {
+      return reply.code(400).send({ error: "Message timestamp expired (5 min window)" });
+    }
+
+    const valid = await verifyKaspaSignature(walletAddress, message, signature);
+    if (!valid) {
+      return reply.code(401).send({ error: "Invalid wallet signature" });
+    }
+
+    let user = await fastify.prisma.user.findFirst({ where: { walletAddress } });
+
+    if (!user) {
+      const prefix = walletAddress.slice(-8);
+      const username = `kaspa_${prefix}`;
+      const email = `${prefix}@wallet.geekprotocol.local`;
+      const randomPw = crypto.randomBytes(32).toString("hex");
+      const passwordHash = await bcrypt.hash(randomPw, 12);
+
+      const totalUsers = await fastify.prisma.user.count();
+      user = await fastify.prisma.user.create({
+        data: {
+          username,
+          email,
+          passwordHash,
+          walletAddress,
+          role: totalUsers === 0 ? "admin" : "player",
+          isAdmin: totalUsers === 0,
+        },
+      });
+    }
+
+    await updateStreak(fastify, user.id);
+    const { user: fresh, token } = await issueSession(fastify, user.id);
+
+    return reply
+      .cookie(COOKIE_NAME, token, COOKIE_OPTS)
+      .send({ data: { ...publicUser(fresh as unknown as Record<string, unknown>), token } });
+  });
+
+  // POST /api/auth/logout
+  fastify.post("/logout", async (_req, reply) => {
+    return reply.clearCookie(COOKIE_NAME).code(200).send({ message: "Logged out" });
+  });
+
+  // GET /api/auth/me
+  fastify.get(
+    "/me",
+    { preHandler: fastify.authenticate },
+    async (req, reply) => {
+      const userId = req.jwtUser!.userId;
+
+      const user = await fastify.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        return reply.code(404).send({ error: "User not found" });
+      }
+
+      const xpForLevel = (lvl: number) => lvl * 1000;
+      const currentLevelXp = xpForLevel(user.level);
+      const nextLevelXp = xpForLevel(user.level + 1);
+      const xpProgress = Math.min(
+        100,
+        Math.round(((user.xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100)
+      );
+
+      logger.info({ userId }, "GET /me");
+
+      return reply.send({
+        data: {
+          ...publicUser(user as unknown as Record<string, unknown>),
+          levelStage: `Level ${user.level}`,
+          xpProgress,
+          streakMultiplier: user.streakBonusMultiplier,
+          characterAffinities: {
+            GIGA: user.characterAffinityGiga,
+            ACE: user.characterAffinityAce,
+          },
+        },
+      });
+    }
+  );
 }

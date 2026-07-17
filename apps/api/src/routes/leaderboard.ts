@@ -1,86 +1,81 @@
 import { FastifyInstance } from "fastify";
-import { LeaderboardQuerySchema, LeaderboardUserParamsSchema } from "@geek/shared";
 
 export async function leaderboardRoutes(fastify: FastifyInstance) {
-  // Get top leaderboard by XP
-  fastify.get<{ Querystring: { limit?: string } }>("/top", async (request, reply) => {
-    try {
-      const { limit } = LeaderboardQuerySchema.parse(request.query);
+  // GET /api/leaderboard/top?limit=50&sort=xp|points|streak
+  fastify.get<{ Querystring: { limit?: string; sort?: string } }>("/top", async (request, reply) => {
+    const limit = Math.min(parseInt(request.query.limit ?? "50", 10) || 50, 100);
+    const sort = ["xp", "points", "currentStreak"].includes(request.query.sort ?? "")
+      ? (request.query.sort as "xp" | "points" | "currentStreak")
+      : "xp";
 
-      const users = await fastify.prisma.user.findMany({
-        orderBy: { xp: "desc" },
-        take: limit,
-        select: {
-          id: true,
-          walletAddress: true,
-          xp: true,
-          level: true,
-          streak: true,
-          createdAt: true,
-        },
-      });
+    const users = await fastify.prisma.user.findMany({
+      orderBy: { [sort]: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        username: true,
+        walletAddress: true,
+        xp: true,
+        level: true,
+        points: true,
+        currentStreak: true,
+        geekBalance: true,
+        favoriteCharacter: true,
+        dateCreated: true,
+      },
+    });
 
-      // Add rank
-      const withRank = users.map((user, idx) => ({
-        ...user,
-        rank: idx + 1,
-      }));
-
-      return reply.send({ success: true, data: withRank });
-    } catch (err) {
-      request.log.error({ err }, "leaderboard.top_failed");
-      return reply.code(500).send({ success: false, error: "Failed to fetch leaderboard" });
-    }
+    return reply.send({
+      success: true,
+      data: users.map((u, i) => ({ ...u, rank: i + 1 })),
+      updatedAt: new Date().toISOString(),
+    });
   });
 
-  // Get single user stats
+  // GET /api/leaderboard/user/:userId
   fastify.get<{ Params: { userId: string } }>("/user/:userId", async (request, reply) => {
-    try {
-      const { userId } = LeaderboardUserParamsSchema.parse(request.params);
+    const userId = parseInt(request.params.userId, 10);
+    if (isNaN(userId)) return reply.code(400).send({ error: "Invalid userId" });
 
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          attempts: {
-            select: {
-              id: true,
-              score: true,
-              scorePct: true,
-              category: true,
-              createdAt: true,
-            },
-            orderBy: { createdAt: "desc" },
-            take: 10,
-          },
+    const user = await fastify.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        walletAddress: true,
+        xp: true,
+        level: true,
+        points: true,
+        currentStreak: true,
+        longestStreak: true,
+        geekBalance: true,
+        favoriteCharacter: true,
+        dateCreated: true,
+        attempts: {
+          select: { isCorrect: true, dateAttempted: true },
+          orderBy: { dateAttempted: "desc" },
+          take: 100,
         },
-      });
+      },
+    });
 
-      if (!user) {
-        return reply.code(404).send({ success: false, error: "User not found" });
-      }
+    if (!user) return reply.code(404).send({ error: "User not found" });
 
-      // Calculate stats
-      const totalAttempts = user.attempts.length;
-      const totalScore = user.attempts.reduce((sum, a) => sum + a.score, 0);
-      const avgScore = totalAttempts > 0 ? totalScore / totalAttempts : 0;
+    const totalAttempts = user.attempts.length;
+    const correct = user.attempts.filter((a) => a.isCorrect).length;
 
-      return reply.send({
-        success: true,
-        data: {
-          id: user.id,
-          walletAddress: user.walletAddress,
-          xp: user.xp,
-          level: user.level,
-          streak: user.streak,
-          totalAttempts,
-          avgScore: Math.round(avgScore * 100) / 100,
-          recentAttempts: user.attempts,
-          createdAt: user.createdAt,
-        },
-      });
-    } catch (err) {
-      request.log.error({ err }, "leaderboard.user_summary_failed");
-      return reply.code(500).send({ success: false, error: "Failed to fetch user stats" });
-    }
+    // Get rank by XP
+    const rank = await fastify.prisma.user.count({ where: { xp: { gt: user.xp } } });
+
+    const { attempts, ...rest } = user;
+    return reply.send({
+      success: true,
+      data: {
+        ...rest,
+        rank: rank + 1,
+        totalAttempts,
+        accuracy: totalAttempts > 0 ? Math.round((correct / totalAttempts) * 100) : 0,
+      },
+    });
   });
 }

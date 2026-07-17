@@ -1,770 +1,1167 @@
-import Link from "next/link";
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import { GigaMascot, AceMascot } from '@/components/GeekMascots';
+import { WavyDivider } from '@/components/WavyDivider';
+import { Marquee } from '@/components/Marquee';
+import { useScrollProgress, useCountUp, useParallax, useTilt, useMagnetic } from '@/lib/scrollFx';
+import {
+  FaGamepad,
+  FaCoins,
+  FaChartLine,
+  FaLock,
+  FaClock,
+  FaGlobe,
+  FaLightbulb,
+  FaBullseye,
+  FaBolt,
+  FaStar,
+  FaWallet,
+  FaTrophy,
+  FaBrain,
+  FaRocket,
+  FaUsers,
+  FaGithub,
+  FaTwitter,
+  FaTelegram,
+  FaLink,
+  FaBook,
+  FaCog,
+  FaUser,
+  FaExternalLinkAlt
+} from 'react-icons/fa';
+const SiKaspa = FaGlobe;
 
-const FLOW_STEPS = [
+const HOW_IT_WORKS = [
   {
-    number: "1",
-    title: "Connect Wallet",
-    description: "Link your Kaspa wallet with one click. No passwords, no security risks.",
-    icon: "🔗"
+    icon: FaWallet,
+    tile: "#eee6ff",
+    title: "Connect",
+    description: "Link your Kaspa wallet in one click. No passwords, no signups, no central database holding your data.",
   },
   {
-    number: "2",
-    title: "Enter The Gauntlet",
-    description: "Face 10 rapid-fire questions across any category. 15 seconds per question.",
-    icon: "🎮"
+    icon: FaGamepad,
+    tile: "#ffe3b0",
+    title: "Play",
+    description: "Face 10 rapid-fire questions across any of 8 categories. 15 seconds each. Server-side scoring keeps it fair.",
   },
   {
-    number: "3",
-    title: "Prove Your Knowledge",
-    description: "Answer correctly. Beat the clock. Show the world your expertise.",
-    icon: "🧠"
+    icon: FaCoins,
+    tile: "#d4f2e3",
+    title: "Earn",
+    description: "Get paid in $GEEK the moment you finish. Settlement lands on Kaspa in under 6 seconds — no waiting around.",
   },
-  {
-    number: "4",
-    title: "Earn $GEEK",
-    description: "Get rewarded instantly. Sub-6 second settlement. No waiting, no intermediaries.",
-    icon: "💰"
-  },
-  {
-    number: "5",
-    title: "Climb Leaderboards",
-    description: "Build your XP, maintain winning streaks, and compete globally.",
-    icon: "🏆"
-  },
-  {
-    number: "6",
-    title: "Build Reputation",
-    description: "Your on-chain achievements are permanent. Portable. Verifiable.",
-    icon: "⭐"
-  }
-];
-
-const STORY_SECTIONS = [
-  {
-    icon: "�",
-    title: "The Problem",
-    description: "Your knowledge and expertise have value, but there's no simple way to prove what you know and get rewarded for it. Current platforms optimize for engagement, not learning.",
-    highlight: "We needed a better system."
-  },
-  {
-    icon: "⚡",
-    title: "Built on Kaspa",
-    description: "Fast, fair, and decentralized. Kaspa's blockDAG architecture gives us sub-second settlements and low fees—perfect for instant knowledge-based rewards.",
-    highlight: "Speed without compromise."
-  },
-  {
-    icon: "🎮",
-    title: "How It Works",
-    description: "Answer questions correctly under time pressure. Earn $GEEK tokens and XP. Build your on-chain reputation. Compete on global leaderboards. Simple as that.",
-    highlight: "Prove what you know. Get rewarded instantly."
-  }
 ];
 
 const FEATURES = [
   {
-    icon: "🎮",
+    icon: FaGamepad,
     title: "The Gauntlet",
     description: "10 rounds of 10 questions (100 total) with progressing difficulty. 15 seconds each. Server-side validation prevents cheating. Real players, real rewards.",
     details: ["Server-side scoring", "HMAC attempt tokens", "Anti-cheat orchestration"]
   },
   {
-    icon: "💰",
+    icon: FaCoins,
     title: "$GEEK Rewards",
     description: "Native KRC-20 token earned through gameplay. No play-to-earn fatigue. Transparent, auditable payouts via Redis queue.",
     details: ["Redis worker automation", "Sub-6 second settlements", "Wallet-level payouts"]
   },
   {
-    icon: "📊",
+    icon: FaChartLine,
     title: "Live Leaderboards",
     description: "Real-time rankings. Track your XP, win streaks, and performance. Compare globally. Compete fairly.",
     details: ["Instant rank updates", "XP tracking", "Detailed analytics"]
   },
   {
-    icon: "🔐",
+    icon: FaLock,
     title: "Kasware Auth",
     description: "Sign in with your Kaspa wallet. No passwords. No central database. Your identity, your data, your control.",
     details: ["Schnorr signature verification", "Nonce challenges", "JWT sessions"]
   },
   {
-    icon: "⏱️",
+    icon: FaClock,
     title: "Sub-6 Second Settlements",
     description: "Proof of signal hits your wallet faster than you can reload the page. This is instant settlement in practice.",
     details: ["Real-time queue monitoring", "Worker heartbeat tracking", "Instant confirmation"]
   },
   {
-    icon: "🌍",
+    icon: FaGlobe,
     title: "Built on Kaspa",
-    description: "Fastest smart contract blockchain. Sub-second block times. Scalability that doesn&rsquo;t compromise security. This is where it lives.",
+    description: "Fastest smart contract blockchain. Sub-second block times. Scalability that doesn't compromise security. This is where it lives.",
     details: ["KRC-20 integration", "Kaspa wallets", "Fee-efficient payouts"]
   }
 ];
 
 const CATEGORIES = [
-  "🎮 Video Games",
-  "💻 Technology",
-  "🚀 Science Fiction",
-  "🎬 Movies",
-  "📺 Anime",
-  "📚 Comics",
-  "🏛️ History",
-  "🌟 Pop Culture"
+  { icon: FaGamepad, name: "Video Games" },
+  { icon: FaCoins, name: "Technology" },
+  { icon: FaRocket, name: "Science Fiction" },
+  { icon: FaBolt, name: "Movies" },
+  { icon: FaBrain, name: "Anime" },
+  { icon: FaBook, name: "Comics" },
+  { icon: FaGlobe, name: "History" },
+  { icon: FaUsers, name: "Pop Culture" }
 ];
 
-export function StorySection() {
+const IMPACT_ITEMS = [
+  {
+    icon: FaLightbulb,
+    title: "Your Knowledge Has Value",
+    description: "Stop giving away your expertise for free. Every answer you provide proves your knowledge. Every correct response generates real, verifiable signal that gets rewarded immediately.",
+    points: [
+      "Monetize your geek knowledge instantly",
+      "No middleman taking a cut",
+      "Direct rewards to your wallet"
+    ],
+    accent: "cyan"
+  },
+  {
+    icon: FaBullseye,
+    title: "Compete Without Gatekeeping",
+    description: "Leaderboards are global. Competition is fair. Everyone plays by the same rules. Your ranking is determined by skill and speed, not money or connections.",
+    points: [
+      "Fair, transparent ranking system",
+      "Real-time leaderboards show your position",
+      "Compete against geeks worldwide"
+    ],
+    accent: "emerald"
+  },
+  {
+    icon: FaBolt,
+    title: "Instant Rewards, Real Settlement",
+    description: "You don't wait days for your earnings. Rewards settle in under 6 seconds. The blockchain doesn't lie. Your token hits your wallet almost before the game ends.",
+    points: [
+      "Sub-6 second settlement times",
+      "No waiting for manual payouts",
+      "Cryptographically verified rewards"
+    ],
+    accent: "cyan"
+  },
+  {
+    icon: FaStar,
+    title: "Build Your On-Chain Reputation",
+    description: "Every achievement is recorded. Your skill profile is permanent. Your reputation isn't deleted by algorithm changes. It lives on the blockchain—forever.",
+    points: [
+      "Permanent on-chain proof of knowledge",
+      "Portable reputation across platforms",
+      "XP streaks and achievement tracking"
+    ],
+    accent: "emerald"
+  }
+];
+
+const RESOURCES = [
+  {
+    icon: FaRocket,
+    title: "v0.1.0-alpha Release",
+    description: "Our first Alpha release is live! Check out what's new.",
+    href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/releases/tag/v0.1.0-alpha",
+    external: true,
+    status: "Live",
+    featured: true
+  },
+  {
+    icon: FaBook,
+    title: "Changelog",
+    description: "Complete version history and feature updates",
+    href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/CHANGELOG.md",
+    external: true,
+    status: "Live"
+  },
+  {
+    icon: FaCog,
+    title: "Architecture",
+    description: "System design, data flows, and technical diagrams",
+    href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/docs/ARCHITECTURE.md",
+    external: true,
+    status: "Live"
+  },
+  {
+    icon: FaCoins,
+    title: "Grant Proposal",
+    description: "Our Kaspa DAO funding proposal and roadmap",
+    href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/docs/funding/GRANT_PROPOSAL.md",
+    external: true,
+    status: "Live"
+  },
+  {
+    icon: FaBook,
+    title: "Litepaper",
+    description: "Deep technical dive into how Geek Protocol works",
+    href: "/litepaper",
+    status: "Coming Soon"
+  },
+  {
+    icon: FaGithub,
+    title: "GitHub Repository",
+    description: "Open-source code. Full transparency. MIT licensed.",
+    href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha",
+    external: true,
+    status: "Live"
+  },
+  {
+    icon: SiKaspa,
+    title: "Kaspa Official",
+    description: "Learn about the blockchain powering Geek Protocol",
+    href: "https://kaspa.org",
+    external: true,
+    status: "Live"
+  },
+  {
+    icon: FaGamepad,
+    title: "Play the Game",
+    description: "Enter the Geek Gauntlet and start earning",
+    href: "/play",
+    status: "Alpha"
+  },
+  {
+    icon: FaUsers,
+    title: "Community",
+    description: "Join geeks building the future together",
+    href: "https://t.me/GEEKonKAScommunity",
+    external: true,
+    status: "Live"
+  },
+  {
+    icon: FaTwitter,
+    title: "Follow Updates",
+    description: "Stay informed about launches and milestones",
+    href: "https://x.com/geekonkas",
+    external: true,
+    status: "Live"
+  }
+];
+
+const COMING_SOON = [
+  {
+    icon: FaGamepad,
+    title: "Play",
+    description: "Enter the Geek Gauntlet. Prove your knowledge. Earn $GEEK rewards."
+  },
+  {
+    icon: FaChartLine,
+    title: "Dashboard",
+    description: "Track your attempts, XP, and rewards. View your progress and history."
+  },
+  {
+    icon: FaTrophy,
+    title: "Leaderboard",
+    description: "Global rankings updated in real-time. See who's dominating."
+  },
+  {
+    icon: FaUser,
+    title: "Profile",
+    description: "Your personal performance page. Stats, achievements, and history."
+  },
+  {
+    icon: FaBook,
+    title: "Litepaper",
+    description: "Deep dive into the protocol. How it works. Why it matters."
+  },
+  {
+    icon: FaCog,
+    title: "Admin",
+    description: "Operator console. Monitor attempts, rewards, and system health."
+  }
+];
+
+const ROADMAP = [
+  {
+    year: 1,
+    title: "Year 1",
+    subtitle: "2026 – Launch & Traction",
+    items: [
+      { status: "done", text: "Public beta on Kaspa mainnet" },
+      { status: "done", text: "First major live tournament" },
+      { status: "next", text: "Content velocity expansion" },
+      { status: "next", text: "Telegram mini app + Geek Wallet" }
+    ],
+    accent: "cyan"
+  },
+  {
+    year: 3,
+    title: "Year 3",
+    subtitle: "2028 – Expansion",
+    items: [
+      { status: "next", text: "Mobile app (iOS + Android)" },
+      { status: "next", text: "Partner integrations" },
+      { status: "next", text: "IRL presence & events" },
+      { status: "next", text: "DAO + open-sourcing begins" }
+    ],
+    accent: "emerald"
+  },
+  {
+    year: 5,
+    title: "Year 5",
+    subtitle: "2030 – Definitive Hub",
+    items: [
+      { status: "next", text: "Ecosystem hub status" },
+      { status: "next", text: "A.C.E. as a Service licensing" },
+      { status: "next", text: "Launchpad for geek-native projects" },
+      { status: "next", text: "Legacy system complete" }
+    ],
+    accent: "purple"
+  }
+];
+
+const ACCENT_COLORS: Record<string, string> = {
+  cyan: 'var(--brand-primary)',
+  emerald: 'var(--brand-secondary)',
+  purple: 'var(--brand-primary-light)'
+};
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => {
   return (
-    <section className="relative py-24 px-6 bg-black">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-1/3 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[80px]" />
-        <div className="absolute bottom-0 right-1/3 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[80px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl">
-        {/* Story sections */}
-        <div className="mb-24 space-y-8">
-          {STORY_SECTIONS.map((section, idx) => (
-            <div key={idx} className="group grid md:grid-cols-[120px_1fr] gap-6 md:gap-12 items-start p-8 rounded-2xl border border-white/5 hover:border-cyan-500/30 bg-gradient-to-br from-white/2 to-transparent hover:from-cyan-500/5 transition-all duration-500 hover:shadow-[0_0_40px_rgba(34,197,94,0.1)]">
-              <div className="text-5xl md:text-6xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">{section.icon}</div>
-              <div className="space-y-4">
-                <h3 className="text-3xl md:text-5xl font-black text-white group-hover:text-cyan-400 transition-colors duration-300">{section.title}</h3>
-                <p className="text-lg md:text-xl text-white/70 leading-relaxed group-hover:text-white/90 transition-colors">{section.description}</p>
-                <p className="text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">{section.highlight}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* The Core Law & Characters */}
-        <div className="my-24 space-y-12">
-          {/* Core Law */}
-          <div className="p-10 md:p-16 rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 via-emerald-500/5 to-purple-500/10 backdrop-blur-sm relative overflow-hidden group hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_60px_rgba(34,197,94,0.3)]">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-shimmer" />
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 mb-8 relative z-10">All Hope, No Hype</h2>
-            <p className="text-lg text-white/70 leading-relaxed mb-6">
-              This isn&rsquo;t a tagline. It&rsquo;s an operating rule. No empty promises. No manipulation. No artificial scarcity. No click-to-earn deception.
-            </p>
-            <p className="text-lg text-white/70 leading-relaxed mb-6">
-              Only: <span className="text-cyan-400 font-bold">learning → proof → progress → truth</span>
-            </p>
-            <p className="text-lg text-white/70 leading-relaxed">
-              Kaspa gave us a blockchain that actually works. Sub-second blocks. No compromise on decentralization. Geek Protocol mirrors that philosophy. Clear mechanics. Transparent rewards. Real-time settlements. Just a protocol that does what it promises.
-            </p>
-          </div>
-
-          {/* The Foundational Beings */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* GIGA */}
-            <div className="p-8 rounded-2xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 to-transparent hover:border-yellow-400/60 transition-all duration-500 hover:shadow-[0_0_40px_rgba(234,179,8,0.2)]">
-              <div className="text-5xl mb-4">🤖</div>
-              <h3 className="text-3xl font-black text-yellow-400 mb-4">GIGA — The Heart</h3>
-              <p className="text-white/70 leading-relaxed mb-4">
-                The golden, glitchy welcoming force. Optimism, onboarding, identity, and community warmth.
-              </p>
-              <p className="text-yellow-300 italic text-sm">
-                &ldquo;Where systems grow cold, GIGA stays warm.&rdquo;
-              </p>
-            </div>
-
-            {/* A.C.E. */}
-            <div className="p-8 rounded-2xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-transparent hover:border-cyan-400/60 transition-all duration-500 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-              <div className="text-5xl mb-4">🔷</div>
-              <h3 className="text-3xl font-black text-cyan-400 mb-4">A.C.E. — The Mind</h3>
-              <p className="text-white/70 leading-relaxed mb-4">
-                The cold precision. Adjudication, analytics, difficulty, legitimacy, and permanent memory.
-              </p>
-              <p className="text-cyan-300 italic text-sm">
-                &ldquo;Emerged from corrupted trivia files. Haunts the Gauntlet. Adapts to intellect.&rdquo;
-              </p>
-            </div>
-          </div>
-
-          {/* The Prime Directive */}
-          <div className="text-center p-12 rounded-2xl border border-white/20 bg-gradient-to-b from-white/5 to-transparent">
-            <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-purple-400">
-              &ldquo;Rebuild the collective mind. Reward the knowing.&rdquo;
-            </p>
-            <p className="text-white/50 mt-4 text-sm uppercase tracking-wider">The Prime Directive</p>
-          </div>
-        </div>
-
-        {/* Core Features */}
-        <div>
-          <div className="mb-20 text-center">
-            <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">Core Systems</h2>
-            <p className="text-xl md:text-2xl text-white/70 font-light">Built for signal. Designed for scale.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {FEATURES.map((feature, idx) => (
-              <div 
-                key={idx}
-                className="relative p-8 rounded-2xl border border-white/10 hover:border-cyan-500/50 bg-gradient-to-br from-white/5 to-transparent hover:from-cyan-500/10 hover:to-emerald-500/5 transition-all duration-500 group hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)] cursor-pointer"
-              >
-                <div className="text-5xl mb-6 transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{feature.icon}</div>
-                <h3 className="text-2xl font-black text-white group-hover:text-cyan-400 mb-3 transition-colors">{feature.title}</h3>
-                <p className="text-white/70 group-hover:text-white/90 text-base mb-6 leading-relaxed transition-colors">{feature.description}</p>
-                <ul className="space-y-2">
-                  {feature.details.map((detail, didx) => (
-                    <li key={didx} className="flex items-start gap-2 text-xs text-white/60">
-                      <span className="text-cyan-400 font-bold mt-1">•</span>
-                      <span>{detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
+    <div className="flat-badge mb-5">
+      {children}
+    </div>
   );
-}
+};
 
-export function CategoriesSection() {
+type RevealVariant = 'fade-up' | 'fade-left' | 'fade-right' | 'scale' | 'rotate';
+
+const ScrollReveal = ({
+  children,
+  delay = 0,
+  className = '',
+  variant = 'fade-up',
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  variant?: RevealVariant;
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
+
   return (
-    <section className="relative py-24 px-6 bg-gradient-to-b from-black to-[#0a0e27]">
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-20 text-center">
-          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-white mb-6">8 Categories of Knowledge</h2>
-          <p className="text-xl md:text-2xl text-white/70 font-light">Master multiple domains. Earn across disciplines.</p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {CATEGORIES.map((category, idx) => (
-            <div
-              key={idx}
-              className="group p-8 rounded-2xl border border-white/10 hover:border-emerald-400/60 bg-gradient-to-br from-white/5 to-transparent hover:from-emerald-500/10 transition-all duration-500 text-center cursor-pointer hover:scale-105 hover:shadow-[0_0_40px_rgba(20,184,166,0.2)]"
-            >
-              <p className="text-4xl md:text-5xl mb-4 transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{category.split(" ")[0]}</p>
-              <p className="text-white group-hover:text-emerald-400 font-bold text-base transition-colors">{category.substring(2)}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+    <div
+      ref={ref}
+      className={`reveal-${variant} ${isVisible ? 'reveal-in' : 'reveal-pending'} ${className}`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
   );
-}
+};
 
-export function RoadmapSection() {
+/** Pointer-reactive 3D tilt wrapper - flat cards read like sturdy trading cards when tilted. */
+const TiltCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+  const ref = useTilt<HTMLDivElement>(7);
   return (
-    <section className="relative py-24 px-6 bg-black">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[80px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-20 text-center">
-          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">The Ecosystem Arc</h2>
-          <p className="text-xl md:text-2xl text-white/70 font-light">In-world history you&rsquo;re living. Built on hope, not hype.</p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Year 1 */}
-          <div className="p-8 rounded-xl border-2 border-cyan-500/60 bg-gradient-to-br from-cyan-500/10 to-transparent">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-cyan-500 text-black flex items-center justify-center font-bold">1</div>
-              <div>
-                <h3 className="text-2xl font-bold text-white">Year 1</h3>
-                <p className="text-sm text-white/60">2026 – Launch & Traction</p>
-              </div>
-            </div>
-            <ul className="space-y-3 text-white/70 text-sm">
-              <li className="flex gap-2">
-                <span className="text-cyan-400">✓</span> Public beta on Kaspa mainnet
-              </li>
-              <li className="flex gap-2">
-                <span className="text-cyan-400">✓</span> First major live tournament
-              </li>
-              <li className="flex gap-2">
-                <span className="text-cyan-400">→</span> Content velocity expansion
-              </li>
-              <li className="flex gap-2">
-                <span className="text-cyan-400">→</span> Telegram mini app + Geek Wallet
-              </li>
-            </ul>
-          </div>
-
-          {/* Year 3 */}
-          <div className="p-8 rounded-xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-500/5 to-transparent">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full border-2 border-emerald-500/60 text-emerald-400 flex items-center justify-center font-bold">3</div>
-              <div>
-                <h3 className="text-2xl font-bold text-white">Year 3</h3>
-                <p className="text-sm text-white/60">2028 – Expansion</p>
-              </div>
-            </div>
-            <ul className="space-y-3 text-white/70 text-sm">
-              <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> Mobile app (iOS + Android)
-              </li>
-              <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> Partner integrations
-              </li>
-              <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> IRL presence & events
-              </li>
-              <li className="flex gap-2">
-                <span className="text-emerald-400">→</span> DAO + open-sourcing begins
-              </li>
-            </ul>
-          </div>
-
-          {/* Year 5 */}
-          <div className="p-8 rounded-xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-500/5 to-transparent">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full border-2 border-purple-500/60 text-purple-400 flex items-center justify-center font-bold">5</div>
-              <div>
-                <h3 className="text-2xl font-bold text-white">Year 5</h3>
-                <p className="text-sm text-white/60">2030 – Definitive Hub</p>
-              </div>
-            </div>
-            <ul className="space-y-3 text-white/70 text-sm">
-              <li className="flex gap-2">
-                <span className="text-purple-400">→</span> Ecosystem hub status
-              </li>
-              <li className="flex gap-2">
-                <span className="text-purple-400">→</span> A.C.E. as a Service licensing
-              </li>
-              <li className="flex gap-2">
-                <span className="text-purple-400">→</span> Launchpad for geek-native projects
-              </li>
-              <li className="flex gap-2">
-                <span className="text-purple-400">→</span> Legacy system complete
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div ref={ref} className={`tilt-card ${className}`}>
+      {children}
+    </div>
   );
-}
+};
 
-export function NavLinks() {
+/** A number that counts up from 0 once it scrolls into view. */
+const Counter = ({ end, suffix = '', prefix = '' }: { end: number; suffix?: string; prefix?: string }) => {
+  const { ref, formatted } = useCountUp<HTMLSpanElement>(end);
   return (
-    <section className="relative py-24 px-6 bg-gradient-to-b from-[#0a0e27] to-black">
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Coming Soon</h2>
-          <p className="text-lg text-white/60">All features launching in Q1 2026</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
-          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
-            <div className="text-5xl mb-4">🎮</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Play</h3>
-            <p className="text-white/70 mb-4">Enter the Geek Gauntlet. Prove your knowledge. Earn $GEEK rewards.</p>
-            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
-          </div>
-
-          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
-            <div className="text-5xl mb-4">📊</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Dashboard</h3>
-            <p className="text-white/70 mb-4">Track your attempts, XP, and rewards. View your progress and history.</p>
-            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
-          </div>
-
-          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
-            <div className="text-5xl mb-4">🏆</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Leaderboard</h3>
-            <p className="text-white/70 mb-4">Global rankings updated in real-time. See who&rsquo;s dominating.</p>
-            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
-          </div>
-
-          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
-            <div className="text-5xl mb-4">👤</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Profile</h3>
-            <p className="text-white/70 mb-4">Your personal performance page. Stats, achievements, and history.</p>
-            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
-          </div>
-
-          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
-            <div className="text-5xl mb-4">📋</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Litepaper</h3>
-            <p className="text-white/70 mb-4">Deep dive into the protocol. How it works. Why it matters.</p>
-            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
-          </div>
-
-          <div className="p-8 rounded-xl border border-white/10 bg-white/2">
-            <div className="text-5xl mb-4">⚙️</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Admin</h3>
-            <p className="text-white/70 mb-4">Operator console. Monitor attempts, rewards, and system health.</p>
-            <span className="text-white/40 font-semibold text-sm">Coming Soon</span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <span ref={ref}>
+      {prefix}
+      {formatted}
+      {suffix}
+    </span>
   );
-}
+};
 
-export function KaspaHonorSection() {
+/** Anchor that gently follows the cursor within its own bounds - a tasteful magnetic-button feel. */
+const MagneticLink = ({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) => {
+  const ref = useMagnetic<HTMLAnchorElement>(0.25);
   return (
-    <section className="relative py-24 px-6 bg-black border-y border-cyan-500/20">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(34,197,94,0.02)_0%,rgba(20,184,166,0.02)_100%)]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-400 mb-8">Why Kaspa</h2>
-          <p className="text-lg md:text-xl text-white/80 leading-relaxed mb-10">
-            Kaspa isn&rsquo;t the loudest blockchain. It&rsquo;s the fastest. Sub-second blocks without sacrificing decentralization or security. 
-          <br />
-          <br />
-          While others promise, Kaspa delivers. Which is exactly what we needed for a protocol that handles real rewards, real payouts, real stakes. 
-          <br />
-          <br />
-          <span className="text-emerald-400 font-semibold">Geek Protocol exists because Kaspa made it possible.</span>
-        </p>
-
-        <div className="grid md:grid-cols-3 gap-6 mt-12">
-          <div className="p-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
-            <div className="text-4xl mb-3">⚡</div>
-            <h3 className="text-white font-bold mb-2">Sub-Second Blocks</h3>
-            <p className="text-sm text-white/70">Finality in milliseconds, not minutes.</p>
-          </div>
-          <div className="p-6 rounded-lg border border-cyan-500/30 bg-cyan-500/5">
-            <div className="text-4xl mb-3">🔐</div>
-            <h3 className="text-white font-bold mb-2">Secure & Decentralized</h3>
-            <p className="text-sm text-white/70">No compromises on the fundamentals.</p>
-          </div>
-          <div className="p-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
-            <div className="text-4xl mb-3">💰</div>
-            <h3 className="text-white font-bold mb-2">Affordable Fees</h3>
-            <p className="text-sm text-white/70">Rewards aren&rsquo;t swallowed by gas costs.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <a ref={ref} href={href} className={`magnetic-btn ${className ?? ''}`}>
+      {children}
+    </a>
   );
-}
+};
 
-export function ImpactSection() {
-  return (
-    <section className="relative py-24 px-6 bg-gradient-to-b from-black to-[#0a0e27]">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[80px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[80px]" />
-      </div>
+/** Reward-curve line chart that draws itself in once scrolled into view. */
+const AnimatedRewardCurve = () => {
+  const pathRef = useRef<SVGPathElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [drawn, setDrawn] = useState(false);
+  const [length, setLength] = useState(0);
 
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-20 text-center">
-          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-white mb-6">How Geek Protocol Changes Your Life</h2>
-          <p className="text-xl md:text-2xl text-white/70 font-light">Real impact. Measurable rewards. Lasting change.</p>
-        </div>
+  useEffect(() => {
+    if (pathRef.current) setLength(pathRef.current.getTotalLength());
+  }, []);
 
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="p-8 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent">
-            <div className="text-5xl mb-4">💡</div>
-            <h3 className="text-2xl font-bold text-white mb-4">Your Knowledge Has Value</h3>
-            <p className="text-white/70 leading-relaxed mb-4">
-              Stop giving away your expertise for free. Every answer you provide proves your knowledge. Every correct response generates real, verifiable signal that gets rewarded immediately.
-            </p>
-            <ul className="space-y-3 text-white/70">
-              <li className="flex gap-3">
-                <span className="text-cyan-400">✦</span>
-                <span>Monetize your geek knowledge instantly</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-cyan-400">✦</span>
-                <span>No middleman taking a cut</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-cyan-400">✦</span>
-                <span>Direct rewards to your wallet</span>
-              </li>
-            </ul>
-          </div>
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setDrawn(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
 
-          <div className="p-8 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent">
-            <div className="text-5xl mb-4">🎯</div>
-            <h3 className="text-2xl font-bold text-white mb-4">Compete Without Gatekeeping</h3>
-            <p className="text-white/70 leading-relaxed mb-4">
-              Leaderboards are global. Competition is fair. Everyone plays by the same rules. Your ranking is determined by skill and speed, not money or connections.
-            </p>
-            <ul className="space-y-3 text-white/70">
-              <li className="flex gap-3">
-                <span className="text-emerald-400">✦</span>
-                <span>Fair, transparent ranking system</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-emerald-400">✦</span>
-                <span>Real-time leaderboards show your position</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-emerald-400">✦</span>
-                <span>Compete against geeks worldwide</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="p-8 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent">
-            <div className="text-5xl mb-4">⚡</div>
-            <h3 className="text-2xl font-bold text-white mb-4">Instant Rewards, Real Settlement</h3>
-            <p className="text-white/70 leading-relaxed mb-4">
-              You don&rsquo;t wait days for your earnings. Rewards settle in under 6 seconds. The blockchain doesn&rsquo;t lie. Your token hits your wallet almost before the game ends.
-            </p>
-            <ul className="space-y-3 text-white/70">
-              <li className="flex gap-3">
-                <span className="text-cyan-400">✦</span>
-                <span>Sub-6 second settlement times</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-cyan-400">✦</span>
-                <span>No waiting for manual payouts</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-cyan-400">✦</span>
-                <span>Cryptographically verified rewards</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="p-8 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent">
-            <div className="text-5xl mb-4">🌟</div>
-            <h3 className="text-2xl font-bold text-white mb-4">Build Your On-Chain Reputation</h3>
-            <p className="text-white/70 leading-relaxed mb-4">
-              Every achievement is recorded. Your skill profile is permanent. Your reputation isn&rsquo;t deleted by algorithm changes. It lives on the blockchain—forever.
-            </p>
-            <ul className="space-y-3 text-white/70">
-              <li className="flex gap-3">
-                <span className="text-emerald-400">✦</span>
-                <span>Permanent on-chain proof of knowledge</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-emerald-400">✦</span>
-                <span>Portable reputation across platforms</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-emerald-400">✦</span>
-                <span>XP streaks and achievement tracking</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function ResourcesSection() {
-  const resources = [
-    {
-      icon: "📖",
-      title: "Litepaper",
-      description: "Deep technical dive into how Geek Protocol works",
-      href: "/litepaper",
-      status: "Coming Soon"
-    },
-    {
-      icon: "🔗",
-      title: "Kaspa Official",
-      description: "Learn about the blockchain powering Geek Protocol",
-      href: "https://kaspa.org",
-      external: true,
-      status: "Live"
-    },
-    {
-      icon: "💻",
-      title: "GitHub Repository",
-      description: "Open-source code. Full transparency.",
-      href: "https://github.com/GEEKProtocol0110/geek-protocol-alpha",
-      external: true,
-      status: "Live"
-    },
-    {
-      icon: "🎮",
-      title: "Play the Game",
-      description: "Enter the Geek Gauntlet and start earning",
-      href: "/play",
-      status: "Coming Soon"
-    },
-    {
-      icon: "👥",
-      title: "Community",
-      description: "Join geeks building the future together",
-      href: "https://t.me/GEEKonKAScommunity",
-      external: true,
-      status: "Live"
-    },
-    {
-      icon: "🐦",
-      title: "Follow Updates",
-      description: "Stay informed about launches and milestones",
-      href: "https://x.com/geekonkas",
-      external: true,
-      status: "Live"
-    }
+  const points = [
+    { x: 60, y: 26 }, { x: 100, y: 48 }, { x: 140, y: 68 }, { x: 180, y: 84 },
+    { x: 220, y: 60 }, { x: 260, y: 42 }, { x: 300, y: 30 }, { x: 340, y: 22 }, { x: 380, y: 20 },
   ];
 
   return (
-    <section className="relative py-24 px-6 bg-black">
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-20 text-center">
-          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">Resources & Links</h2>
-          <p className="text-xl md:text-2xl text-white/70 font-light">Everything you need to understand and join Geek Protocol</p>
+    <div ref={containerRef} className="h-[150px] w-full">
+      <svg className="w-full h-full" viewBox="0 0 400 150" preserveAspectRatio="none">
+        <line x1="20" y1="20" x2="20" y2="130" stroke="rgba(26,26,46,0.12)" strokeWidth="1" />
+        <line x1="20" y1="130" x2="380" y2="130" stroke="rgba(26,26,46,0.12)" strokeWidth="1" />
+        {[0, 1, 2, 3, 4].map((i) => {
+          const y = 20 + i * 27.5;
+          return <line key={i} x1="20" y1={y} x2="380" y2={y} stroke="rgba(26,26,46,0.06)" strokeWidth="0.5" />;
+        })}
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => {
+          const x = 20 + i * 40;
+          return <line key={i} x1={x} y1="20" x2={x} y2="130" stroke="rgba(26,26,46,0.06)" strokeWidth="0.5" />;
+        })}
+        <path
+          d="M20,130 L60,26 L100,48 L140,68 L180,84 L220,60 L260,42 L300,30 L340,22 L380,20 L380,130 L20,130 Z"
+          fill="rgba(108,62,245,0.08)"
+          style={{ opacity: drawn ? 1 : 0, transition: 'opacity 1s ease 0.8s' }}
+        />
+        <path
+          ref={pathRef}
+          d="M20,130 L60,26 L100,48 L140,68 L180,84 L220,60 L260,42 L300,30 L340,22 L380,20"
+          fill="none"
+          stroke="#6c3ef5"
+          strokeWidth="2.5"
+          style={
+            length
+              ? {
+                  strokeDasharray: length,
+                  strokeDashoffset: drawn ? 0 : length,
+                  transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                }
+              : undefined
+          }
+        />
+        {points.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="3.5"
+            fill="#f04e3e"
+            style={{
+              opacity: drawn ? 1 : 0,
+              transform: drawn ? 'scale(1)' : 'scale(0)',
+              transformOrigin: `${p.x}px ${p.y}px`,
+              transition: `opacity 0.3s ease ${0.2 + i * 0.1}s, transform 0.3s ease ${0.2 + i * 0.1}s`,
+            }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
+};
+
+export default function LandingPage() {
+  const scrollProgress = useScrollProgress();
+  const gigaParallax = useParallax<HTMLDivElement>(0.12);
+  const aceParallax = useParallax<HTMLDivElement>(-0.1);
+
+  return (
+    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)] font-sans overflow-x-hidden">
+      {/* Scroll progress bar - flat, thick-bordered, no gradient */}
+      <div className="fixed top-0 left-0 w-full h-[5px] z-[300] bg-transparent">
+        <div
+          className="h-full"
+          style={{ width: `${scrollProgress}%`, background: 'var(--brand-accent)', borderRight: scrollProgress > 1 ? '3px solid var(--ink)' : 'none', transition: 'width 0.1s linear' }}
+        />
+      </div>
+
+      <Navbar />
+
+      {/* ── Hero band (flat, solid color, no gradient) ─────────────────────── */}
+      <section className="relative overflow-hidden" style={{ background: 'var(--brand-primary)' }}>
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-2 gap-10 items-center">
+          <ScrollReveal variant="fade-left">
+            <div className="flex flex-col gap-6">
+              <div className="flat-badge w-fit">
+                <span className="w-1.5 h-1.5 bg-[var(--brand-secondary)] rounded-full animate-pulse" />
+                Live on Kaspa · KRC-20 native
+              </div>
+
+              <h1 className="font-extrabold leading-[0.92] text-white">
+                <span className="block text-6xl sm:text-7xl md:text-8xl">GEEK</span>
+                <span className="block text-6xl sm:text-7xl md:text-8xl" style={{ color: 'var(--flat-yellow)' }}>PROTOCOL</span>
+              </h1>
+              <p className="text-xl md:text-2xl font-bold text-white">A Quiz2Earn ecosystem….kinda a whole knowledge economy.</p>
+              <p className="text-base md:text-lg text-white/85 max-w-[480px]">
+                Prove your knowledge across 8 categories. Answer fast, answer right, and get paid in <strong>$GEEK</strong> — settled on Kaspa in under 6 seconds. No gatekeeping, no middlemen.
+              </p>
+
+              <div className="flex flex-wrap gap-3 mt-2">
+                <MagneticLink href="/auth/register" className="flat-btn flat-btn-accent text-base">
+                  Get Started →
+                </MagneticLink>
+                <MagneticLink href="/auth/login" className="flat-btn text-base">
+                  Sign In
+                </MagneticLink>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="relative flex justify-center md:justify-end">
+            <div ref={gigaParallax}>
+              <GigaMascot className="w-56 sm:w-64 md:w-80 flat-bob" />
+            </div>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {resources.map((resource, idx) => (
-            <a
-              key={idx}
-              href={resource.href}
-              target={resource.external ? "_blank" : undefined}
-              rel={resource.external ? "noopener noreferrer" : undefined}
-              className="group p-10 rounded-2xl border border-white/10 hover:border-cyan-500/50 bg-gradient-to-br from-white/5 to-transparent hover:from-cyan-500/10 transition-all duration-500 cursor-pointer hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.2)]"
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div className="text-6xl transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{resource.icon}</div>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  resource.status === "Live" 
-                    ? "bg-emerald-500/20 text-emerald-400" 
-                    : "bg-white/10 text-white/60"
-                }`}>
-                  {resource.status}
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                {resource.title}
-              </h3>
-              <p className="text-white/70 text-sm">{resource.description}</p>
-              {resource.external && (
-                <div className="mt-4 flex items-center gap-2 text-cyan-400 text-sm font-semibold">
-                  <span>Open External</span>
-                  <span>↗</span>
+        <WavyDivider fill="var(--flat-yellow)" />
+      </section>
+
+      {/* ── "Future of" band (flat yellow, no gradient) ────────────────────── */}
+      <section className="relative" style={{ background: 'var(--flat-yellow)' }}>
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+          <div className="flex justify-center order-2 md:order-1 relative">
+            <div ref={aceParallax}>
+              <AceMascot className="w-56 sm:w-64 md:w-80" />
+            </div>
+            <div className="hidden md:flex absolute -bottom-2 -left-6 flat-badge">
+              <FaStar className="text-[var(--brand-accent)]" /> On-chain proof
+            </div>
+          </div>
+          <ScrollReveal variant="fade-right" className="order-1 md:order-2">
+            <div className="flat-badge mb-5">Protocol Entities</div>
+            <h2 className="font-extrabold text-3xl md:text-5xl text-[var(--ink)] leading-tight">
+              The future of proof-of-learning
+            </h2>
+            <p className="mt-4 text-base md:text-lg text-[var(--ink)] opacity-80 max-w-[520px]">
+              Meet <strong>GIGA</strong>, the golden face of the community, and <strong>A.C.E.</strong>, the AI quizmaster who runs the Gauntlet and settles rewards on-chain. Together they turn what you already know into something worth real money.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-5">
+              <span className="flat-badge">#Community</span>
+              <span className="flat-badge">#Quizmaster</span>
+              <span className="flat-badge">#OnChain</span>
+            </div>
+          </ScrollReveal>
+        </div>
+
+        <WavyDivider fill="var(--surface-0)" />
+      </section>
+
+      {/* ── How It Works (3-card, flat, tilt-on-hover) ──────────────────────── */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-14">
+          <div className="flat-badge mb-4 mx-auto w-fit">Getting Started</div>
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">How it works</h2>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {HOW_IT_WORKS.map((step, idx) => (
+            <ScrollReveal key={step.title} delay={idx * 120} variant="scale">
+              <TiltCard>
+                <div className="flat-card p-6 h-full flex flex-col" style={{ background: 'var(--flat-cream)' }}>
+                  <div className="flat-icon-tile mb-6" style={{ background: step.tile }}>
+                    <step.icon className="text-[var(--ink)]" />
+                  </div>
+                  <h3 className="font-extrabold text-2xl text-[var(--ink)] mb-2">{step.title}</h3>
+                  <p className="text-sm text-[var(--ink)] opacity-75 leading-relaxed">{step.description}</p>
                 </div>
-              )}
+              </TiltCard>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Quick stats (count-up on scroll) ────────────────────────────────── */}
+      <section className="px-4 md:px-8 max-w-[1400px] mx-auto pb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { end: 8, suffix: '', label: 'Knowledge Categories' },
+            { end: 100, suffix: '', label: 'Questions (10 rounds)' },
+            { end: 15, suffix: 's', label: 'Per Question' },
+            { end: 6, suffix: 's', prefix: '<', label: 'Reward Settlement' },
+          ].map((stat, idx) => (
+            <ScrollReveal key={stat.label} delay={idx * 100} variant="fade-up">
+              <div className="flat-card p-6 text-center">
+                <div className="text-4xl md:text-5xl font-extrabold text-[var(--brand-primary)] mb-2">
+                  <Counter end={stat.end} suffix={stat.suffix} prefix={stat.prefix} />
+                </div>
+                <div className="text-xs md:text-sm text-[var(--text-3)] font-semibold">{stat.label}</div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Ticker ───────────────────────────────────────────────────────────── */}
+      <Marquee
+        items={['#KRC-20', '#PROOF-OF-LEARNING', '#ALL-HOPE-NO-HYPE', '#SUB-6-SECOND-SETTLEMENT', '#QUIZ2EARN', '#BUILT-ON-KASPA']}
+      />
+
+      {/* Gauntlet */}
+      <section className="py-16 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="py-4">
+          <SectionLabel>Challenge Module</SectionLabel>
+          <h2 className="font-extrabold text-3xl md:text-4xl text-[var(--text-1)]">The Geek Gauntlet</h2>
+          <p className="text-[var(--text-2)] mt-3 text-lg">10 rounds · Increasing difficulty · Real rewards</p>
+
+          <div className="grid md:grid-cols-2 gap-8 mt-10">
+            <div className="flat-card overflow-x-auto p-2">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Rnd</th>
+                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Entry</th>
+                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Reward/Q</th>
+                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Max Earn</th>
+                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">B/E</th>
+                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Diff</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">01</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">Free</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">10 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">100 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">0</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">Easy</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">02</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">40 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">20 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">200 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">2</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">Easy+</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">03</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">100 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">40 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">400 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]">Medium</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">04</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">200 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">75 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">750 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]">Med+</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">05</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">400 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">125 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">1,250 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">4</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">Hard</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">06</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">750 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">200 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">2,000 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">4</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">Hard</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">07</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">1,250 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">350 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3,500 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">4</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">V.Hard</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">08</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">2,000 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">500 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">5,000 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">5</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">V.Hard</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">09</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3,500 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">750 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">7,500 GEEK</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">5</td>
+                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary-light)]/10 text-[var(--brand-primary-light)]">Expert</span></td>
+                  </tr>
+                  <tr className="hover:bg-[var(--flat-cream)] transition">
+                    <td className="px-3 py-2 text-[var(--brand-primary)] font-bold">10</td>
+                    <td className="px-3 py-2">6,000 GEEK</td>
+                    <td className="px-3 py-2">1,000 GEEK</td>
+                    <td className="px-3 py-2">10,000 GEEK</td>
+                    <td className="px-3 py-2">7</td>
+                    <td className="px-3 py-2"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary-light)]/10 text-[var(--brand-primary-light)]">Expert</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <div className="flat-card p-6">
+                <div className="text-[10px] tracking-widest uppercase text-[var(--text-3)] font-bold mb-4">Reward Curve</div>
+                <AnimatedRewardCurve />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 mt-4">
+                <div className="flat-card p-6 text-center">
+                  <FaClock className="text-[var(--brand-primary)] text-2xl mx-auto mb-3" />
+                  <div className="font-bold text-[var(--text-1)]">15-Second Timer</div>
+                  <p className="text-[var(--text-2)] text-sm">Speed matters. Time bonus: (15 − TimeTaken) × 10 pts</p>
+                </div>
+                <div className="flat-card p-6 text-center">
+                  <FaLock className="text-[var(--brand-tertiary)] text-2xl mx-auto mb-3" />
+                  <div className="font-bold text-[var(--text-1)]">Anti-Cheat System</div>
+                  <p className="text-[var(--text-2)] text-sm">Server-side validation · Answer randomization · Session tracking</p>
+                </div>
+                <div className="flat-card p-6 text-center">
+                  <FaChartLine className="text-[var(--brand-primary-light)] text-2xl mx-auto mb-3" />
+                  <div className="font-bold text-[var(--text-1)]">XP Calculation</div>
+                  <p className="text-[var(--text-2)] text-sm">(Total Correct × 10) + (Total Score ÷ 100)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CCE */}
+      <section className="py-16 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="py-4">
+          <SectionLabel>Content Engine</SectionLabel>
+          <h2 className="font-extrabold text-3xl md:text-4xl text-[var(--text-1)]">Community Content Engine</h2>
+          <p className="text-[var(--text-2)] mt-3 text-lg">Create knowledge. Get paid forever.</p>
+
+          <div className="grid md:grid-cols-2 gap-8 mt-10">
+            <div>
+              <div className="flex flex-col">
+                <div className="flex gap-4 py-5 border-b border-[var(--border-soft)]">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--flat-cream)] border-2 border-[var(--ink)] flex items-center justify-center text-sm font-bold text-[var(--brand-primary)] flex-shrink-0">01</div>
+                  <div>
+                    <h3 className="font-bold text-[var(--text-1)]">Level 10+ Unlock</h3>
+                    <p className="text-[var(--text-2)] text-sm">Reach Level 10 to submit questions with topics, difficulty, and source verification.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 py-5 border-b border-[var(--border-soft)]">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--flat-cream)] border-2 border-[var(--ink)] flex items-center justify-center text-sm font-bold text-[var(--brand-primary)] flex-shrink-0">02</div>
+                  <div>
+                    <h3 className="font-bold text-[var(--text-1)]">Peer Review System</h3>
+                    <p className="text-[var(--text-2)] text-sm">Level 10+ reviewers vote Approve/Reject. 5 approvals = question accepted. Reviewers earn 1 XP + 0.1 GEEK per review.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 py-5">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--flat-cream)] border-2 border-[var(--ink)] flex items-center justify-center text-sm font-bold text-[var(--brand-primary)] flex-shrink-0">03</div>
+                  <div>
+                    <h3 className="font-bold text-[var(--text-1)]">Passive Income</h3>
+                    <p className="text-[var(--text-2)] text-sm">Earn 0.5 GEEK every time your question is served. Lifetime cap: 1,000 GEEK per question (2,000 serves). Upload unlimited questions.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flat-card p-6 mt-6">
+                <div className="text-[10px] tracking-widest uppercase text-[var(--text-3)] font-bold text-center mb-4">The CCE Flywheel</div>
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <span className="flat-badge">More Players</span>
+                  <span className="text-[var(--text-3)]">→</span>
+                  <span className="flat-badge">More Creators</span>
+                  <span className="text-[var(--text-3)]">→</span>
+                  <span className="flat-badge">More Questions</span>
+                  <span className="text-[var(--text-3)]">→</span>
+                  <span className="flat-badge">Better Challengeplay</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flat-card overflow-hidden">
+              <div className="px-4 py-3 bg-[var(--flat-cream)] border-b-2 border-[var(--ink)] font-bold text-xs uppercase tracking-widest text-[var(--brand-primary)]">Reviewer Dashboard</div>
+              <div className="p-4 border-b border-[var(--border-soft)]">
+                <div className="font-semibold text-[var(--text-1)]">What is the capital of Mars Colony?</div>
+                <div className="text-[10px] text-[var(--text-3)] mt-1">Topic: Sci-Fi · Difficulty: Medium</div>
+                <div className="flex gap-2 mt-3">
+                  <button className="px-3 py-1 text-xs font-semibold rounded-full border-2 border-[var(--ink)] text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/10 transition">✓ Approve</button>
+                  <button className="px-3 py-1 text-xs font-semibold rounded-full border-2 border-[var(--ink)] text-[var(--brand-tertiary)] hover:bg-[var(--brand-tertiary)]/10 transition">✗ Reject</button>
+                </div>
+              </div>
+              <div className="p-4 border-b border-[var(--border-soft)]">
+                <div className="font-semibold text-[var(--text-1)]">Who invented the Babbage Engine?</div>
+                <div className="text-[10px] text-[var(--text-3)] mt-1">Topic: History · Difficulty: Easy</div>
+                <div className="flex gap-2 mt-3">
+                  <button className="px-3 py-1 text-xs font-semibold rounded-full border-2 border-[var(--ink)] text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/10 transition">✓ Approve</button>
+                  <button className="px-3 py-1 text-xs font-semibold rounded-full border-2 border-[var(--ink)] text-[var(--brand-tertiary)] hover:bg-[var(--brand-tertiary)]/10 transition">✗ Reject</button>
+                </div>
+              </div>
+              <div className="px-4 py-3 bg-[var(--flat-cream)] text-center text-xs text-[var(--text-3)] font-semibold">+1 XP &nbsp;·&nbsp; +0.1 GEEK per review</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Token */}
+      <section className="py-16 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="py-4">
+          <SectionLabel>KRC-20 Asset</SectionLabel>
+          <h2 className="font-extrabold text-3xl md:text-4xl text-[var(--text-1)]">$GEEK Token</h2>
+          <p className="text-[var(--text-2)] mt-3 text-lg">The value layer for Proof-of-Learning on Kaspa</p>
+
+          <div className="grid md:grid-cols-2 gap-8 mt-10">
+            <div>
+              <div className="flat-badge mb-4">Token Specifications</div>
+              <div className="flex flex-col divide-y divide-[var(--border-soft)]">
+                <div className="flex justify-between py-3"><span className="text-xs text-[var(--text-3)] font-semibold uppercase tracking-wide">Name</span><span className="text-sm text-[var(--text-1)] font-semibold">Geek Protocol</span></div>
+                <div className="flex justify-between py-3"><span className="text-xs text-[var(--text-3)] font-semibold uppercase tracking-wide">Ticker</span><span className="text-sm text-[var(--brand-tertiary)] font-semibold">$GEEK</span></div>
+                <div className="flex justify-between py-3"><span className="text-xs text-[var(--text-3)] font-semibold uppercase tracking-wide">Blockchain</span><span className="text-sm text-[var(--text-1)] font-semibold">Kaspa (KRC-20)</span></div>
+                <div className="flex justify-between py-3"><span className="text-xs text-[var(--text-3)] font-semibold uppercase tracking-wide">Total Supply</span><span className="text-sm text-[var(--text-1)] font-semibold">144,000,000,000 GEEK</span></div>
+                <div className="flex justify-between py-3"><span className="text-xs text-[var(--text-3)] font-semibold uppercase tracking-wide">Decimals</span><span className="text-sm text-[var(--text-1)] font-semibold">8</span></div>
+                <div className="flex justify-between py-3"><span className="text-xs text-[var(--text-3)] font-semibold uppercase tracking-wide">Mint Rate</span><span className="text-sm text-[var(--text-1)] font-semibold">1 KAS = 100,000 GEEK</span></div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flat-badge mb-4">Token Allocation</div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm font-semibold"><span>Quiz2Earn Rewards</span><span className="text-[var(--text-3)]">30% (43.2B)</span></div>
+                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '30%', background: 'var(--brand-primary)' }} /></div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm font-semibold"><span>Staking Rewards</span><span className="text-[var(--text-3)]">20% (28.8B)</span></div>
+                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '20%', background: 'var(--brand-secondary)' }} /></div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm font-semibold"><span>Liquidity Fund</span><span className="text-[var(--text-3)]">20% (28.8B)</span></div>
+                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '20%', background: 'var(--brand-tertiary)' }} /></div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm font-semibold"><span>Team & Advisors</span><span className="text-[var(--text-3)]">15% (21.6B)</span></div>
+                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '15%', background: 'var(--brand-accent)' }} /></div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm font-semibold"><span>Marketing & Ecosystem</span><span className="text-[var(--text-3)]">15% (21.6B)</span></div>
+                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '15%', background: 'var(--brand-primary-light)' }} /></div>
+                </div>
+              </div>
+
+              <div className="flat-card p-6 mt-6" style={{ background: 'var(--flat-cream)' }}>
+                <div className="text-[10px] tracking-widest uppercase text-[var(--text-3)] font-bold text-center mb-4">70/30 Recycle & Burn Model</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-2xl border-2 border-[var(--ink)] text-center py-4">
+                    <span className="text-2xl font-extrabold text-[var(--brand-primary)] block">70%</span>
+                    <span className="text-sm text-[var(--text-2)]">Back to Rewards</span>
+                  </div>
+                  <div className="bg-white rounded-2xl border-2 border-[var(--ink)] text-center py-4">
+                    <span className="text-2xl font-extrabold text-[var(--brand-tertiary)] block">30%</span>
+                    <span className="text-sm text-[var(--text-2)]">Permanently Burned</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+            <div className="flat-card p-6 text-center hover:-translate-y-1 transition">
+              <FaTrophy className="text-[var(--brand-accent)] text-2xl mx-auto mb-3" />
+              <div className="font-bold text-[var(--text-1)]">Earn</div>
+              <div className="text-sm text-[var(--text-2)]">Quiz rewards</div>
+            </div>
+            <div className="flat-card p-6 text-center hover:-translate-y-1 transition">
+              <FaCoins className="text-[var(--brand-tertiary)] text-2xl mx-auto mb-3" />
+              <div className="font-bold text-[var(--text-1)]">Spend</div>
+              <div className="text-sm text-[var(--text-2)]">Shop & lifelines</div>
+            </div>
+            <div className="flat-card p-6 text-center hover:-translate-y-1 transition">
+              <FaChartLine className="text-[var(--brand-primary)] text-2xl mx-auto mb-3" />
+              <div className="font-bold text-[var(--text-1)]">Trade</div>
+              <div className="text-sm text-[var(--text-2)]">Marketplace</div>
+            </div>
+            <div className="flat-card p-6 text-center hover:-translate-y-1 transition">
+              <FaLock className="text-[var(--brand-primary-light)] text-2xl mx-auto mb-3" />
+              <div className="font-bold text-[var(--text-1)]">Stake</div>
+              <div className="text-sm text-[var(--text-2)]">Yield + boosts</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">Core Systems</h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">Built for signal. Designed for scale.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {FEATURES.map((feature, idx) => (
+            <ScrollReveal key={idx} delay={(idx % 3) * 90} variant={idx % 2 === 0 ? 'fade-left' : 'fade-right'}>
+              <TiltCard>
+                <div className="flat-card p-8 h-full">
+                  <div className="text-5xl mb-6 text-[var(--brand-primary)]">
+                    <feature.icon />
+                  </div>
+                  <h3 className="text-2xl font-bold text-[var(--text-1)] mb-3">{feature.title}</h3>
+                  <p className="text-[var(--text-2)] text-base mb-6 leading-relaxed">{feature.description}</p>
+                  <ul className="space-y-2">
+                    {feature.details.map((detail, didx) => (
+                      <li key={didx} className="flex items-start gap-2 text-xs text-[var(--text-2)]">
+                        <span className="text-[var(--brand-primary)] font-bold mt-1">•</span>
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </TiltCard>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Impact */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">How Geek Protocol Changes Your Life</h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">Real impact. Measurable rewards. Lasting change.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {IMPACT_ITEMS.map((item, idx) => {
+            const accent = ACCENT_COLORS[item.accent] ?? 'var(--brand-primary)';
+            return (
+              <ScrollReveal key={idx} delay={(idx % 2) * 120} variant={idx % 2 === 0 ? 'fade-left' : 'fade-right'}>
+                <div className="flat-card p-8">
+                  <div className="text-5xl mb-4" style={{ color: accent }}>
+                    <item.icon />
+                  </div>
+                  <h3 className="text-2xl font-bold text-[var(--text-1)] mb-4">{item.title}</h3>
+                  <p className="text-[var(--text-2)] leading-relaxed mb-4">{item.description}</p>
+                  <ul className="space-y-3 text-[var(--text-2)]">
+                    {item.points.map((point, pidx) => (
+                      <li key={pidx} className="flex gap-3">
+                        <span style={{ color: accent }}>✦</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">8 Categories of Knowledge</h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">Master multiple domains. Earn across disciplines.</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {CATEGORIES.map((category, idx) => (
+            <ScrollReveal key={idx} delay={(idx % 4) * 80} variant="rotate">
+              <div className="flat-card group p-6 text-center hover:-translate-y-1 hover:rotate-2 transition duration-300">
+                <div className="text-4xl md:text-5xl mb-3 text-[var(--brand-secondary)] group-hover:scale-110 transition duration-300">
+                  <category.icon />
+                </div>
+                <p className="text-[var(--text-1)] font-bold">{category.name}</p>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Roadmap */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">The Ecosystem Arc</h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">In-world history you&rsquo;re living. Built on hope, not hype.</p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {ROADMAP.map((item, ridx) => {
+            const accent = ACCENT_COLORS[item.accent] ?? 'var(--brand-primary)';
+            return (
+              <ScrollReveal key={item.year} delay={ridx * 130} variant="fade-up">
+                <div className="flat-card p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold border-2 border-[var(--ink)]" style={{ background: accent }}>{item.year}</div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-[var(--text-1)]">{item.title}</h3>
+                      <p className="text-sm text-[var(--text-2)]">{item.subtitle}</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-3 text-[var(--text-2)] text-sm">
+                    {item.items.map((sub, idx) => (
+                      <li key={idx} className="flex gap-2">
+                        <span style={{ color: accent, opacity: sub.status === 'done' ? 1 : 0.6 }}>
+                          {sub.status === 'done' ? '✓' : '→'}
+                        </span>
+                        {sub.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Why Kaspa */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--brand-primary)] mb-8">Why Kaspa</h2>
+          <p className="text-lg md:text-xl text-[var(--text-2)] leading-relaxed mb-10">
+            Kaspa isn&rsquo;t the loudest blockchain. It&rsquo;s the fastest. Sub-second blocks without sacrificing decentralization or security.
+            <br /><br />
+            While others promise, Kaspa delivers. Which is exactly what we needed for a protocol that handles real rewards, real payouts, real stakes.
+            <br /><br />
+            <span className="text-[var(--brand-secondary)] font-semibold">Geek Protocol exists because Kaspa made it possible.</span>
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-4 mt-8">
+            <div className="flat-card p-6">
+              <FaBolt className="text-4xl mx-auto mb-3 text-[var(--brand-secondary)]" />
+              <h3 className="text-[var(--text-1)] font-bold mb-2">Sub-Second Blocks</h3>
+              <p className="text-sm text-[var(--text-2)]">Finality in milliseconds, not minutes.</p>
+            </div>
+            <div className="flat-card p-6">
+              <FaLock className="text-4xl mx-auto mb-3 text-[var(--brand-primary)]" />
+              <h3 className="text-[var(--text-1)] font-bold mb-2">Secure & Decentralized</h3>
+              <p className="text-sm text-[var(--text-2)]">No compromises on the fundamentals.</p>
+            </div>
+            <div className="flat-card p-6">
+              <FaCoins className="text-4xl mx-auto mb-3 text-[var(--brand-secondary)]" />
+              <h3 className="text-[var(--text-1)] font-bold mb-2">Affordable Fees</h3>
+              <p className="text-sm text-[var(--text-2)]">Rewards aren&rsquo;t swallowed by gas costs.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Resources */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">Resources & Links</h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">Everything you need to understand and join Geek Protocol</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {RESOURCES.map((resource, idx) => (
+            <ScrollReveal key={idx} delay={(idx % 3) * 90} variant="scale">
+              <a
+                href={resource.href}
+                target={resource.external ? "_blank" : undefined}
+                rel={resource.external ? "noopener noreferrer" : undefined}
+                className={`flat-card group p-8 transition duration-300 hover:-translate-y-1 block h-full ${
+                  resource.featured ? 'ring-4 ring-[var(--brand-accent)]' : ''
+                }`}
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="text-5xl text-[var(--brand-primary)] group-hover:scale-110 transition duration-300">
+                    <resource.icon />
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full border-2 border-[var(--ink)] ${
+                    resource.status === "Live" ? "bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)]" :
+                    resource.status === "Alpha" ? "bg-[var(--brand-primary)]/15 text-[var(--brand-primary)]" :
+                    "bg-[var(--surface-2)] text-[var(--text-3)]"
+                  }`}>
+                    {resource.status}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-[var(--text-1)] mb-2">{resource.title}</h3>
+                <p className="text-[var(--text-2)] text-sm">{resource.description}</p>
+                {resource.external && (
+                  <div className="mt-4 flex items-center gap-2 text-[var(--brand-primary)] text-sm font-semibold">
+                    <span>Open External</span>
+                    <FaExternalLinkAlt className="text-xs" />
+                  </div>
+                )}
+              </a>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Coming Soon */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">Coming Soon</h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">All features launching in Q1 2026</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-90">
+          {COMING_SOON.map((item, idx) => (
+            <ScrollReveal key={idx} delay={(idx % 3) * 90} variant="fade-up">
+              <div className="flat-card p-8">
+                <div className="text-5xl mb-4 text-[var(--text-3)]">
+                  <item.icon />
+                </div>
+                <h3 className="text-2xl font-bold text-[var(--text-1)] mb-2">{item.title}</h3>
+                <p className="text-[var(--text-2)] mb-4">{item.description}</p>
+                <span className="flat-badge">Coming Soon</span>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <ScrollReveal variant="scale">
+        <div className="flat-card rounded-[32px] p-8 md:p-16 text-center" style={{ background: 'var(--brand-primary)' }}>
+          <div className="flat-badge mb-6" style={{ background: '#fff' }}>Mission Briefing</div>
+          <h2 className="font-extrabold text-4xl md:text-5xl text-white">Join the Mission</h2>
+          <p className="text-white/85 text-lg italic my-4">All Hope. No Hype. Level Up. Earn On. Geek Out.</p>
+
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <MagneticLink href="/auth/register" className="flat-btn flat-btn-accent px-10 py-4 text-base">
+              Join Now
+            </MagneticLink>
+            <MagneticLink href="/auth/login" className="flat-btn px-10 py-4 text-base">
+              Sign In
+            </MagneticLink>
+          </div>
+
+          <div className="flex justify-center gap-4 mt-10">
+            <a href="https://x.com/geekonkas" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border-2 border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:-translate-y-0.5 transition">
+              <FaTwitter />
             </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function HowItWorksSection() {
-  return (
-    <section className="relative py-32 px-6 bg-black">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-1/4 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[80px]" />
-        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[80px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-24 text-center">
-          <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-6">How It Works</h2>
-          <p className="text-xl md:text-2xl text-white/70 font-light">Six simple steps from wallet to rewards</p>
-        </div>
-
-        {/* Flow visualization */}
-        <div className="mb-20">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {FLOW_STEPS.map((step, idx) => (
-              <div key={idx} className="relative group">
-                {/* Connection line */}
-                {idx < FLOW_STEPS.length - 1 && (
-                  <div className="hidden lg:block absolute top-16 left-[calc(100%+8px)] w-[calc(100%-16px)] h-1 bg-gradient-to-r from-cyan-500/50 to-emerald-500/50 group-hover:from-cyan-400 group-hover:to-emerald-400 transition-all" />
-                )}
-
-                <div className="relative p-6 rounded-xl border border-cyan-500/30 hover:border-cyan-400/60 bg-gradient-to-br from-cyan-500/5 to-transparent hover:from-cyan-500/10 transition-all duration-300 group">
-                  {/* Step number */}
-                  <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-bold text-sm">
-                    {step.number}
-                  </div>
-
-                  {/* Icon */}
-                  <div className="text-4xl mb-4 group-hover:scale-125 transition-transform duration-300">
-                    {step.icon}
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-white/60">
-                    {step.description}
-                  </p>
-                </div>
-              </div>
-            ))}
+            <a href="https://t.me/GEEKonKAScommunity" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border-2 border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:-translate-y-0.5 transition">
+              <FaTelegram />
+            </a>
+            <a href="#" className="w-10 h-10 rounded-full bg-white border-2 border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:-translate-y-0.5 transition">
+              <FaLink />
+            </a>
           </div>
         </div>
+        </ScrollReveal>
+      </section>
 
-        {/* Timeline visualization for mobile */}
-        <div className="lg:hidden space-y-4">
-          {FLOW_STEPS.map((step, idx) => (
-            <div key={idx} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-bold flex-shrink-0">
-                  {step.number}
-                </div>
-                {idx < FLOW_STEPS.length - 1 && (
-                  <div className="w-1 h-12 bg-gradient-to-b from-cyan-500/50 to-transparent mt-2" />
-                )}
-              </div>
-              <div className="flex-1 pt-1">
-                <h3 className="font-bold text-white text-lg">{step.title}</h3>
-                <p className="text-white/60 text-sm mt-1">{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function CTASection() {
-  return (
-    <section className="relative py-24 px-6 bg-gradient-to-b from-black via-[#0a0e27] to-black">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 h-[500px] w-[500px] rounded-full bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-cyan-500/20 blur-[100px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <h2 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white mb-8">Join the Geek Revolution</h2>
-        <p className="text-2xl md:text-3xl text-white/80 mb-16 font-light leading-relaxed">
-          Your knowledge. Your edge. Your rewards. <br />Be part of the protocol changing how geeks earn.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-          <a
-            href="https://x.com/geekonkas"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center px-12 py-6 text-xl font-black uppercase tracking-widest text-white rounded-2xl border-2 border-white/30 hover:border-cyan-400/60 bg-white/5 hover:bg-cyan-500/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.3)]"
-          >
-            <span className="relative z-10">Follow on X →</span>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </a>
-
-          <a
-            href="https://t.me/GEEKonKAScommunity"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center px-12 py-6 text-xl font-black uppercase tracking-widest text-white rounded-2xl border-2 border-emerald-400/40 hover:border-emerald-400/70 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(20,184,166,0.3)]"
-          >
-            <span className="relative z-10">Join Community →</span>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </a>
-        </div>
-
-        <p className="text-xl text-white/60 mb-16 font-medium">Coming to www.geekprotocol.xyz in Q1 2026</p>
-
-        <div className="pt-12 border-t border-white/10">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Infrastructure</p>
-              <p className="text-white/90 font-semibold">Kaspa Layer 1 • KRC-20</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Security</p>
-              <p className="text-white/90 font-semibold">Schnorr Signatures • HMAC Tokens</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Settlement</p>
-              <p className="text-white/90 font-semibold">Sub-6 Second Finality</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+      <Footer />
+    </div>
   );
 }

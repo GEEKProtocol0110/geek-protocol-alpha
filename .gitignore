@@ -42,6 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# turbo
+.turbo/
+
 # local scratch / accidental files
 *.txt
 mintty.*.png
