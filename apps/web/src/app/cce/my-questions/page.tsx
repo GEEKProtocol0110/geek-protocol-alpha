@@ -75,14 +75,14 @@ export default function MyQuestions() {
 
   if (status === "idle" || status === "loading") {
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-12">
 
@@ -107,7 +107,7 @@ export default function MyQuestions() {
               onClick={() => { setFilter(f.value); setPage(1); }}
               className={`text-[10px] tracking-widest font-bold rounded-full px-3 py-1.5 transition ${
                 filter === f.value
-                  ? "bg-[var(--brand-primary)] text-white shadow-[var(--shadow-brand)]"
+                  ? "bg-[var(--brand-primary)] text-white border-[3px] border-[var(--ink)] shadow-[var(--shadow-brand)]"
                   : "bg-[var(--surface-2)] text-[var(--text-3)] hover:bg-[var(--surface-3)] hover:text-[var(--text-1)]"
               }`}
             >

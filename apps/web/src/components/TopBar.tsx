@@ -69,7 +69,7 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-[rgba(2,5,15,0.85)] backdrop-blur-2xl">
+    <header className="sticky top-0 z-50 border-b-2 border-[var(--border-soft)] bg-[var(--gp-bg)]">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:gap-6">
         {/* Logo */}
         <div className="flex items-center gap-3 text-sm font-semibold tracking-tight">

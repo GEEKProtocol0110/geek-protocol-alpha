@@ -289,7 +289,7 @@ export default function PlayClient() {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={startRun}
-            className="rounded-2xl bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-secondary)] to-[var(--brand-tertiary)] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-black transition hover:scale-[1.01]"
+            className="rounded-2xl bg-[var(--gp-cyan)] border-2 border-[var(--ink)] shadow-[4px_4px_0px_0px_var(--gp-cyan-dark)] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[var(--gp-bg)] transition hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_var(--gp-cyan-dark)]"
           >
             Start Run
           </button>
@@ -338,7 +338,7 @@ export default function PlayClient() {
           </div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-secondary)] to-[var(--brand-tertiary)]" style={{ width: `${Math.round(progress * 100)}%` }} />
+          <div className="h-full rounded-full bg-[var(--gp-cyan)]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       </div>
 

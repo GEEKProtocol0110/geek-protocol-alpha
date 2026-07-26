@@ -32,7 +32,7 @@ function ResultsContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-12">
 
@@ -42,7 +42,7 @@ function ResultsContent() {
             Daily Quiz Complete · {theme}
           </div>
 
-          <div className={`${rank.bg} rounded-3xl shadow-[var(--shadow-soft)] w-28 h-28 flex items-center justify-center text-4xl mx-auto`}>
+          <div className={`${rank.bg} rounded-3xl border-[3px] border-[var(--ink)] shadow-[var(--shadow-soft)] w-28 h-28 flex items-center justify-center text-4xl mx-auto`}>
             {rank.badge}
           </div>
           <div className={`font-extrabold text-4xl ${rank.color} mb-1 mt-4`}>{rank.name}</div>
@@ -97,7 +97,7 @@ function ResultsContent() {
 export default function ResultsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     }>

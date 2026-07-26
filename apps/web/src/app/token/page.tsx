@@ -273,16 +273,26 @@ export default function TokenPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
 
       <div className="max-w-5xl mx-auto px-4 py-12">
 
+        {/* Neon banner */}
+        <div className="relative rounded-3xl overflow-hidden border-2 border-[var(--gp-cyan)] mb-8 h-40 shadow-[6px_6px_0px_0px_var(--gp-cyan-dark)]">
+          <img
+            src="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1400&q=80"
+            alt="Neon abstract market"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-[rgba(10,10,18,0.55)]" aria-hidden />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
-          <div className="badge-pill text-[var(--brand-accent)] mb-4">Geek Token Market</div>
+          <div className="badge-pill mb-4">Geek Token Market</div>
           <h1 className="font-extrabold text-5xl text-[var(--text-1)] mb-1">
-            $GEEK <span className="text-[var(--brand-primary)]">Market</span>
+            <span className="glow-mint text-[var(--neon-mint)]">$GEEK</span> <span className="neon-text-pink">Market</span>
           </h1>
           <p className="text-sm text-[var(--text-3)]">
             Buy, sell, and trade $GEEK tokens. Powered by an on-chain AMM liquidity pool.
@@ -333,7 +343,7 @@ export default function TokenPage() {
                   onClick={() => { setTab(t.id); setQuote(null); setKasInput(""); setGeekInput(""); }}
                   className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold tracking-wide transition ${
                     tab === t.id
-                      ? "bg-[var(--brand-primary)] text-white shadow-[var(--shadow-brand)]"
+                      ? "bg-[var(--brand-primary)] text-white border-[3px] border-[var(--ink)] shadow-[var(--shadow-brand)]"
                       : "text-[var(--text-3)] hover:text-[var(--text-1)]"
                   }`}
                 >

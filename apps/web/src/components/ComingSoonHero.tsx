@@ -1,18 +1,10 @@
 
 export function ComingSoonHero() {
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-black via-black to-[#0a0e27] px-6 flex items-center justify-center py-20">
-      {/* Animated background elements */}
+    <section className="relative min-h-screen w-full overflow-hidden bg-[var(--gp-bg)] px-6 flex items-center justify-center py-20">
+      {/* Flat dot-grid backdrop */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Kaspa blue glow */}
-        <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-cyan-500/20 blur-[100px]" />
-        {/* Kaspa green glow */}
-        <div className="absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-emerald-500/15 blur-[100px]" />
-        {/* Purple accent */}
-        <div className="absolute top-1/2 left-1/3 h-[400px] w-[400px] rounded-full bg-purple-500/10 blur-[80px]" />
-        
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+        <div className="gp-dot-grid" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl text-center space-y-8">
@@ -31,7 +23,7 @@ export function ComingSoonHero() {
           <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
             The Geek Gauntlet
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-400">
+            <span className="text-[var(--gp-cyan)]">
               is Loading
             </span>
           </h1>

@@ -183,7 +183,7 @@ function ResultsContent() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       {children}
     </div>
@@ -193,7 +193,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 export default function GauntletResultsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     }>

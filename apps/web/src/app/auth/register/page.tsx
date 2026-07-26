@@ -64,7 +64,7 @@ export default function RegisterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)] flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen text-[var(--text-1)] flex items-center justify-center px-4 py-16">
       <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-8 items-start">
 
         {/* Left — perks */}
@@ -107,7 +107,7 @@ export default function RegisterPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand-primary)] font-extrabold text-white">GP</span>
               <span className="font-bold text-sm text-[var(--text-2)]">GEEK PROTOCOL</span>
             </a>
-            <h1 className="font-extrabold text-4xl text-[var(--text-1)]">Create Account</h1>
+            <h1 className="font-extrabold text-4xl"><span className="neon-text-pink">Create Account</span></h1>
             <p className="text-[var(--text-3)] text-sm mt-1">Join the Proof-of-Learning movement</p>
           </div>
 

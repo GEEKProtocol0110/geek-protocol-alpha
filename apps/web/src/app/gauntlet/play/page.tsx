@@ -367,7 +367,7 @@ function PlayContent() {
             {MODIFIERS.map((m) => {
               const active = modifier === m.id;
               return (
-                <button key={m.id} onClick={() => setModifier(m.id)} className={`text-left rounded-2xl p-4 min-h-36 transition ${active ? "bg-[var(--brand-primary)] text-white shadow-[var(--shadow-brand)]" : "bg-white shadow-[var(--shadow-soft)] hover:bg-[var(--surface-2)]"}`}>
+                <button key={m.id} onClick={() => setModifier(m.id)} className={`text-left rounded-2xl p-4 min-h-36 transition border-[3px] border-[var(--ink)] ${active ? "bg-[var(--brand-primary)] text-white shadow-[var(--shadow-brand)]" : "bg-[var(--surface-1)] shadow-[var(--shadow-soft)] hover:bg-[var(--surface-2)]"}`}>
                   <div className="font-extrabold text-xl">{m.label}</div>
                   <div className={`text-[10px] mb-2 font-semibold ${active ? "text-white/80" : "text-[var(--brand-accent)]"}`}>{m.fee}</div>
                   <p className={`text-xs leading-relaxed ${active ? "text-white/80" : "text-[var(--text-3)]"}`}>{m.text}</p>
@@ -411,7 +411,7 @@ function PlayContent() {
               ["Topic Acc", current.topicAccuracy == null ? "New" : `${current.topicAccuracy}%`],
               ["Seen", String(current.seenCount ?? 0)],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-white shadow-[var(--shadow-soft)] p-3 text-center">
+              <div key={label} className="rounded-2xl bg-[var(--surface-1)] border-[3px] border-[var(--ink)] shadow-[var(--shadow-soft)] p-3 text-center">
                 <div className="text-[9px] tracking-widest text-[var(--text-3)] uppercase font-semibold">{label}</div>
                 <div className="font-extrabold text-xl text-[var(--text-1)]">{value}</div>
               </div>
@@ -512,7 +512,7 @@ function PlayContent() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 pt-4 flex justify-end">
         <SfxToggle />

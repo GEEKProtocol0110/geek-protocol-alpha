@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Navbar } from '@/components/Navbar';
+import { HeroSection } from '@/components/HeroSection';
 import { Footer } from '@/components/Footer';
-import { GigaMascot, AceMascot } from '@/components/GeekMascots';
 import { WavyDivider } from '@/components/WavyDivider';
 import { Marquee } from '@/components/Marquee';
 import { useScrollProgress, useCountUp, useParallax, useTilt, useMagnetic } from '@/lib/scrollFx';
@@ -36,19 +37,19 @@ const SiKaspa = FaGlobe;
 const HOW_IT_WORKS = [
   {
     icon: FaWallet,
-    tile: "#eee6ff",
+    tile: "rgba(180,77,255,0.18)",
     title: "Connect",
     description: "Link your Kaspa wallet in one click. No passwords, no signups, no central database holding your data.",
   },
   {
     icon: FaGamepad,
-    tile: "#ffe3b0",
+    tile: "rgba(255,46,196,0.18)",
     title: "Play",
     description: "Face 10 rapid-fire questions across any of 8 categories. 15 seconds each. Server-side scoring keeps it fair.",
   },
   {
     icon: FaCoins,
-    tile: "#d4f2e3",
+    tile: "rgba(45,255,179,0.18)",
     title: "Earn",
     description: "Get paid in $GEEK the moment you finish. Settlement lands on Kaspa in under 6 seconds — no waiting around.",
   },
@@ -482,11 +483,10 @@ const AnimatedRewardCurve = () => {
 
 export default function LandingPage() {
   const scrollProgress = useScrollProgress();
-  const gigaParallax = useParallax<HTMLDivElement>(0.12);
   const aceParallax = useParallax<HTMLDivElement>(-0.1);
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)] font-sans overflow-x-hidden">
+    <div className="gp-arcade-page min-h-screen text-[var(--text-1)] font-sans overflow-x-hidden">
       {/* Scroll progress bar - flat, thick-bordered, no gradient */}
       <div className="fixed top-0 left-0 w-full h-[5px] z-[300] bg-transparent">
         <div
@@ -497,52 +497,22 @@ export default function LandingPage() {
 
       <Navbar />
 
-      {/* ── Hero band (flat, solid color, no gradient) ─────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: 'var(--brand-primary)' }}>
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-2 gap-10 items-center">
-          <ScrollReveal variant="fade-left">
-            <div className="flex flex-col gap-6">
-              <div className="flat-badge w-fit">
-                <span className="w-1.5 h-1.5 bg-[var(--brand-secondary)] rounded-full animate-pulse" />
-                Live on Kaspa · KRC-20 native
-              </div>
-
-              <h1 className="font-extrabold leading-[0.92] text-white">
-                <span className="block text-6xl sm:text-7xl md:text-8xl">GEEK</span>
-                <span className="block text-6xl sm:text-7xl md:text-8xl" style={{ color: 'var(--flat-yellow)' }}>PROTOCOL</span>
-              </h1>
-              <p className="text-xl md:text-2xl font-bold text-white">A Quiz2Earn ecosystem….kinda a whole knowledge economy.</p>
-              <p className="text-base md:text-lg text-white/85 max-w-[480px]">
-                Prove your knowledge across 8 categories. Answer fast, answer right, and get paid in <strong>$GEEK</strong> — settled on Kaspa in under 6 seconds. No gatekeeping, no middlemen.
-              </p>
-
-              <div className="flex flex-wrap gap-3 mt-2">
-                <MagneticLink href="/auth/register" className="flat-btn flat-btn-accent text-base">
-                  Get Started →
-                </MagneticLink>
-                <MagneticLink href="/auth/login" className="flat-btn text-base">
-                  Sign In
-                </MagneticLink>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          <div className="relative flex justify-center md:justify-end">
-            <div ref={gigaParallax}>
-              <GigaMascot className="w-56 sm:w-64 md:w-80 flat-bob" />
-            </div>
-          </div>
-        </div>
-
-        <WavyDivider fill="var(--flat-yellow)" />
-      </section>
+      {/* ── Hero band (self-contained brand hero component) ───────────────── */}
+      <HeroSection />
+      <WavyDivider fill="var(--flat-yellow)" />
 
       {/* ── "Future of" band (flat yellow, no gradient) ────────────────────── */}
       <section className="relative" style={{ background: 'var(--flat-yellow)' }}>
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-20 grid md:grid-cols-2 gap-10 items-center">
           <div className="flex justify-center order-2 md:order-1 relative">
             <div ref={aceParallax}>
-              <AceMascot className="w-56 sm:w-64 md:w-80" />
+              <Image
+                src="/mascot-ace.png"
+                alt="A.C.E., the Geek Protocol AI quizmaster waving"
+                width={1005}
+                height={1402}
+                className="w-56 sm:w-64 md:w-80 h-auto"
+              />
             </div>
             <div className="hidden md:flex absolute -bottom-2 -left-6 flat-badge">
               <FaStar className="text-[var(--brand-accent)]" /> On-chain proof
@@ -550,10 +520,10 @@ export default function LandingPage() {
           </div>
           <ScrollReveal variant="fade-right" className="order-1 md:order-2">
             <div className="flat-badge mb-5">Protocol Entities</div>
-            <h2 className="font-extrabold text-3xl md:text-5xl text-[var(--ink)] leading-tight">
+            <h2 className="font-extrabold text-3xl md:text-5xl text-[var(--text-1)] leading-tight">
               The future of proof-of-learning
             </h2>
-            <p className="mt-4 text-base md:text-lg text-[var(--ink)] opacity-80 max-w-[520px]">
+            <p className="mt-4 text-base md:text-lg text-[var(--text-1)] opacity-80 max-w-[520px]">
               Meet <strong>GIGA</strong>, the golden face of the community, and <strong>A.C.E.</strong>, the AI quizmaster who runs the Gauntlet and settles rewards on-chain. Together they turn what you already know into something worth real money.
             </p>
             <div className="flex flex-wrap gap-2 mt-5">
@@ -580,10 +550,10 @@ export default function LandingPage() {
               <TiltCard>
                 <div className="flat-card p-6 h-full flex flex-col" style={{ background: 'var(--flat-cream)' }}>
                   <div className="flat-icon-tile mb-6" style={{ background: step.tile }}>
-                    <step.icon className="text-[var(--ink)]" />
+                    <step.icon className="text-[var(--text-1)]" />
                   </div>
-                  <h3 className="font-extrabold text-2xl text-[var(--ink)] mb-2">{step.title}</h3>
-                  <p className="text-sm text-[var(--ink)] opacity-75 leading-relaxed">{step.description}</p>
+                  <h3 className="font-extrabold text-2xl text-[var(--text-1)] mb-2">{step.title}</h3>
+                  <p className="text-sm text-[var(--text-1)] opacity-75 leading-relaxed">{step.description}</p>
                 </div>
               </TiltCard>
             </ScrollReveal>
@@ -825,7 +795,7 @@ export default function LandingPage() {
       <section className="py-16 px-4 md:px-8 max-w-[1400px] mx-auto">
         <div className="py-4">
           <SectionLabel>KRC-20 Asset</SectionLabel>
-          <h2 className="font-extrabold text-3xl md:text-4xl text-[var(--text-1)]">$GEEK Token</h2>
+          <h2 className="text-3xl md:text-4xl gp-extrude-gold">$GEEK Token</h2>
           <p className="text-[var(--text-2)] mt-3 text-lg">The value layer for Proof-of-Learning on Kaspa</p>
 
           <div className="grid md:grid-cols-2 gap-8 mt-10">
@@ -869,11 +839,11 @@ export default function LandingPage() {
               <div className="flat-card p-6 mt-6" style={{ background: 'var(--flat-cream)' }}>
                 <div className="text-[10px] tracking-widest uppercase text-[var(--text-3)] font-bold text-center mb-4">70/30 Recycle & Burn Model</div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-2xl border-2 border-[var(--ink)] text-center py-4">
+                  <div className="bg-[var(--surface-1)] rounded-2xl border-2 border-[var(--ink)] text-center py-4">
                     <span className="text-2xl font-extrabold text-[var(--brand-primary)] block">70%</span>
                     <span className="text-sm text-[var(--text-2)]">Back to Rewards</span>
                   </div>
-                  <div className="bg-white rounded-2xl border-2 border-[var(--ink)] text-center py-4">
+                  <div className="bg-[var(--surface-1)] rounded-2xl border-2 border-[var(--ink)] text-center py-4">
                     <span className="text-2xl font-extrabold text-[var(--brand-tertiary)] block">30%</span>
                     <span className="text-sm text-[var(--text-2)]">Permanently Burned</span>
                   </div>
@@ -1033,7 +1003,7 @@ export default function LandingPage() {
       {/* Why Kaspa */}
       <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--brand-primary)] mb-8">Why Kaspa</h2>
+          <h2 className="text-4xl md:text-5xl gp-extrude-cyan mb-8">Why Kaspa</h2>
           <p className="text-lg md:text-xl text-[var(--text-2)] leading-relaxed mb-10">
             Kaspa isn&rsquo;t the loudest blockchain. It&rsquo;s the fastest. Sub-second blocks without sacrificing decentralization or security.
             <br /><br />
@@ -1133,9 +1103,9 @@ export default function LandingPage() {
       <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
         <ScrollReveal variant="scale">
         <div className="flat-card rounded-[32px] p-8 md:p-16 text-center" style={{ background: 'var(--brand-primary)' }}>
-          <div className="flat-badge mb-6" style={{ background: '#fff' }}>Mission Briefing</div>
+          <div className="flat-badge mb-6" >Mission Briefing</div>
           <h2 className="font-extrabold text-4xl md:text-5xl text-white">Join the Mission</h2>
-          <p className="text-white/85 text-lg italic my-4">All Hope. No Hype. Level Up. Earn On. Geek Out.</p>
+          <p className="gp-pixel text-white/85 text-xs sm:text-sm my-4">All Hope. No Hype. Level Up. Earn On. Geek Out.</p>
 
           <div className="flex flex-wrap justify-center gap-4 mt-8">
             <MagneticLink href="/auth/register" className="flat-btn flat-btn-accent px-10 py-4 text-base">
@@ -1146,14 +1116,24 @@ export default function LandingPage() {
             </MagneticLink>
           </div>
 
+          <div className="flex justify-center gap-3 mt-10" aria-hidden="true">
+            <span className="gp-progress-square" />
+            <span className="gp-progress-square" />
+            <span className="gp-progress-square" />
+            <span className="gp-progress-square gp-progress-square--off" />
+            <span className="gp-progress-square gp-progress-square--off" />
+          </div>
+          <p className="gp-pixel text-white text-xs sm:text-sm mt-6">Follow for the drop</p>
+          <p className="gp-pixel text-[var(--gp-cyan)] text-xs mt-2">geekprotocol.xyz</p>
+
           <div className="flex justify-center gap-4 mt-10">
-            <a href="https://x.com/geekonkas" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border-2 border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:-translate-y-0.5 transition">
+            <a href="https://x.com/geekonkas" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-[var(--surface-1)] border-2 border-[var(--ink)] flex items-center justify-center text-[var(--neon-pink)] hover:-translate-y-0.5 transition">
               <FaTwitter />
             </a>
-            <a href="https://t.me/GEEKonKAScommunity" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border-2 border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:-translate-y-0.5 transition">
+            <a href="https://t.me/GEEKonKAScommunity" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-[var(--surface-1)] border-2 border-[var(--ink)] flex items-center justify-center text-[var(--neon-pink)] hover:-translate-y-0.5 transition">
               <FaTelegram />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-white border-2 border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:-translate-y-0.5 transition">
+            <a href="#" className="w-10 h-10 rounded-full bg-[var(--surface-1)] border-2 border-[var(--ink)] flex items-center justify-center text-[var(--neon-pink)] hover:-translate-y-0.5 transition">
               <FaLink />
             </a>
           </div>

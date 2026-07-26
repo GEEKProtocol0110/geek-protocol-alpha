@@ -81,14 +81,14 @@ export default function SubmitQuestion() {
 
   if (status === "idle" || status === "loading") {
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-12">
 

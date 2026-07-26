@@ -37,7 +37,7 @@ export default function DashboardPage() {
 
   if (status === "idle" || status === "loading") {
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -50,7 +50,7 @@ export default function DashboardPage() {
   ));
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
 
       <div className="max-w-5xl mx-auto px-4 py-12">
@@ -66,7 +66,7 @@ export default function DashboardPage() {
               Level {user.level} · {user.xp.toLocaleString()} XP · 🔥 {user.currentStreak} day streak
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 rounded-full bg-[#2a1a5e] px-4 py-2 text-white font-bold text-sm shadow-[var(--shadow-brand)]">
+          <div className="hidden sm:flex items-center gap-2 rounded-full bg-[var(--surface-2)] border-2 border-[var(--ink)] px-4 py-2 text-white font-bold text-sm shadow-[var(--shadow-hard-sm)] gp-mono">
             💎 {user.points.toLocaleString()}
           </div>
         </div>
@@ -83,16 +83,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Daily Quiz — Hero CTA */}
-        <div className="relative rounded-3xl bg-[var(--brand-accent)] border-[3px] border-[var(--ink)] p-8 mb-8 overflow-hidden shadow-[var(--shadow-soft)]">
-          <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/15" aria-hidden />
-          <div className="absolute right-16 bottom-0 w-20 h-20 rounded-full bg-white/10" aria-hidden />
+        <div className="relative rounded-3xl border-2 border-[var(--gp-pink)] bg-[var(--surface-1)] p-8 mb-8 overflow-hidden shadow-[6px_6px_0px_0px_var(--gp-pink-dark)]">
+          <img
+            src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80"
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-[rgba(10,10,18,0.55)]" aria-hidden />
 
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
               <div className="text-xs font-bold tracking-wide text-white/80 mb-2 uppercase">
                 Today · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
               </div>
-              <h2 className="font-extrabold text-4xl text-white mb-1">Daily Quiz</h2>
+              <h2 className="font-extrabold text-4xl text-white mb-1 glow-cyan">Daily Quiz</h2>
               <div className="font-bold text-xl text-white/90 mb-3">Theme: {todayTheme}</div>
               <div className="flex flex-wrap gap-3 text-xs text-white/80 font-semibold">
                 <span>10 Questions</span>

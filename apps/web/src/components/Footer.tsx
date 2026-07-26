@@ -1,17 +1,23 @@
 "use client";
 
+import Image from "next/image";
 import { FaTwitter, FaTelegram, FaGithub } from "react-icons/fa";
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border-soft)] bg-white py-12 px-4 md:px-8">
+    <footer className="relative border-t-2 border-[var(--border-soft)] bg-[var(--surface-1)] py-12 px-4 md:px-8">
       <div className="max-w-[1400px] mx-auto">
         <div className="grid md:grid-cols-4 gap-8 pb-8 border-b border-[var(--border-soft)] mb-6">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--brand-primary)] font-extrabold text-sm text-white">GP</span>
-              <span className="font-extrabold text-sm text-[var(--text-1)]">GEEK PROTOCOL</span>
+            <div className="flex items-center mb-3">
+              <Image
+                src="/logo.png"
+                alt="Geek Protocol"
+                width={1536}
+                height={1024}
+                className="h-[8rem] w-auto"
+              />
             </div>
             <p className="text-[var(--text-1)] text-sm mb-4 font-semibold">All hope, no hype.</p>
             <p className="text-[var(--text-3)] text-sm">

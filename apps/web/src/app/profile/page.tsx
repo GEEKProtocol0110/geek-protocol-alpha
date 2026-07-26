@@ -49,7 +49,7 @@ export default function ProfilePage() {
 
   if (status === "idle" || status === "loading") {
     return (
-      <main className="flex min-h-[calc(100vh-72px)] items-center justify-center bg-[var(--surface-0)]">
+      <main className="flex min-h-[calc(100vh-72px)] items-center justify-center">
         <div className="text-[var(--text-3)] animate-pulse text-sm">Loading profile…</div>
       </main>
     );
@@ -70,7 +70,7 @@ export default function ProfilePage() {
     );
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)]">
+    <div className="min-h-screen">
       <main className="mx-auto max-w-2xl px-4 py-12">
         {/* Avatar + headline */}
         <div className="mb-8 flex items-center gap-5">

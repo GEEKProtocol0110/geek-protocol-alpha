@@ -103,7 +103,7 @@ export default function LeaderboardPage() {
   const myRank = me ? entries.findIndex((e) => e.id === me.id) + 1 : 0;
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -113,7 +113,7 @@ export default function LeaderboardPage() {
           <div className="badge-pill text-[var(--brand-accent)] mb-4">Global Rankings</div>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <h1 className="font-extrabold text-5xl text-[var(--text-1)]">
-              Leader<span className="text-[var(--brand-primary)]">board</span>
+              <span className="glow-cyan">Leader</span><span className="neon-text-pink">board</span>
             </h1>
             <div className="flex items-center gap-2 text-[10px] text-[var(--text-3)] font-semibold">
               <span
@@ -147,7 +147,7 @@ export default function LeaderboardPage() {
               onClick={() => setSort(t.key)}
               className={`flex-1 py-2.5 rounded-full text-xs font-bold tracking-wide transition ${
                 sort === t.key
-                  ? "bg-[var(--brand-primary)] text-white shadow-[var(--shadow-brand)]"
+                  ? "bg-[var(--brand-primary)] text-white border-[3px] border-[var(--ink)] shadow-[var(--shadow-brand)]"
                   : "text-[var(--text-3)] hover:text-[var(--text-1)]"
               }`}
             >

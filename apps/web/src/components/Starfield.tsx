@@ -127,8 +127,6 @@ const createStars = (rng: () => number, layer: LayerConfig, offset: number): Sta
       opacity,
       animationDuration: `${twinkleDuration}s, ${driftDuration}s`,
       animationDelay: `${twinkleDelay}s, ${driftDelay}s`,
-      filter: blur ? `blur(${blur}px)` : undefined,
-      boxShadow: glow ? `0 0 ${glow}px ${layer.shadowColor}` : undefined,
     };
 
     (style as StarStyle)["--drift-x"] = `${driftX}px`;
@@ -218,17 +216,6 @@ export function Starfield() {
         ))}
       </div>
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 right-8 h-96 w-96 rounded-full bg-teal-500/10 blur-3xl animate-pulse" />
-        <div
-          className="absolute bottom-16 left-12 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl animate-pulse"
-          style={{ animationDelay: "1.5s" }}
-        />
-        <div
-          className="absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/5 blur-3xl animate-pulse"
-          style={{ animationDelay: "3s" }}
-        />
-      </div>
     </div>
   );
 }

@@ -101,7 +101,7 @@ export default function AdminPage() {
 
   if (status === "idle" || status === "loading") {
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -109,7 +109,7 @@ export default function AdminPage() {
 
   if (status === "authenticated" && !user?.isAdmin) {
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+      <div className="min-h-screen text-[var(--text-1)]">
         <Navbar />
         <div className="max-w-xl mx-auto px-4 py-16 text-center">
           <div className="soft-card border border-[var(--brand-tertiary)]/30 p-8">
@@ -122,7 +122,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-8">

@@ -216,7 +216,7 @@ export default function DailyQuizPage() {
   // ── Render phases ─────────────────────────────────────────────────────────
 
   if (phase === "loading") return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="text-center">
@@ -228,7 +228,7 @@ export default function DailyQuizPage() {
   );
 
   if (phase === "error") return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="flex items-center justify-center min-h-[80vh] px-4">
         <div className="soft-card border border-[var(--brand-tertiary)]/20 p-8 max-w-md w-full text-center">
@@ -245,7 +245,7 @@ export default function DailyQuizPage() {
   );
 
   if (phase === "intro" && quiz) return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-16">
         <div className="flex justify-end mb-2">
@@ -305,7 +305,7 @@ export default function DailyQuizPage() {
     const correctCount = results.filter((r) => r.isCorrect).length;
 
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+      <div className="min-h-screen text-[var(--text-1)]">
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 py-8">
 
@@ -340,7 +340,7 @@ export default function DailyQuizPage() {
               { label: "COMBO", value: combo > 0 ? `🔥×${combo}` : "—" },
               { label: "STREAK", value: `×${user?.streakBonusMultiplier?.toFixed(1) ?? "1.0"}` },
             ].map((s) => (
-              <div key={s.label} className={`flex-1 rounded-2xl p-2 text-center ${s.alert ? "bg-[var(--brand-tertiary)]/10" : "bg-white shadow-[var(--shadow-soft)]"}`}>
+              <div key={s.label} className={`flex-1 rounded-2xl p-2 text-center border-[3px] border-[var(--ink)] ${s.alert ? "bg-[var(--brand-tertiary)]/10" : "bg-[var(--surface-1)] shadow-[var(--shadow-soft)]"}`}>
                 <div className="text-[9px] tracking-widest text-[var(--text-3)] font-semibold">{s.label}</div>
                 <div className={`font-extrabold text-lg ${s.alert ? "text-[var(--brand-tertiary)]" : "text-[var(--text-1)]"}`}>{s.value}</div>
               </div>
@@ -424,7 +424,7 @@ export default function DailyQuizPage() {
   }
 
   if (phase === "submitting") return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)] flex items-center justify-center">
+    <div className="min-h-screen text-[var(--text-1)] flex items-center justify-center">
       <div className="text-center">
         <div className="text-4xl mb-4">{character === "GIGA" ? "🤖" : "🧠"}</div>
         <div className="font-extrabold text-2xl text-[var(--text-1)] mb-2">Calculating Results</div>

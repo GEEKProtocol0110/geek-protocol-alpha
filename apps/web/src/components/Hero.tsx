@@ -19,8 +19,6 @@ export function Hero() {
       {/* PCB-style background with scanlines */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="absolute inset-0 bg-[#0a0e0a]" />
-        {/* Scanlines effect */}
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.18)_2px,rgba(0,0,0,0.18)_4px)]" />
         {/* Circuit traces - decorative lines */}
         <div className="absolute top-20 left-10 h-[2px] w-32 bg-[#2a1a3a]" />
         <div className="absolute top-40 left-24 h-[2px] w-48 bg-[#2a1a3a]" />
@@ -70,7 +68,7 @@ export function Hero() {
           <div className="flex flex-wrap gap-4">
             <Link
               href="/play"
-              className="relative overflow-hidden bg-[#ff2d78] px-8 py-4 font-['Syncopate',sans-serif] text-sm font-bold uppercase tracking-wider text-white transition hover:shadow-[0_0_24px_rgba(255,45,120,0.5)]"
+              className="relative overflow-hidden bg-[var(--gp-pink)] px-8 py-4 font-['Syncopate',sans-serif] text-sm font-bold uppercase tracking-wider text-white transition hover:shadow-[4px_4px_0px_0px_var(--gp-pink-dark)]"
             >
               <span className="relative z-10">Play Gauntlet</span>
             </Link>

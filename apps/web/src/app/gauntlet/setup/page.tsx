@@ -85,24 +85,34 @@ export default function GauntletSetupPage() {
 
   if (status === "idle" || status === "loading" || checking) {
     return (
-      <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-12">
         <div className="flex justify-end mb-2">
           <SfxToggle />
         </div>
 
+        {/* Neon banner */}
+        <div className="relative rounded-3xl overflow-hidden border-2 border-[var(--gp-cyan)] mb-8 h-40 shadow-[6px_6px_0px_0px_var(--gp-cyan-dark)]">
+          <img
+            src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1400&q=80"
+            alt="Neon arcade"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-[rgba(10,10,18,0.55)]" aria-hidden />
+        </div>
+
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="badge-pill text-[var(--brand-accent)] mb-4">Geek Gauntlet · Setup</div>
-          <h1 className="font-extrabold text-5xl text-[var(--text-1)]">Geek Gauntlet</h1>
+          <div className="badge-pill mb-4">Geek Gauntlet · Setup</div>
+          <h1 className="font-extrabold text-5xl"><span className="glow-cyan text-[var(--text-1)]">Geek</span> <span className="neon-text">Gauntlet</span></h1>
           <p className="text-sm text-[var(--text-3)] mt-2">10 rounds. Progressive difficulty. Real stakes.</p>
         </div>
 
@@ -155,7 +165,7 @@ export default function GauntletSetupPage() {
                 <button
                   key={t.name}
                   onClick={() => toggle(t.name)}
-                  className={`rounded-2xl p-4 text-center transition ${
+                  className={`rounded-2xl p-4 text-center transition border-[3px] border-[var(--ink)] ${
                     active
                       ? "bg-[var(--brand-primary)] text-white shadow-[var(--shadow-brand)]"
                       : "bg-[var(--surface-2)] text-[var(--text-2)] hover:bg-[var(--surface-3)]"

@@ -29,12 +29,12 @@ const FOOTER_LINKS = [
 
 export function LandingFooter() {
   return (
-    <footer className="relative border-t border-[var(--border-soft)] bg-white py-16">
+    <footer className="relative border-t-2 border-[var(--border-soft)] bg-[var(--surface-1)] py-16">
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="grid gap-10 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <div className="grid size-12 place-items-center rounded-3xl bg-[var(--brand-primary)] text-sm font-bold text-white">
+              <div className="grid size-12 place-items-center rounded-3xl bg-[var(--gp-pink)] text-sm font-bold text-white shadow-[4px_4px_0px_0px_var(--gp-pink-dark)]">
                 GP
               </div>
               <div>

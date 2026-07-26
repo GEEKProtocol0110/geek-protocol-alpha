@@ -1,30 +1,96 @@
 @import "tailwindcss";
 
+/* ── GEEK PROTOCOL design tokens ──────────────────────────────────────────
+   Flat, solid colors only. NO gradients (linear/radial/conic), NO blurred
+   box-shadows, NO glow. Depth comes from the hard offset shadow technique:
+   zero-blur box-shadow offset 4–8px down-right in the darker shade of the
+   same color family. Every color in the product must reference this file. */
+
 :root {
-  --surface-0: #f7f6fc;
-  --surface-1: #ffffff;
-  --surface-2: #f1eefb;
-  --surface-3: #e9e4fa;
-  --brand-primary: #6c3ef5;
-  --brand-primary-light: #7b4dff;
-  --brand-secondary: #2bb673;
-  --brand-accent: #f7941d;
-  --brand-tertiary: #f04e3e;
-  --text-1: #1a1a2e;
-  --text-2: #4a4a5f;
-  --text-3: #8e8ea0;
-  --border-strong: rgba(26, 26, 46, 0.14);
-  --border-soft: rgba(26, 26, 46, 0.08);
-  --shadow-soft: 5px 5px 0 rgba(20, 20, 26, 1);
-  --shadow-brand: 6px 6px 0 rgba(20, 20, 26, 1);
-  color-scheme: light;
+  /* Core palette */
+  --gp-cyan: #00E5D6;         /* primary brand, CTAs, links */
+  --gp-pink: #FF3FA4;         /* secondary, energy accents, reward states */
+  --gp-bg: #0A0A12;           /* primary background — deep space */
+  --gp-white: #FFFFFF;        /* text on dark, highlights */
+  --gp-violet: #7B5CFA;       /* tertiary — category tags only */
+  --gp-gold: #FFC93C;         /* points/rewards/rank-1 ONLY — never decorative */
+  --gp-slate: #8A8F9C;        /* secondary text, timestamps, disabled states */
+
+  /* Derived / offset shades (hard-shadow technique) */
+  --gp-cyan-dark: #00A99D;
+  --gp-pink-dark: #C4287A;
+  --gp-violet-dark: #5A3FC7;
+  --gp-gold-dark: #C79418;   /* extrusion shade for gold reward headlines only */
+
+  /* Wordmark 3D treatment shades (logo spec) */
+  --gp-cyan-bevel: #00B8B0;
+  --gp-pink-bevel: #D92982;
+  --gp-outline: #1A1B25;
+  --gp-shadow: #090912;
+
+  /* Flat surface steps (solid — never translucent glass) */
+  --surface-0: var(--gp-bg);
+  --surface-1: #12121D;
+  --surface-2: #1A1A28;
+  --surface-3: #222233;
+
+  /* Text */
+  --text-1: var(--gp-white);
+  --text-2: #C9CDD6;
+  --text-3: var(--gp-slate);
+
+  /* Borders / outline ink (thick dark outlines on cards & badges) */
+  --ink: #05050B;
+  --border-strong: rgba(0, 229, 214, 0.55);
+  --border-soft: rgba(255, 255, 255, 0.1);
+
+  /* Legacy aliases — existing components reference these names.
+     They now resolve to the GP palette; do not add new usages. */
+  --brand-primary: var(--gp-cyan);
+  --brand-primary-light: var(--gp-cyan);
+  --brand-secondary: var(--gp-cyan);
+  --brand-accent: var(--gp-pink);
+  --brand-tertiary: var(--gp-violet);
+  --neon-pink: var(--gp-pink);
+  --neon-mint: var(--gp-cyan);
+  --neon-cyan: var(--gp-cyan);
+  --neon-purple: var(--gp-violet);
+
+  /* Hard offset shadows — zero blur radius, always */
+  --shadow-hard: 6px 6px 0px 0px var(--ink);
+  --shadow-hard-sm: 3px 3px 0px 0px var(--ink);
+  --shadow-hard-cyan: 6px 6px 0px 0px var(--gp-cyan-dark);
+  --shadow-hard-pink: 6px 6px 0px 0px var(--gp-pink-dark);
+  --shadow-hard-violet: 6px 6px 0px 0px var(--gp-violet-dark);
+
+  /* Legacy shadow aliases → hard offset equivalents */
+  --shadow-soft: var(--shadow-hard);
+  --shadow-brand: var(--shadow-hard-cyan);
+  --shadow-flat-sm: var(--shadow-hard-sm);
+  --shadow-flat: var(--shadow-hard);
+  --shadow-flat-lg: 8px 8px 0px 0px var(--ink);
+  --flat-yellow: var(--surface-2);
+  --flat-cream: var(--surface-1);
+
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--surface-0);
+  --color-background: var(--gp-bg);
   --color-foreground: var(--text-1);
-  --font-sans: var(--font-jakarta);
-  --font-display: var(--font-jakarta);
+  --font-sans: var(--font-grotesk);
+}
+
+/* Font tokens: next/font (layout.tsx) injects --font-baloo / --font-grotesk /
+   --font-jbmono etc. AS CLASSES ON <body> — so these aliases must be scoped
+   to body (not :root/html, where those vars don't exist yet; an alias whose
+   var() can't resolve poisons every font-family that references it). */
+body {
+  --font-display: var(--font-baloo);
+  --font-body: var(--font-grotesk);
+  --font-mono: var(--font-jbmono);
+  --font-orbitron: var(--font-baloo);
+  --font-jakarta: var(--font-grotesk);
 }
 
 * {
@@ -36,18 +102,31 @@ html {
 }
 
 body {
-  background-color: var(--surface-0);
+  background-color: var(--gp-bg);
   color: var(--text-1);
   min-height: 100vh;
-  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body), "Space Grotesk", system-ui, -apple-system, sans-serif;
   font-optical-sizing: auto;
   overflow-x: hidden;
 }
 
+/* Display family for headlines. Weight stays Regular/Medium in-app —
+   ExtraBold is reserved for the hero/wordmark (.gp-display). */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
-  font-optical-sizing: auto;
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.gp-display {
+  font-family: var(--font-display), sans-serif;
   font-weight: 800;
+}
+
+.gp-mono,
+.stat-value,
+code, kbd, samp, pre {
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
 }
 
 @layer base {
@@ -57,8 +136,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::selection {
-  background: rgba(108, 62, 245, 0.18);
-  color: var(--text-1);
+  background: var(--gp-pink);
+  color: var(--gp-white);
 }
 
 a {
@@ -67,21 +146,32 @@ a {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--brand-primary);
+  outline: 2px solid var(--gp-cyan);
   outline-offset: 3px;
 }
 
+/* ── Flat surfaces (legacy "glass" names kept, glass look removed) ──────── */
+
 .glass {
   background: var(--surface-1);
-  border: 3px solid var(--ink);
-  box-shadow: var(--shadow-soft);
+  border: 2px solid var(--border-soft);
+  box-shadow: var(--shadow-hard);
 }
 
-.layer-card {
-  border-radius: 24px;
-  border: 3px solid var(--ink);
+.layer-card,
+.soft-card {
+  border-radius: 20px;
+  border: 2px solid var(--border-soft);
   background: var(--surface-1);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-hard);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.soft-card:hover,
+.layer-card:hover {
+  border-color: var(--gp-cyan);
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px 0px var(--gp-cyan-dark);
 }
 
 .badge-pill {
@@ -90,21 +180,17 @@ button:focus-visible {
   gap: 0.35rem;
   padding: 0.35rem 0.85rem;
   border-radius: 999px;
-  border: 2.5px solid var(--ink);
-  background: var(--surface-2);
-  color: var(--text-1);
+  border: 2px solid var(--ink);
+  background: var(--gp-violet);
+  color: var(--gp-white);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  box-shadow: 3px 3px 0px 0px var(--gp-violet-dark);
 }
 
-.soft-card {
-  border-radius: 24px;
-  background: var(--surface-1);
-  box-shadow: var(--shadow-soft);
-  border: 3px solid var(--ink);
-}
+/* ── Buttons — flat fill + hard offset shadow ───────────────────────────── */
 
 .pill-btn {
   display: inline-flex;
@@ -113,50 +199,356 @@ button:focus-visible {
   gap: 0.5rem;
   padding: 0.65rem 1.5rem;
   border-radius: 999px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
-  border: 3px solid var(--ink);
+  border: 2px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-1);
+  box-shadow: var(--shadow-hard-sm);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .pill-btn:hover {
   transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px 0px var(--ink);
 }
 
 .pill-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink) !important;
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px var(--ink);
 }
 
 .pill-btn-primary {
-  background: var(--brand-primary);
-  color: #ffffff;
-  box-shadow: var(--shadow-brand);
+  background: var(--gp-cyan);
+  color: var(--gp-bg);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0px 0px var(--gp-cyan-dark);
+}
+
+.pill-btn-primary:hover {
+  box-shadow: 6px 6px 0px 0px var(--gp-cyan-dark);
+}
+
+.pill-btn-primary:active {
+  box-shadow: 0px 0px 0px 0px var(--gp-cyan-dark);
 }
 
 .pill-btn-white {
-  background: #ffffff;
-  color: var(--brand-primary);
+  background: var(--gp-white);
+  color: var(--gp-bg);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0px 0px var(--gp-slate);
 }
 
 .stat-tile {
-  border-radius: 20px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  color: #ffffff;
-  border: 3px solid var(--ink);
-  box-shadow: var(--shadow-soft);
+  color: var(--gp-white);
+  border: 2px solid var(--border-soft) !important;
+  background: var(--surface-1) !important;
+  box-shadow: var(--shadow-hard);
+  position: relative;
+  overflow: hidden;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+.stat-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--gp-cyan);
+}
+
+/* ── Typography helpers (legacy names, now flat solid color) ────────────── */
+
+.neon-text {
+  color: var(--gp-cyan);
+}
+
+.neon-text-pink {
+  color: var(--gp-pink);
+}
+
+.cyber-outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--gp-white);
+  letter-spacing: 0.06em;
+}
+
+.glow-pink { color: var(--gp-pink); }
+.glow-mint { color: var(--gp-cyan); }
+.glow-cyan { color: var(--gp-cyan); }
+
+/* Gold — reward/rank-1 states ONLY. Never apply as a static decoration. */
+.gp-reward {
+  color: var(--gp-gold);
+}
+.gp-reward-badge {
+  background: var(--gp-gold);
+  color: var(--gp-bg);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard-sm);
+}
+
+/* ── Arcade poster treatment (landing page) ─────────────────────────────────
+   Chunky game-logo lettering: solid fill + stepped zero-blur text-shadow
+   extrusion in the darker shade of the same family. No gradients, no blur. */
+
+.gp-arcade {
+  font-family: var(--font-arcade), "Bungee", var(--font-display), sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.gp-arcade-page h1,
+.gp-arcade-page h2 {
+  font-family: var(--font-arcade), "Bungee", var(--font-display), sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.gp-arcade-page h2 {
+  text-shadow:
+    1px 1px 0 var(--ink),
+    2px 2px 0 var(--ink),
+    3px 3px 0 var(--ink),
+    4px 4px 0 var(--ink);
+}
+
+.gp-extrude-cyan {
+  color: var(--gp-cyan);
+  text-shadow:
+    1px 1px 0 var(--gp-cyan-dark),
+    2px 2px 0 var(--gp-cyan-dark),
+    3px 3px 0 var(--gp-cyan-dark),
+    4px 4px 0 var(--gp-cyan-dark),
+    5px 5px 0 var(--ink),
+    6px 6px 0 var(--ink),
+    7px 7px 0 var(--ink);
+}
+
+.gp-extrude-pink {
+  color: var(--gp-pink);
+  text-shadow:
+    1px 1px 0 var(--gp-pink-dark),
+    2px 2px 0 var(--gp-pink-dark),
+    3px 3px 0 var(--gp-pink-dark),
+    4px 4px 0 var(--gp-pink-dark),
+    5px 5px 0 var(--ink),
+    6px 6px 0 var(--ink),
+    7px 7px 0 var(--ink);
+}
+
+/* Gold extrusion — reward/token contexts ONLY, per the gold usage rule */
+.gp-extrude-gold {
+  color: var(--gp-gold);
+  text-shadow:
+    1px 1px 0 var(--gp-gold-dark),
+    2px 2px 0 var(--gp-gold-dark),
+    3px 3px 0 var(--gp-gold-dark),
+    4px 4px 0 var(--gp-gold-dark),
+    5px 5px 0 var(--ink),
+    6px 6px 0 var(--ink),
+    7px 7px 0 var(--ink);
+}
+
+.gp-pixel {
+  font-family: var(--font-pixel), var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Google Fonts embed utility classes (loaded via <link> in layout.tsx) ── */
+
+.bungee-regular {
+  font-family: "Bungee", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.archivo-black-regular {
+  font-family: "Archivo Black", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.inter-regular {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.inter-bold {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.league-spartan-regular {
+  font-family: "League Spartan", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.league-spartan-bold {
+  font-family: "League Spartan", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* ── Chunky arcade wordmark (GEEK / PROTOCOL logo treatment) ────────────────
+   Ultra-bold rounded letterforms (Luckiest Guy), tight kerning, dark outline,
+   thin white top highlight, deep same-family bevel extrusion, then a hard
+   near-black offset shadow. All zero-blur — flat-color 3D, vinyl-toy style. */
+
+.gp-wordmark {
+  /* Bungee regular — squared arcade letterforms, flat fill, no gradient */
+  font-family: var(--font-arcade), var(--font-wordmark), sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+  line-height: 0.98;
+  -webkit-text-stroke: 4px var(--gp-outline);
+  paint-order: stroke fill;
+}
+
+
+/* Extrusion drops nearly straight down (x ≈ 0.4y) like the reference block
+   lettering; white rim rides the top edge; depth ends in near-black shadow. */
+.gp-wordmark-cyan {
+  color: var(--gp-cyan);
+  text-shadow:
+    0 -3px 0 var(--gp-white),
+    0 1px 0 var(--gp-cyan-bevel), 1px 2px 0 var(--gp-cyan-bevel),
+    1px 3px 0 var(--gp-cyan-bevel), 2px 4px 0 var(--gp-cyan-bevel),
+    2px 5px 0 var(--gp-cyan-bevel), 2px 6px 0 var(--gp-cyan-bevel),
+    3px 7px 0 var(--gp-cyan-bevel), 3px 8px 0 var(--gp-cyan-bevel),
+    3px 9px 0 var(--gp-cyan-bevel), 4px 10px 0 var(--gp-cyan-bevel),
+    4px 11px 0 var(--gp-shadow), 5px 12px 0 var(--gp-shadow),
+    5px 13px 0 var(--gp-shadow), 6px 14px 0 var(--gp-shadow),
+    6px 15px 0 var(--gp-shadow), 6px 16px 0 var(--gp-shadow),
+    7px 17px 0 var(--gp-shadow), 7px 18px 0 var(--gp-shadow);
+}
+
+.gp-wordmark-pink {
+  color: var(--gp-pink);
+  text-shadow:
+    0 -3px 0 var(--gp-white),
+    0 1px 0 var(--gp-pink-bevel), 1px 2px 0 var(--gp-pink-bevel),
+    1px 3px 0 var(--gp-pink-bevel), 2px 4px 0 var(--gp-pink-bevel),
+    2px 5px 0 var(--gp-pink-bevel), 2px 6px 0 var(--gp-pink-bevel),
+    3px 7px 0 var(--gp-pink-bevel), 3px 8px 0 var(--gp-pink-bevel),
+    3px 9px 0 var(--gp-pink-bevel), 4px 10px 0 var(--gp-pink-bevel),
+    4px 11px 0 var(--gp-shadow), 5px 12px 0 var(--gp-shadow),
+    5px 13px 0 var(--gp-shadow), 6px 14px 0 var(--gp-shadow),
+    6px 15px 0 var(--gp-shadow), 6px 16px 0 var(--gp-shadow),
+    7px 17px 0 var(--gp-shadow), 7px 18px 0 var(--gp-shadow);
+}
+
+/* Smaller screens: shallower extrusion so it doesn't overwhelm the glyphs */
+@media (max-width: 640px) {
+  .gp-wordmark {
+    -webkit-text-stroke-width: 3px;
   }
+  .gp-wordmark-cyan {
+    text-shadow:
+      0 -2px 0 var(--gp-white),
+      0 1px 0 var(--gp-cyan-bevel), 1px 2px 0 var(--gp-cyan-bevel),
+      1px 3px 0 var(--gp-cyan-bevel), 2px 4px 0 var(--gp-cyan-bevel),
+      2px 5px 0 var(--gp-cyan-bevel), 2px 6px 0 var(--gp-cyan-bevel),
+      3px 7px 0 var(--gp-shadow), 3px 8px 0 var(--gp-shadow),
+      4px 9px 0 var(--gp-shadow), 4px 10px 0 var(--gp-shadow),
+      4px 11px 0 var(--gp-shadow), 5px 12px 0 var(--gp-shadow);
+  }
+  .gp-wordmark-pink {
+    text-shadow:
+      0 -2px 0 var(--gp-white),
+      0 1px 0 var(--gp-pink-bevel), 1px 2px 0 var(--gp-pink-bevel),
+      1px 3px 0 var(--gp-pink-bevel), 2px 4px 0 var(--gp-pink-bevel),
+      2px 5px 0 var(--gp-pink-bevel), 2px 6px 0 var(--gp-pink-bevel),
+      3px 7px 0 var(--gp-shadow), 3px 8px 0 var(--gp-shadow),
+      4px 9px 0 var(--gp-shadow), 4px 10px 0 var(--gp-shadow),
+      4px 11px 0 var(--gp-shadow), 5px 12px 0 var(--gp-shadow);
+  }
+}
+
+/* Launch progress squares (poster motif): flat squares, no gradient */
+.gp-progress-square {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  border: 2px solid var(--ink);
+  background: var(--gp-cyan);
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.gp-progress-square--off {
+  background: var(--gp-slate);
+}
+
+/* ── Background texture — flat dot grid (SVG tile, no gradients) ────────── */
+
+.gp-dot-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='2' cy='2' r='1.5' fill='%2300E5D6'/%3E%3C/svg%3E");
+  background-size: 28px 28px;
+}
+
+/* Legacy decorative layers — retired (blur/gradient effects are off-brand) */
+.cyber-grid-floor,
+.cyber-scanlines,
+.aurora-ribbon {
+  display: none;
+}
+
+/* ── Starfield support (flat dots, opacity animation only) ──────────────── */
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1; }
+}
+
+@keyframes starDrift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(var(--drift-x, 0px), var(--drift-y, 0px)); }
+}
+
+.starfield-star {
+  animation-name: starTwinkle, starDrift;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: normal, alternate;
+  animation-timing-function: ease-in-out, linear;
+}
+
+@keyframes shootAcross {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  8%   { opacity: 1; }
+  100% { transform: translate(var(--shoot-dx, 200px), var(--shoot-dy, 60px)); opacity: 0; }
+}
+
+.animate-shoot {
+  animation-name: shootAcross;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
 }
 
 @keyframes floatUp {
@@ -178,25 +570,13 @@ button:focus-visible {
   animation: floatUp 6s ease-in-out infinite;
 }
 
-/* ── Flat / neo-brutalist system, scoped to the landing page ──────────────────
-   Solid colors only, thick ink outlines, hard offset shadows (no blur, no
-   gradients). Kept separate from .soft-card/.pill-btn/.badge-pill so the rest
-   of the app's softer visual language is untouched. */
-
-:root {
-  --ink: #14141a;
-  --flat-yellow: #ffd84d;
-  --flat-cream: #fff7e8;
-  --shadow-flat-sm: 3px 3px 0 var(--ink);
-  --shadow-flat: 6px 6px 0 var(--ink);
-  --shadow-flat-lg: 9px 9px 0 var(--ink);
-}
+/* ── Flat component set (shared with landing page) ──────────────────────── */
 
 .flat-card {
-  border-radius: 28px;
-  border: 3px solid var(--ink);
-  background: #ffffff;
-  box-shadow: var(--shadow-flat);
+  border-radius: 24px;
+  border: 2px solid var(--border-soft);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-hard);
 }
 
 .flat-btn {
@@ -206,31 +586,44 @@ button:focus-visible {
   gap: 0.5rem;
   padding: 0.9rem 2rem;
   border-radius: 999px;
-  border: 3px solid var(--ink);
+  border: 2px solid var(--ink);
   font-weight: 800;
-  color: var(--ink);
-  background: #ffffff;
-  box-shadow: var(--shadow-flat-sm);
+  color: var(--text-1);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-hard-sm);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .flat-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-flat);
+  box-shadow: 5px 5px 0px 0px var(--ink);
 }
 
 .flat-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink);
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px var(--ink);
 }
 
 .flat-btn-accent {
-  background: var(--brand-accent);
+  background: var(--gp-pink);
+  color: var(--gp-white);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0px 0px var(--gp-pink-dark);
+}
+
+.flat-btn-accent:hover {
+  box-shadow: 6px 6px 0px 0px var(--gp-pink-dark);
 }
 
 .flat-btn-primary {
-  background: var(--brand-primary);
-  color: #ffffff;
+  background: var(--gp-cyan);
+  color: var(--gp-bg);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0px 0px var(--gp-cyan-dark);
+}
+
+.flat-btn-primary:hover {
+  box-shadow: 6px 6px 0px 0px var(--gp-cyan-dark);
 }
 
 .flat-badge {
@@ -239,13 +632,14 @@ button:focus-visible {
   gap: 0.4rem;
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
-  border: 2.5px solid var(--ink);
-  background: #ffffff;
+  border: 2px solid var(--ink);
+  background: var(--gp-cyan);
   font-weight: 700;
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink);
+  letter-spacing: 0.08em;
+  color: var(--gp-bg);
+  box-shadow: 3px 3px 0px 0px var(--gp-cyan-dark);
 }
 
 .flat-icon-tile {
@@ -255,9 +649,11 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid var(--ink);
+  border: 2px solid var(--ink);
+  background: var(--surface-2);
   font-size: 1.85rem;
   flex-shrink: 0;
+  box-shadow: var(--shadow-hard-sm);
 }
 
 @keyframes bobGentle {
@@ -269,7 +665,20 @@ button:focus-visible {
   animation: bobGentle 5s ease-in-out infinite;
 }
 
-/* ── Scroll-reveal variants (fade + transform only, no gradients/colors) ──── */
+/* ── Skeleton/loading — flat pulse, never gradient shimmer ──────────────── */
+
+@keyframes flatPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+.gp-skeleton {
+  background: var(--surface-2);
+  border-radius: 8px;
+  animation: flatPulse 1.4s ease-in-out infinite;
+}
+
+/* ── Scroll-reveal variants (fade + transform only) ──────────────────────── */
 
 @keyframes revealFadeUp {
   from { opacity: 0; transform: translateY(36px); }
@@ -314,7 +723,7 @@ button:focus-visible {
   animation: marqueeScroll 22s linear infinite reverse;
 }
 
-/* ── Living wavy divider (progressive enhancement, static fallback) ───────── */
+/* ── Living wavy divider ─────────────────────────────────────────────────── */
 
 @keyframes waveMorph {
   0%   { d: path("M0,32 C 180,80 360,0 540,24 C 720,48 900,80 1080,56 C 1260,32 1350,16 1440,32 L1440,80 L0,80 Z"); }
@@ -326,7 +735,7 @@ button:focus-visible {
   animation: waveMorph 11s ease-in-out infinite;
 }
 
-/* ── Tilt / magnetic interactive elements ──────────────────────────────── */
+/* ── Tilt / magnetic interactive elements ────────────────────────────────── */
 
 .tilt-card {
   transition: transform 0.12s ease-out;
@@ -340,10 +749,19 @@ button:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   .wave-path,
   .animate-marquee,
   .animate-marquee-reverse,
-  .flat-bob {
+  .flat-bob,
+  .starfield-star,
+  .animate-shoot,
+  .gp-skeleton {
     animation: none !important;
   }
   .reveal-fade-up.reveal-in,

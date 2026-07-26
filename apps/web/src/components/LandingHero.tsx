@@ -12,7 +12,7 @@ export function LandingHero() {
       width: Math.random() * 6 + 2,
       height: Math.random() * 6 + 2,
       left: Math.random() * 100,
-      background: i % 3 === 0 ? 'rgba(43, 182, 115, 0.5)' : i % 3 === 1 ? 'rgba(108, 62, 245, 0.5)' : 'rgba(247, 148, 29, 0.5)',
+      background: i % 3 === 0 ? 'var(--gp-cyan)' : i % 3 === 1 ? 'var(--gp-violet)' : 'var(--gp-pink)',
       animationDelay: Math.random() * 15,
       animationDuration: Math.random() * 10 + 10
     }));
@@ -32,7 +32,7 @@ export function LandingHero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-[var(--surface-0)] px-6 py-20">
+    <section className="relative min-h-screen w-full overflow-hidden px-6 py-20">
       {/* Animated background elements */}
       <style>{`
         @keyframes float {
@@ -43,10 +43,6 @@ export function LandingHero() {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           50% { transform: translateY(-30px) translateX(15px); }
         }
-        @keyframes glow-pulse {
-          0%, 100% { opacity: 0.25; filter: blur(120px); }
-          50% { opacity: 0.5; filter: blur(140px); }
-        }
         @keyframes slide-in {
           from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
@@ -54,15 +50,6 @@ export function LandingHero() {
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
-        }
-        @keyframes glow-ring {
-          0% { box-shadow: 0 0 20px rgba(108, 62, 245, 0.25); }
-          50% { box-shadow: 0 0 40px rgba(108, 62, 245, 0.35), 0 0 60px rgba(43, 182, 115, 0.2); }
-          100% { box-shadow: 0 0 20px rgba(108, 62, 245, 0.25); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
         }
         @keyframes particle {
           0% { transform: translateY(0) scale(1); opacity: 0; }
@@ -72,39 +59,17 @@ export function LandingHero() {
         }
         .animate-float { animation: float 8s ease-in-out infinite; }
         .animate-float-slow { animation: float-slow 10s ease-in-out infinite; }
-        .animate-glow { animation: glow-pulse 4s ease-in-out infinite; }
         .animate-slide-in { animation: slide-in 0.8s ease-out; }
         .animate-fade-in { animation: fade-in 1.2s ease-out; }
-        .animate-glow-ring { animation: glow-ring 3s ease-in-out infinite; }
-        .animate-shimmer {
-          animation: shimmer 3s linear infinite;
-          background: linear-gradient(90deg, transparent, rgba(108, 62, 245, 0.15), transparent);
-          background-size: 1000px 100%;
-        }
         .animate-particle {
           animation: particle 15s linear infinite;
         }
       `}</style>
 
       <div className="pointer-events-none absolute inset-0">
-        {/* Dynamic glows that follow mouse */}
+        {/* Flat dot-grid texture with subtle parallax */}
         <div
-          className="absolute h-[800px] w-[800px] rounded-full bg-[var(--brand-primary)]/20 blur-[140px] animate-glow transition-all duration-1000"
-          style={{
-            top: `${mousePos.y}%`,
-            left: `${mousePos.x}%`,
-            transform: 'translate(-50%, -50%)'
-          }}
-        />
-
-        {/* Static glows */}
-        <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-[var(--brand-primary)]/15 blur-[120px] animate-glow" />
-        <div className="absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-[var(--brand-secondary)]/15 blur-[120px] animate-glow" style={{animationDelay: "1s"}} />
-        <div className="absolute top-1/2 left-1/3 h-[500px] w-[500px] rounded-full bg-[var(--brand-accent)]/10 blur-[100px] animate-glow" style={{animationDelay: "2s"}} />
-
-        {/* Enhanced grid pattern with parallax */}
-        <div
-          className="absolute inset-0 bg-[linear-gradient(rgba(108,62,245,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(43,182,115,0.05)_1px,transparent_1px)] bg-[size:50px_50px]"
+          className="gp-dot-grid"
           style={{
             transform: `translate(${mousePos.x * 0.02}px, ${mousePos.y * 0.02}px)`
           }}
@@ -127,21 +92,20 @@ export function LandingHero() {
           />
         ))}
 
-        {/* Larger floating elements with enhanced animation */}
-        <div className="absolute top-20 right-20 h-4 w-4 rounded-full bg-[var(--brand-primary)] shadow-[0_0_20px_rgba(108,62,245,0.5)] animate-float" style={{animationDelay: "0s"}} />
-        <div className="absolute bottom-32 left-32 h-3 w-3 rounded-full bg-[var(--brand-secondary)] shadow-[0_0_15px_rgba(43,182,115,0.5)] animate-float" style={{animationDelay: "1s"}} />
-        <div className="absolute top-1/3 right-1/4 h-3 w-3 rounded-full bg-[var(--brand-accent)] shadow-[0_0_15px_rgba(247,148,29,0.5)] animate-float" style={{animationDelay: "2s"}} />
-        <div className="absolute top-1/2 left-1/4 h-2 w-2 rounded-full bg-[var(--brand-primary-light)] shadow-[0_0_10px_rgba(123,77,255,0.5)] animate-float-slow" style={{animationDelay: "3s"}} />
-        <div className="absolute bottom-1/4 right-1/3 h-2 w-2 rounded-full bg-[var(--brand-secondary)] shadow-[0_0_10px_rgba(43,182,115,0.5)] animate-float-slow" style={{animationDelay: "4s"}} />
+        {/* Larger floating elements — flat solid dots, no glow */}
+        <div className="absolute top-20 right-20 h-4 w-4 rounded-full bg-[var(--gp-cyan)] animate-float" style={{animationDelay: "0s"}} />
+        <div className="absolute bottom-32 left-32 h-3 w-3 rounded-full bg-[var(--gp-pink)] animate-float" style={{animationDelay: "1s"}} />
+        <div className="absolute top-1/3 right-1/4 h-3 w-3 rounded-full bg-[var(--gp-violet)] animate-float" style={{animationDelay: "2s"}} />
+        <div className="absolute top-1/2 left-1/4 h-2 w-2 rounded-full bg-[var(--gp-cyan)] animate-float-slow" style={{animationDelay: "3s"}} />
+        <div className="absolute bottom-1/4 right-1/3 h-2 w-2 rounded-full bg-[var(--gp-pink)] animate-float-slow" style={{animationDelay: "4s"}} />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
         {/* Badge with enhanced animation */}
         <div className="flex justify-center mb-12 animate-slide-in">
-          <div className="group relative inline-flex items-center gap-2 rounded-full bg-white shadow-[var(--shadow-soft)] px-6 py-3 hover:shadow-[var(--shadow-brand)] transition-all duration-300 animate-glow-ring">
-            <span className="size-2 rounded-full bg-[var(--brand-primary)] animate-pulse shadow-[0_0_10px_rgba(108,62,245,0.5)]" />
-            <span className="text-sm font-bold text-[var(--brand-primary)] tracking-wide uppercase">Proof-of-Learning on Kaspa • All Hope, No Hype</span>
-            <div className="absolute inset-0 rounded-full animate-shimmer opacity-50" />
+          <div className="group relative inline-flex items-center gap-2 rounded-full bg-[var(--surface-1)] border-2 border-[var(--border-soft)] shadow-[var(--shadow-hard-sm)] px-6 py-3 hover:shadow-[var(--shadow-hard-cyan)] transition-all duration-300">
+            <span className="size-2 rounded-full bg-[var(--gp-cyan)] animate-pulse" />
+            <span className="text-sm font-bold text-[var(--gp-cyan)] tracking-wide uppercase">Proof-of-Learning on Kaspa • All Hope, No Hype</span>
           </div>
         </div>
 
@@ -150,7 +114,7 @@ export function LandingHero() {
           <h1 className="text-6xl md:text-9xl font-extrabold text-[var(--text-1)] leading-[0.95] animate-slide-in" style={{animationDelay: "0.1s"}}>
             Your Knowledge
             <br />
-            <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-secondary)] to-[var(--brand-primary)] animate-slide-in" style={{animationDelay: "0.2s"}}>
+            <span className="relative inline-block text-[var(--gp-cyan)] animate-slide-in" style={{animationDelay: "0.2s"}}>
               Has Real Value
             </span>
           </h1>
@@ -164,7 +128,7 @@ export function LandingHero() {
         {/* Enhanced CTA Section with more impact */}
         <div className="text-center mb-24 space-y-8 animate-slide-in" style={{animationDelay: "0.4s"}}>
           <div className="relative inline-block group">
-            <div className="relative px-12 py-6 bg-gradient-to-br from-[var(--brand-accent)] to-[#ffb35c] rounded-3xl shadow-[var(--shadow-soft)]">
+            <div className="relative px-12 py-6 bg-[var(--gp-pink)] border-2 border-[var(--ink)] rounded-3xl shadow-[6px_6px_0px_0px_var(--gp-pink-dark)]">
               <p className="text-3xl md:text-4xl font-extrabold text-white uppercase tracking-wider">
                 Coming Q1 2026
               </p>

@@ -47,7 +47,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
 
       <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-56px)] px-4 py-16">
@@ -59,7 +59,7 @@ function LoginForm() {
               <span className="w-1.5 h-1.5 bg-[var(--brand-primary)] rounded-full animate-pulse" />
               Secure Login · KRC-20 Native
             </div>
-            <h1 className="font-extrabold text-4xl text-[var(--text-1)]">Sign In</h1>
+            <h1 className="font-extrabold text-4xl"><span className="neon-text">Sign In</span></h1>
             <p className="text-[var(--text-3)] text-sm mt-1">Continue your Proof-of-Learning journey</p>
           </div>
 
@@ -160,7 +160,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--surface-0)]" />}>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <LoginForm />
     </Suspense>
   );

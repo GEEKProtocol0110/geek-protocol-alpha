@@ -112,11 +112,11 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[600] flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[600] flex items-center justify-center px-4 bg-black/70"
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-sm rounded-3xl border ${rs.border} bg-white p-6 shadow-[var(--shadow-soft)]`}
+        className={`relative w-full max-w-sm rounded-3xl border ${rs.border} bg-[#0c081e] p-6 shadow-[var(--shadow-soft)]`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center mb-4">
@@ -209,7 +209,7 @@ export default function StickersPage() {
   const myStickers    = allStickers.filter((s) => !!owned[s.id]);
 
   return (
-    <div className="min-h-screen bg-[var(--surface-0)] text-[var(--text-1)]">
+    <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
 
       {selected && (
