@@ -2,6 +2,11 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { makeAttemptToken, verifyAttemptToken } from "../lib/security";
 import { logger } from "../lib/logger";
+import { validateAttemptTiming } from "../lib/antiCheat";
+import { BehaviorSignalsSchema, scoreBehavior } from "../lib/behaviorScore";
+
+/** Must match QUESTION_TIME in the gauntlet play client. */
+const GAUNTLET_QUESTION_SECONDS = 20;
 
 const ROUND_CONFIG = [
   { round: 1, fee: 0,    difficulty: "easy",        rewardPerCorrect: 10,   label: "INITIATION" },
@@ -246,8 +251,9 @@ export async function gauntletRoutes(fastify: FastifyInstance) {
       answers: z.array(z.number()),
       timings: z.array(z.number()).optional(),
       modifier: z.string().optional(),
+      behavior: BehaviorSignalsSchema.optional(),
     });
-    const { userId, token, answers, timings, modifier } = Schema.parse(request.body);
+    const { userId, token, answers, timings, modifier, behavior } = Schema.parse(request.body);
 
     const verified = verifyAttemptToken(token);
     if (!verified.ok) return reply.code(401).send({ success: false, error: "Invalid token" });
@@ -259,10 +265,51 @@ export async function gauntletRoutes(fastify: FastifyInstance) {
     const correctAnswers: number[] = JSON.parse(verified.data.correctAnswers as string);
     const questionIds: number[] = JSON.parse(verified.data.questionIds as string);
 
+    // Gauntlet pays the largest per-question rewards on the platform, so the
+    // same wall-clock check applies here: speed bonuses come from validated
+    // timings, never from what the client claims.
+    const timing = validateAttemptTiming({
+      issuedAtMs:
+        typeof verified.data.iat === "number" ? (verified.data.iat as number) : Date.now(),
+      submittedAtMs: Date.now(),
+      questionCount: correctAnswers.length,
+      clientTimings: (timings ?? []).map((t) => (t ?? 20000) / 1000),
+      maxSecondsPerQuestion: GAUNTLET_QUESTION_SECONDS,
+    });
+
+    if (!timing.ok) {
+      fastify.log.warn(
+        { userId, runId, round, reason: timing.reason, flags: timing.flags },
+        "Gauntlet submission rejected by timing validation"
+      );
+      return reply.code(400).send({ success: false, error: timing.reason });
+    }
+
+    const behaviorVerdict = behavior ? scoreBehavior(behavior) : null;
+    if (timing.flags.length || behaviorVerdict?.suspicious) {
+      logger.warn(
+        {
+          userId,
+          runId,
+          round,
+          timingFlags: timing.flags,
+          behaviorScore: behaviorVerdict?.score,
+          behaviorFlags: behaviorVerdict?.flags,
+        },
+        "Gauntlet attempt flagged for review"
+      );
+    }
+
     const results = answers.map((ans, i) => {
       const isCorrect = ans === correctAnswers[i];
-      const timeTaken = timings?.[i] ? timings[i] / 1000 : 15;
-      const speedBonus = isCorrect && timeTaken < 5 ? 0.2 : isCorrect && timeTaken < 9 ? 0.1 : 0;
+      const timeTaken = timing.effectiveTimings[i] ?? 15;
+      const fullCredit = timing.speedCreditFactor >= 1;
+      const speedBonus =
+        isCorrect && fullCredit && timeTaken < 5
+          ? 0.2
+          : isCorrect && fullCredit && timeTaken < 9
+            ? 0.1
+            : 0;
       let reward = isCorrect ? cfg.rewardPerCorrect : 0;
       if (modifier === "double_down") reward *= 2;
       if (modifier === "hot_streak" && i < 5 && answers.slice(0, i + 1).every((a, idx) => a === correctAnswers[idx])) reward *= 1.5;

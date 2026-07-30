@@ -137,6 +137,20 @@ export async function login(
   return json.data;
 }
 
+/**
+ * Request a single-use login challenge. The server authors the message; the
+ * client must sign it verbatim and must not compose its own. The challenge is
+ * burned on first use and expires after ~30s.
+ */
+export async function requestLoginNonce(
+  walletAddress: string
+): Promise<{ nonce: string; message: string; expiresAt: number; expiresInMs: number }> {
+  const json = await post<{
+    data: { nonce: string; message: string; expiresAt: number; expiresInMs: number };
+  }>("/api/auth/nonce", { walletAddress });
+  return json.data;
+}
+
 export async function walletLogin(
   walletAddress: string,
   message: string,

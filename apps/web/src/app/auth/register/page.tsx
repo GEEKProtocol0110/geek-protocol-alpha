@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -69,10 +70,6 @@ export default function RegisterPage() {
 
         {/* Left — perks */}
         <div className="hidden md:flex flex-col justify-center py-8">
-          <div className="badge-pill text-[var(--brand-primary)] mb-6 w-fit">
-            <span className="w-1.5 h-1.5 bg-[var(--brand-primary)] rounded-full animate-pulse" />
-            Proof-of-Learning Protocol
-          </div>
           <h2 className="font-extrabold text-5xl text-[var(--text-1)] leading-tight mb-4">
             Turn your<br />
             <span className="text-[var(--brand-primary)]">knowledge</span><br />
@@ -103,9 +100,8 @@ export default function RegisterPage() {
         <div>
           {/* Logo */}
           <div className="text-center mb-6">
-            <a href="/" className="inline-flex items-center gap-3 mb-4">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand-primary)] font-extrabold text-white">GP</span>
-              <span className="font-bold text-sm text-[var(--text-2)]">GEEK PROTOCOL</span>
+            <a href="/" className="inline-flex items-center mb-4">
+              <Image src="/logo.png" alt="Geek Protocol" width={1536} height={1024} className="h-24 w-auto" />
             </a>
             <h1 className="font-extrabold text-4xl"><span className="neon-text-pink">Create Account</span></h1>
             <p className="text-[var(--text-3)] text-sm mt-1">Join the Proof-of-Learning movement</p>

@@ -1,5 +1,16 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { logger } from "../lib/logger";
+import {
+  APPROVAL_THRESHOLD,
+  REJECTION_THRESHOLD,
+  MIN_LEVEL,
+  MIN_REVIEW_SECONDS,
+  REVIEW_REWARD_GEEK,
+  cappedCreatorIds,
+  getReviewEligibility,
+  recomputeReviewerAccuracy,
+} from "../lib/reviewIntegrity";
 
 const SubmitSchema = z.object({
   question: z.string().min(10).max(500),
@@ -19,6 +30,8 @@ const ReviewSchema = z.object({
   questionId: z.number().int().positive(),
   action: z.enum(["approve", "reject"]),
   detailedFeedback: z.string().max(500).optional(),
+  /** Seconds the reviewer spent on this question, from the review UI. */
+  reviewTime: z.number().min(0).max(3600).optional(),
 });
 
 export async function cceRoutes(fastify: FastifyInstance) {
@@ -39,8 +52,8 @@ export async function cceRoutes(fastify: FastifyInstance) {
       },
     });
 
-    if (user.level < 10) {
-      return reply.code(403).send({ error: "CCE requires Level 10 or higher." });
+    if (user.level < MIN_LEVEL) {
+      return reply.code(403).send({ error: `CCE requires Level ${MIN_LEVEL} or higher.` });
     }
 
     // Top 5 earning questions
@@ -103,7 +116,9 @@ export async function cceRoutes(fastify: FastifyInstance) {
       where: { id: userId },
       select: { level: true },
     });
-    if (user.level < 10) return reply.code(403).send({ error: "CCE requires Level 10." });
+    if (user.level < MIN_LEVEL) {
+      return reply.code(403).send({ error: `CCE requires Level ${MIN_LEVEL}.` });
+    }
 
     const parse = SubmitSchema.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: parse.error.flatten() });
@@ -139,14 +154,22 @@ export async function cceRoutes(fastify: FastifyInstance) {
     return reply.code(201).send({ data: question });
   });
 
-  // GET /api/cce/review/next — get next question to review
+  // GET /api/cce/eligibility — why the user can or can't review right now
+  fastify.get("/eligibility", { preHandler: fastify.authenticate }, async (req, reply) => {
+    const eligibility = await getReviewEligibility(fastify.prisma, req.jwtUser!.userId);
+    return reply.send({ data: eligibility });
+  });
+
+  // GET /api/cce/review/next — serve a RANDOM question from the eligible pool.
+  // Reviewers cannot choose what they review, so a ring cannot steer itself
+  // toward its own submissions.
   fastify.get("/review/next", { preHandler: fastify.authenticate }, async (req, reply) => {
     const userId = req.jwtUser!.userId;
-    const user = await fastify.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { level: true },
-    });
-    if (user.level < 10) return reply.code(403).send({ error: "CCE requires Level 10." });
+
+    const eligibility = await getReviewEligibility(fastify.prisma, userId);
+    if (!eligibility.eligible) {
+      return reply.code(403).send({ error: eligibility.reasons.join(" "), data: eligibility });
+    }
 
     // Already reviewed by this user?
     const reviewed = await fastify.prisma.questionValidation.findMany({
@@ -155,15 +178,31 @@ export async function cceRoutes(fastify: FastifyInstance) {
     });
     const reviewedIds = reviewed.map((r) => r.questionId);
 
-    const entry = await fastify.prisma.reviewQueue.findFirst({
-      where: {
-        question: {
-          status: "pending",
-          createdBy: { not: userId },
-          ...(reviewedIds.length ? { id: { notIn: reviewedIds } } : {}),
+    // Creators this reviewer has already voted on too often this week.
+    const blockedCreators = await cappedCreatorIds(fastify.prisma, userId);
+
+    const where = {
+      question: {
+        status: "pending",
+        createdBy: {
+          not: userId,
+          ...(blockedCreators.length ? { notIn: blockedCreators } : {}),
         },
+        ...(reviewedIds.length ? { id: { notIn: reviewedIds } } : {}),
       },
-      orderBy: { priority: "desc" },
+    };
+
+    const candidates = await fastify.prisma.reviewQueue.count({ where });
+    if (candidates === 0) return reply.send({ data: null, eligibility });
+
+    // Random offset into the eligible pool rather than a deterministic
+    // priority ordering — two colluding accounts hitting this endpoint at the
+    // same moment no longer receive the same question.
+    const skip = Math.floor(Math.random() * candidates);
+
+    const entry = await fastify.prisma.reviewQueue.findFirst({
+      where,
+      skip,
       include: {
         question: {
           include: {
@@ -173,32 +212,61 @@ export async function cceRoutes(fastify: FastifyInstance) {
       },
     });
 
-    if (!entry) return reply.send({ data: null });
+    if (!entry) return reply.send({ data: null, eligibility });
 
-    // Hide correct answer from reviewer
-    const { correctOption: _hidden, ...safeQ } = entry.question;
+    await fastify.prisma.reviewQueue.update({
+      where: { id: entry.id },
+      data: { lastShown: new Date() },
+    });
+
+    // Hide correct answer and author from the reviewer. Concealing the author
+    // means a colluder cannot recognise a partner's submission even if one
+    // reaches them.
+    const { correctOption: _hidden, createdBy: _author, ...safeQ } = entry.question;
     void _hidden;
-    return reply.send({ data: safeQ });
+    void _author;
+    return reply.send({ data: safeQ, eligibility });
   });
 
   // POST /api/cce/review — submit a review decision
   fastify.post("/review", { preHandler: fastify.authenticate }, async (req, reply) => {
     const userId = req.jwtUser!.userId;
-    const user = await fastify.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { level: true, reviewsCompleted: true, reviewAccuracy: true },
-    });
-    if (user.level < 10) return reply.code(403).send({ error: "CCE requires Level 10." });
+
+    // Re-check every gate at vote time. The serving endpoint's check is only a
+    // UI convenience; this is the one that actually protects the reward pool.
+    const eligibility = await getReviewEligibility(fastify.prisma, userId);
+    if (!eligibility.eligible) {
+      return reply.code(403).send({ error: eligibility.reasons.join(" "), data: eligibility });
+    }
 
     const parse = ReviewSchema.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: parse.error.flatten() });
 
-    const { questionId, action, detailedFeedback } = parse.data;
+    const { questionId, action, detailedFeedback, reviewTime } = parse.data;
+
+    if (reviewTime !== undefined && reviewTime < MIN_REVIEW_SECONDS) {
+      return reply.code(429).send({
+        error: `Please spend at least ${MIN_REVIEW_SECONDS}s reviewing before voting.`,
+      });
+    }
 
     const question = await fastify.prisma.question.findUnique({ where: { id: questionId } });
     if (!question) return reply.code(404).send({ error: "Question not found" });
     if (question.createdBy === userId) return reply.code(403).send({ error: "Cannot review own question" });
     if (question.status !== "pending") return reply.code(409).send({ error: "Question already reviewed" });
+
+    // Weekly per-creator cap — the rule that stops a ring waving through
+    // everything its own members submit.
+    const blockedCreators = await cappedCreatorIds(fastify.prisma, userId);
+    if (question.createdBy != null && blockedCreators.includes(question.createdBy)) {
+      logger.warn(
+        { userId, creatorId: question.createdBy, questionId },
+        "Review blocked: weekly per-creator cap reached"
+      );
+      return reply.code(403).send({
+        error: "You have reviewed too many questions from this creator this week.",
+      });
+    }
 
     // Check not double-reviewing
     const already = await fastify.prisma.questionValidation.findFirst({
@@ -206,7 +274,7 @@ export async function cceRoutes(fastify: FastifyInstance) {
     });
     if (already) return reply.code(409).send({ error: "Already reviewed this question" });
 
-    const geekReward = 0.1;
+    const geekReward = REVIEW_REWARD_GEEK;
 
     await fastify.prisma.questionValidation.create({
       data: {
@@ -214,6 +282,7 @@ export async function cceRoutes(fastify: FastifyInstance) {
         validatorId: userId,
         action,
         geekAwarded: geekReward,
+        reviewTime: reviewTime ?? 0,
         detailedFeedback: detailedFeedback || null,
       },
     });
@@ -228,9 +297,11 @@ export async function cceRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // Auto-approve/reject when threshold met (3 votes)
+    // Auto-approve/reject once quorum is reached. APPROVAL_THRESHOLD is 5, not
+    // 3 — publishing on three votes meant three sock puppets were a quorum.
     let finalStatus = updatedQ.status;
-    if (updatedQ.approvalsCount >= 3) {
+    let resolved = false;
+    if (updatedQ.approvalsCount >= APPROVAL_THRESHOLD) {
       await fastify.prisma.question.update({
         where: { id: questionId },
         data: { status: "approved", dateApproved: new Date() },
@@ -244,7 +315,8 @@ export async function cceRoutes(fastify: FastifyInstance) {
         });
       }
       finalStatus = "approved";
-    } else if (updatedQ.rejectionsCount >= 3) {
+      resolved = true;
+    } else if (updatedQ.rejectionsCount >= REJECTION_THRESHOLD) {
       await fastify.prisma.question.update({
         where: { id: questionId },
         data: { status: "rejected" },
@@ -257,6 +329,7 @@ export async function cceRoutes(fastify: FastifyInstance) {
         });
       }
       finalStatus = "rejected";
+      resolved = true;
     }
 
     // Reward reviewer
@@ -269,7 +342,29 @@ export async function cceRoutes(fastify: FastifyInstance) {
       },
     });
 
-    return reply.send({ data: { status: finalStatus, geekAwarded: geekReward } });
+    // On resolution, re-score everyone who voted on it. reviewAccuracy was
+    // previously stored but never computed, so it gated nothing; now it is the
+    // number that suspends rubber-stampers.
+    if (resolved) {
+      const voters = await fastify.prisma.questionValidation.findMany({
+        where: { questionId },
+        select: { validatorId: true },
+      });
+      const uniqueVoters = [...new Set(voters.map((v) => v.validatorId))];
+      await Promise.all(
+        uniqueVoters.map((id) => recomputeReviewerAccuracy(fastify.prisma, id))
+      );
+    }
+
+    const after = await getReviewEligibility(fastify.prisma, userId);
+    return reply.send({
+      data: {
+        status: finalStatus,
+        geekAwarded: geekReward,
+        reviewsRemainingToday: after.reviewsRemainingToday,
+        accuracyPct: after.accuracyPct,
+      },
+    });
   });
 
   // GET /api/cce/my-questions — paginated list of user's submitted questions

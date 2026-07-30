@@ -3,7 +3,7 @@ import fastifyHelmet from "@fastify/helmet";
 import fastifyCors from "@fastify/cors";
 import fastifyCookie from "@fastify/cookie";
 import fastifyRateLimit from "@fastify/rate-limit";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import Redis from "ioredis";
 import { logger } from "./lib/logger";
 import authPlugin from "./middleware/auth";
@@ -20,7 +20,14 @@ import { tokenRoutes } from "./routes/token";
 import { purchaseRoutes } from "./routes/purchase";
 import { withdrawalRoutes } from "./routes/withdrawal";
 import { kycRoutes } from "./routes/kyc";
-import { Worker } from "bullmq";
+import { statsRoutes } from "./routes/stats";
+import { closePayoutQueues } from "./lib/payoutQueue";
+// Decimal fields (geekBalance, totalEarnedGeek) serialize as strings by
+// default; every consumer (frontend + this API's own routes) treats them
+// as numbers, so normalize at the JSON boundary.
+Prisma.Decimal.prototype.toJSON = function () {
+    return this.toNumber();
+};
 // Initialize Prisma
 const prisma = new PrismaClient();
 // Initialize Redis
@@ -29,6 +36,7 @@ const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
 });
 const fastify = Fastify({
     logger: process.env.NODE_ENV === "development",
+    bodyLimit: 20 * 1024 * 1024, // 20MB - bulk question imports can run to thousands of rows
 });
 // Decorate fastify with prisma and redis
 fastify.decorate("prisma", prisma);
@@ -93,26 +101,22 @@ fastify.register(async (instance) => {
     instance.register(purchaseRoutes, { prefix: "/purchase" });
     instance.register(withdrawalRoutes, { prefix: "/wallet" });
     instance.register(kycRoutes, { prefix: "/kyc" });
+    instance.register(statsRoutes, { prefix: "/stats" });
 }, { prefix: "/api" });
-// Start BullMQ Worker for reward processing
-const rewardWorker = new Worker("reward-processing", async (job) => {
-    logger.info({ jobId: job.id }, "Processing reward job");
-    // Reward logic will be implemented in src/workers/rewards.ts
-}, { connection: redis });
-rewardWorker.on("completed", (job) => {
-    logger.info({ jobId: job.id }, "Reward job completed");
-});
-rewardWorker.on("failed", (job, err) => {
-    logger.error({ jobId: job?.id, err }, "Reward job failed");
-});
+// NOTE: this process deliberately does NOT run a payout worker.
+// It previously started a Worker on "reward-processing" whose handler was an
+// empty stub. BullMQ round-robins jobs across every worker listening to a queue,
+// so that stub was consuming real payout jobs and marking them completed without
+// ever sending tokens. Payouts are processed exclusively by
+// src/workers/rewards.ts (`npm run start:worker`), which runs in its own process.
 // Graceful shutdown
 const shutdown = async () => {
     logger.info("Shutting down gracefully...");
     try {
         await fastify.close();
+        await closePayoutQueues();
         await prisma.$disconnect();
         await redis.quit();
-        await rewardWorker.close();
         logger.info("Shutdown complete");
         process.exit(0);
     }

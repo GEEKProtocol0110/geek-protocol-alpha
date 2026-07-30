@@ -1,10 +1,7 @@
 import { z } from "zod";
-import { Queue } from "bullmq";
-import Redis from "ioredis";
 import { logger } from "../lib/logger";
 import { getGeekBalance } from "../lib/geekBalance";
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-const rewardQueue = new Queue("reward-processing", { connection: redis });
+import { enqueuePayout } from "../lib/payoutQueue";
 // Zod schemas
 const WithdrawSchema = z.object({
     toAddress: z.string(),
@@ -43,7 +40,7 @@ export async function withdrawalRoutes(fastify) {
             },
         });
         // Enqueue withdrawal job
-        await rewardQueue.add("process-reward", {
+        await enqueuePayout({
             attemptId: withdrawal.id.toString(),
             userId,
             toAddress,

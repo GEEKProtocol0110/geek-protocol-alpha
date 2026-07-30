@@ -2,12 +2,11 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import Stripe from "stripe";
 import { logger } from "../lib/logger";
-import { Queue } from "bullmq";
 import Redis from "ioredis";
 import { getKasUsdPrice } from "../lib/coingecko";
+import { enqueuePayout } from "../lib/payoutQueue";
 
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-const rewardQueue = new Queue("reward-processing", { connection: redis as any });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2026-06-24.dahlia",
@@ -120,7 +119,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
         }
 
         // Enqueue purchase reward job
-        await rewardQueue.add("process-reward", {
+        await enqueuePayout({
           attemptId: session.id,
           userId: parseInt(userId),
           rewardAmount: parseFloat(geekAmount),

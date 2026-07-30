@@ -7,6 +7,8 @@ import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { SfxToggle } from "@/components/SfxToggle";
 import { playSfx } from "@/lib/sfx";
+import CanvasQuestion from "@/components/CanvasQuestion";
+import { createBehaviorTracker } from "@/lib/behaviorSignals";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 const QUESTION_TIME = 20;
@@ -137,6 +139,14 @@ function PlayContent() {
   const [serverResult, setServerResult] = useState<ServerRoundResult | null>(null);
   const [error, setError] = useState("");
   const startedAt = useRef(Date.now());
+  const behavior = useRef(createBehaviorTracker());
+
+  // Aggregate interaction telemetry for the duration of the run.
+  useEffect(() => {
+    const tracker = behavior.current;
+    tracker.start();
+    return () => tracker.stop();
+  }, []);
 
   const cfg = payload?.roundConfig ?? ROUND_CONFIG[round - 1];
   const character = payload?.character ?? (user?.favoriteCharacter === "ACE" ? "ACE" : "GIGA");
@@ -270,6 +280,7 @@ function PlayContent() {
           answers,
           timings,
           modifier: modifier === "standard" ? undefined : modifier,
+          behavior: behavior.current.snapshot(),
         }),
       });
       const json = await res.json();
@@ -423,7 +434,14 @@ function PlayContent() {
               <span className="badge-pill text-[var(--brand-accent)]">{current.difficulty}</span>
               <span className="text-[10px] tracking-widest text-[var(--text-3)] font-semibold uppercase">Past accuracy: {current.pastAccuracy == null ? "First serve" : `${current.pastAccuracy}%`}</span>
             </div>
-            <h2 className="text-xl md:text-2xl font-bold leading-relaxed mb-6 text-[var(--text-1)]">{current.question}</h2>
+            {/* Canvas-rendered rather than scrapeable DOM text; the accessible
+                name still carries the question for screen readers. */}
+            <CanvasQuestion
+              text={current.question}
+              seed={`${round}-${questionIndex}`}
+              className="mb-6"
+              onRendered={(ok) => behavior.current.markCanvasRendered(ok)}
+            />
             <div className="grid gap-3">
               {current.options.map((option, index) => {
                 const show = phase === "feedback";

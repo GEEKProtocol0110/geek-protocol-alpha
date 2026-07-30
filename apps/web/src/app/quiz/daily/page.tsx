@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { SfxToggle } from "@/components/SfxToggle";
 import { playSfx } from "@/lib/sfx";
+import CanvasQuestion from "@/components/CanvasQuestion";
+import { createBehaviorTracker } from "@/lib/behaviorSignals";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 const QUESTION_TIME = 15;
@@ -73,6 +75,15 @@ export default function DailyQuizPage() {
   const [character] = useState<"GIGA" | "ACE">(user?.favoriteCharacter === "ACE" ? "ACE" : "GIGA");
   const [timings, setTimings] = useState<number[]>([]);
   const questionStartRef = useRef<number>(Date.now());
+  const behavior = useRef(createBehaviorTracker());
+
+  // Interaction telemetry runs for the length of the attempt. Aggregates only —
+  // no coordinates or keystrokes leave the browser.
+  useEffect(() => {
+    const tracker = behavior.current;
+    tracker.start();
+    return () => tracker.stop();
+  }, []);
 
   // Load quiz
   useEffect(() => {
@@ -181,6 +192,7 @@ export default function DailyQuizPage() {
           answers,
           timings,
           userId: user?.id,
+          behavior: behavior.current.snapshot(),
         }),
       });
       const json = await res.json();
@@ -354,7 +366,14 @@ export default function DailyQuizPage() {
               <span className="text-[10px] tracking-widest text-[var(--text-3)] font-semibold uppercase">{q.topic}</span>
             </div>
 
-            <h2 className="text-xl font-bold text-[var(--text-1)] leading-relaxed mb-6">{q.question}</h2>
+            {/* Rendered to canvas rather than as scrapeable DOM text. The real
+                text stays available to screen readers via aria-label. */}
+            <CanvasQuestion
+              text={q.question}
+              seed={`${qIndex}-${q.id}`}
+              className="mb-6"
+              onRendered={(ok) => behavior.current.markCanvasRendered(ok)}
+            />
 
             <div className="grid grid-cols-1 gap-3">
               {q.options.map((opt, i) => {

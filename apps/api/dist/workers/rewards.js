@@ -4,21 +4,26 @@ import { Worker } from "bullmq";
 import { logger } from "../lib/logger";
 import { decryptPrivateKey } from "../lib/security";
 import { sendKrc20Tokens } from "../lib/kaspa";
+import { allLaneNames, LEGACY_PAYOUT_QUEUE, PAYOUT_CONCURRENCY, PAYOUT_LANES, } from "../lib/payoutQueue";
 const prisma = new PrismaClient();
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+    maxRetriesPerRequest: null,
+});
 const DEMO_MODE = process.env.DEMO_MODE === "true";
 const MIN_SCORE_FOR_REWARD = parseInt(process.env.MIN_SCORE_FOR_REWARD || "70", 10);
 const ENABLE_REWARDS = (process.env.ENABLE_REWARDS || "false").toLowerCase() === "true";
 const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "";
-// Reward worker
-const worker = new Worker("reward-processing", async (job) => {
-    logger.info({ jobId: job.id, data: job.data }, "Processing reward job");
+async function handlePayout(job) {
+    logger.info({ jobId: job.id, queue: job.queueName, data: job.data }, "Processing reward job");
     const { attemptId, userId, rewardAmount, type, toAddress } = job.data;
-    // Check idempotency
-    const lockKey = `lock:reward:${attemptId}`;
-    const lockAcquired = await redis.set(lockKey, "1", "EX", 300, "NX");
+    // Idempotency guard. The key is held for 24h and is NOT released on success —
+    // releasing it on completion (the old behaviour) meant a duplicate enqueue or a
+    // BullMQ retry after a partial failure could pay the same attempt twice.
+    // It is only released when the job throws, so genuine retries can run again.
+    const lockKey = `lock:reward:${type}:${attemptId}`;
+    const lockAcquired = await redis.set(lockKey, String(Date.now()), "EX", 86400, "NX");
     if (!lockAcquired) {
-        logger.info({ attemptId }, "Reward job already processed, skipping");
+        logger.info({ attemptId, type }, "Reward already processed, skipping duplicate");
         return;
     }
     try {
@@ -29,17 +34,37 @@ const worker = new Worker("reward-processing", async (job) => {
             await processPurchaseReward(job, userId, rewardAmount, attemptId);
         }
         else if (type === "withdrawal") {
+            // Guard rather than trust: without this a malformed job would call
+            // sendKrc20Tokens with an undefined destination. Throwing keeps the
+            // withdrawal in the failed set for inspection instead of burning tokens.
+            if (!toAddress) {
+                throw new Error(`Withdrawal job ${attemptId} is missing a destination address`);
+            }
             await processWithdrawal(job, userId, toAddress, rewardAmount, attemptId);
+        }
+        else {
+            logger.warn({ jobId: job.id, type }, "Unknown payout type, dropping");
         }
     }
     catch (error) {
+        // Release so the retry can re-acquire; the DB-level unique constraints on
+        // attemptId still prevent a double-credit if the failure was partial.
+        await redis.del(lockKey);
         logger.error({ error, jobId: job.id }, "Failed to process reward job");
         throw error;
     }
-    finally {
-        await redis.del(lockKey);
-    }
-}, { connection: redis });
+}
+// One worker per lane. Each lane runs PAYOUT_CONCURRENCY jobs at once, so the
+// pipeline sustains PAYOUT_LANES * PAYOUT_CONCURRENCY simultaneous payouts.
+const workers = allLaneNames().map((name) => new Worker(name, handlePayout, {
+    connection: redis,
+    concurrency: PAYOUT_CONCURRENCY,
+}));
+// Drain anything still sitting in the pre-shard queue from before this change.
+workers.push(new Worker(LEGACY_PAYOUT_QUEUE, handlePayout, {
+    connection: redis,
+    concurrency: PAYOUT_CONCURRENCY,
+}));
 // Process quiz reward
 async function processQuizReward(job, attemptId, userId, rewardAmount) {
     // Get user
@@ -66,30 +91,33 @@ async function processQuizReward(job, attemptId, userId, rewardAmount) {
     });
     if (!ENABLE_REWARDS || DEMO_MODE) {
         logger.info({ attemptId }, "Rewards disabled or demo mode, marking as confirmed");
-        await prisma.reward.update({
-            where: { id: reward.id },
-            data: { status: "confirmed", confirmedAt: new Date() },
-        });
-        await prisma.quizAttempt.update({
-            where: { attemptId },
-            data: { status: "paid" },
-        });
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                geekBalance: { increment: rewardAmount },
-                totalEarnedGeek: { increment: rewardAmount },
-            },
-        });
-        // Add treasury ledger entry
-        await prisma.treasuryLedger.create({
-            data: {
-                amount: -rewardAmount,
-                reason: "quiz_reward",
-                recipient: user.walletAddress || "",
-                triggeringId: attemptId,
-            },
-        });
+        // One transaction: a crash between these writes must not leave a confirmed
+        // reward with no balance credit (or vice versa).
+        await prisma.$transaction([
+            prisma.reward.update({
+                where: { id: reward.id },
+                data: { status: "confirmed", confirmedAt: new Date() },
+            }),
+            prisma.quizAttempt.update({
+                where: { attemptId },
+                data: { status: "paid" },
+            }),
+            prisma.user.update({
+                where: { id: userId },
+                data: {
+                    geekBalance: { increment: rewardAmount },
+                    totalEarnedGeek: { increment: rewardAmount },
+                },
+            }),
+            prisma.treasuryLedger.create({
+                data: {
+                    amount: -rewardAmount,
+                    reason: "quiz_reward",
+                    recipient: user.walletAddress || "",
+                    triggeringId: attemptId,
+                },
+            }),
+        ]);
         return;
     }
     // Send KRC-20 tokens from treasury wallet
@@ -102,37 +130,35 @@ async function processQuizReward(job, attemptId, userId, rewardAmount) {
     // Convert amount to atomic units (assuming 8 decimals)
     const atomicAmount = (rewardAmount * 1e8).toString();
     const txid = await sendKrc20Tokens(treasuryPrivateKey, user.walletAddress || "", GEEK_TOKEN_ID, atomicAmount);
-    await prisma.reward.update({
-        where: { id: reward.id },
-        data: { status: "sent", txid },
-    });
-    // Simulate confirmation delay
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    await prisma.reward.update({
-        where: { id: reward.id },
-        data: { status: "confirmed", confirmedAt: new Date() },
-    });
-    await prisma.quizAttempt.update({
-        where: { attemptId },
-        data: { status: "paid" },
-    });
-    // Update user balance
-    await prisma.user.update({
-        where: { id: userId },
-        data: {
-            geekBalance: { increment: rewardAmount },
-            totalEarnedGeek: { increment: rewardAmount },
-        },
-    });
-    // Add treasury ledger entry
-    await prisma.treasuryLedger.create({
-        data: {
-            amount: -rewardAmount,
-            reason: "quiz_reward",
-            recipient: user.walletAddress || "",
-            triggeringId: attemptId,
-        },
-    });
+    // The send returned a txid, so the payout is committed on-chain. Settle
+    // immediately — the old code slept 5s here to "simulate" confirmation, which
+    // pinned a worker slot for 5 seconds per payout and was the single biggest
+    // throughput limit in the pipeline.
+    await prisma.$transaction([
+        prisma.reward.update({
+            where: { id: reward.id },
+            data: { status: "confirmed", txid, confirmedAt: new Date() },
+        }),
+        prisma.quizAttempt.update({
+            where: { attemptId },
+            data: { status: "paid" },
+        }),
+        prisma.user.update({
+            where: { id: userId },
+            data: {
+                geekBalance: { increment: rewardAmount },
+                totalEarnedGeek: { increment: rewardAmount },
+            },
+        }),
+        prisma.treasuryLedger.create({
+            data: {
+                amount: -rewardAmount,
+                reason: "quiz_reward",
+                recipient: user.walletAddress || "",
+                triggeringId: attemptId,
+            },
+        }),
+    ]);
     logger.info({ attemptId, txid }, "Reward processed successfully");
 }
 // Process purchase reward
@@ -223,11 +249,21 @@ async function processWithdrawal(job, userId, toAddress, amount, withdrawalId) {
     logger.info({ withdrawalId, txid }, "Withdrawal processed successfully");
 }
 // Event handlers
-worker.on("completed", (job) => {
-    logger.info({ jobId: job.id }, "Reward job completed");
-});
-worker.on("failed", (job, err) => {
-    logger.error({ jobId: job?.id, err }, "Reward job failed");
-});
-// Start worker
-logger.info("Reward worker started");
+for (const w of workers) {
+    w.on("completed", (job) => {
+        logger.info({ jobId: job.id, queue: w.name }, "Reward job completed");
+    });
+    w.on("failed", (job, err) => {
+        logger.error({ jobId: job?.id, queue: w.name, err }, "Reward job failed");
+    });
+}
+const shutdown = async () => {
+    logger.info("Reward workers shutting down...");
+    await Promise.all(workers.map((w) => w.close()));
+    await prisma.$disconnect();
+    await redis.quit();
+    process.exit(0);
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+logger.info({ lanes: PAYOUT_LANES, concurrencyPerLane: PAYOUT_CONCURRENCY, maxParallel: PAYOUT_LANES * PAYOUT_CONCURRENCY }, "Reward workers started");

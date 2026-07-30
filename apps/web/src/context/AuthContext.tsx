@@ -14,6 +14,7 @@ import {
   login,
   register,
   walletLogin,
+  requestLoginNonce,
   authLogout,
   saveToken,
   loadToken,
@@ -200,9 +201,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const net = await kaswareGetNetwork();
       setWalletNetwork(net);
 
-      // Build the canonical login message then sign
-      const timestamp = Date.now();
-      const message = `Geek Protocol Login\n${addr}\n${timestamp}`;
+      // Ask the server for a single-use challenge and sign it verbatim.
+      // The client no longer composes its own message — a self-signed message
+      // with a client-chosen timestamp was replayable by anyone who captured it.
+      const { message } = await requestLoginNonce(addr);
 
       const k = getKasware();
       let signature = "";

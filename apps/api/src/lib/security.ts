@@ -32,10 +32,17 @@ export type AttemptTokenPayload = {
   [key: string]: string | number | boolean | undefined;
 };
 
-type AttemptTokenData = AttemptTokenPayload & { exp: number };
+/** `iat` is the server's issue time in ms — the trusted clock the anti-cheat
+ * timing checks measure against. It is inside the HMAC, so a client cannot
+ * backdate an attempt to manufacture a speed bonus. */
+type AttemptTokenData = AttemptTokenPayload & { exp: number; iat: number };
 
 export function makeAttemptToken(payload: AttemptTokenPayload, ttlSeconds: number): string {
-  const data: AttemptTokenData = { ...payload, exp: Math.floor(Date.now() / 1000) + ttlSeconds } as AttemptTokenData;
+  const data: AttemptTokenData = {
+    ...payload,
+    iat: Date.now(),
+    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+  } as AttemptTokenData;
   const json = JSON.stringify(data);
   const sig = crypto.createHmac("sha256", HMAC_SECRET).update(json).digest("hex");
   return Buffer.from(json).toString("base64") + "." + sig;
@@ -57,7 +64,12 @@ export function verifyAttemptToken(token: string): AttemptTokenVerification {
     return { ok: false, error: "Invalid base64" };
   }
   const expectedSig = crypto.createHmac("sha256", HMAC_SECRET).update(json).digest("hex");
-  if (sig !== expectedSig) return { ok: false, error: "Invalid signature" };
+  // Constant-time compare so signature verification can't be probed byte by byte.
+  const sigBuf = Buffer.from(sig, "utf8");
+  const expectedBuf = Buffer.from(expectedSig, "utf8");
+  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
+    return { ok: false, error: "Invalid signature" };
+  }
   let data: AttemptTokenData;
   try {
     data = JSON.parse(json) as AttemptTokenData;

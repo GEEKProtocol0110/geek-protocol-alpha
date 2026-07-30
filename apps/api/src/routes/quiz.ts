@@ -3,12 +3,11 @@ import { z } from "zod";
 import { makeAttemptToken, verifyAttemptToken } from "../lib/security";
 import { logger } from "../lib/logger";
 import { QUIZ_REWARD_TABLE } from "../config/quizRewards";
-import { Queue, Worker } from "bullmq";
-import Redis from "ioredis";
+import { enqueuePayout } from "../lib/payoutQueue";
+import { validateAttemptTiming, timeBonusFor } from "../lib/antiCheat";
+import { BehaviorSignalsSchema, scoreBehavior } from "../lib/behaviorScore";
 
 const QUESTION_TTL = 15 * 60; // 15 minutes
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-const rewardQueue = new Queue("reward-processing", { connection: redis as any });
 
 // Zod schemas
 const StartQuizSchema = z.object({
@@ -19,12 +18,14 @@ const SubmitQuizSchema = z.object({
   attemptToken: z.string(),
   answers: z.array(z.number()),
   timeTakenPerQuestion: z.array(z.number()),
+  behavior: BehaviorSignalsSchema.optional(),
 });
 
 const DailySubmitSchema = z.object({
   token: z.string(),
   answers: z.array(z.number()),
   timings: z.array(z.number()),
+  behavior: BehaviorSignalsSchema.optional(),
 });
 
 function getComboMultiplier(combo: number) {
@@ -150,7 +151,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ success: false, error: parse.error.flatten() });
       }
 
-      const { attemptToken, answers, timeTakenPerQuestion } = parse.data;
+      const { attemptToken, answers, timeTakenPerQuestion, behavior } = parse.data;
       const userId = req.jwtUser!.userId;
 
       // Verify attempt token
@@ -159,7 +160,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ success: false, error: verified.error });
       }
 
-      const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson } = verified.data as any;
+      const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson, iat } = verified.data as any;
       const questionIds: number[] = JSON.parse(questionIdsJson);
       const correctAnswers: number[] = JSON.parse(correctAnswersJson);
 
@@ -168,13 +169,50 @@ export async function quizRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ success: false, error: "Answer count mismatch" });
       }
 
+      // Timing is checked against the server's own signed issue time, not the
+      // client's self-reported numbers. Posting `0` for every question no longer
+      // buys a speed bonus.
+      const timing = validateAttemptTiming({
+        issuedAtMs: typeof iat === "number" ? iat : Date.now(),
+        submittedAtMs: Date.now(),
+        questionCount: questionIds.length,
+        clientTimings: timeTakenPerQuestion,
+      });
+
+      if (!timing.ok) {
+        logger.warn(
+          { userId, attemptId, reason: timing.reason, flags: timing.flags },
+          "Quiz submission rejected by timing validation"
+        );
+        return reply.code(400).send({ success: false, error: timing.reason });
+      }
+
+      // Advisory only — never used to withhold a payout, because a false
+      // positive here means refusing to pay a real player.
+      const behaviorVerdict = behavior ? scoreBehavior(behavior) : null;
+
+      if (timing.flags.length || behaviorVerdict?.suspicious) {
+        logger.warn(
+          {
+            userId,
+            attemptId,
+            timingFlags: timing.flags,
+            behaviorScore: behaviorVerdict?.score,
+            behaviorFlags: behaviorVerdict?.flags,
+            elapsedSeconds: timing.elapsedSeconds,
+            claimedSeconds: timing.claimedSeconds,
+          },
+          "Quiz attempt flagged for review"
+        );
+      }
+
       // Calculate score server-side
       let correctCount = 0;
       let score = 0;
       const results = answers.map((answer, idx) => {
         const isCorrect = answer === correctAnswers[idx];
-        const timeTaken = timeTakenPerQuestion[idx] || 15;
-        const timeBonus = isCorrect ? Math.max(0, (15 - timeTaken) * 10) : 0;
+        const timeTaken = timing.effectiveTimings[idx];
+        const timeBonus = isCorrect ? timeBonusFor(timeTaken, timing.speedCreditFactor) : 0;
         const basePoints = isCorrect ? 100 : 0;
         const totalPoints = basePoints + timeBonus;
 
@@ -213,7 +251,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
       });
 
       // Enqueue reward job
-      await rewardQueue.add("process-reward", {
+      await enqueuePayout({
         attemptId,
         userId,
         rewardAmount,
@@ -298,7 +336,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
       if (!parse.success) {
         return reply.code(400).send({ success: false, error: parse.error.flatten() });
       }
-      const { token, answers, timings } = parse.data;
+      const { token, answers, timings, behavior } = parse.data;
 
       const verified = verifyAttemptToken(token);
       if (!verified.ok) {
@@ -309,12 +347,42 @@ export async function quizRoutes(fastify: FastifyInstance) {
         attemptId,
         questionIds: questionIdsJson,
         correctAnswers: correctAnswersJson,
+        iat,
       } = verified.data as any;
       const questionIds: number[] = JSON.parse(questionIdsJson);
       const correctAnswers: number[] = JSON.parse(correctAnswersJson);
 
       if (answers.length !== questionIds.length || timings.length !== questionIds.length) {
         return reply.code(400).send({ success: false, error: "Answer count mismatch" });
+      }
+
+      // Same wall-clock check as the scored quiz. Note `timings` here are in ms.
+      const dailyTiming = validateAttemptTiming({
+        issuedAtMs: typeof iat === "number" ? iat : Date.now(),
+        submittedAtMs: Date.now(),
+        questionCount: questionIds.length,
+        clientTimings: timings.map((t) => (t ?? 15000) / 1000),
+      });
+
+      if (!dailyTiming.ok) {
+        logger.warn(
+          { attemptId, reason: dailyTiming.reason, flags: dailyTiming.flags },
+          "Daily quiz submission rejected by timing validation"
+        );
+        return reply.code(400).send({ success: false, error: dailyTiming.reason });
+      }
+
+      const dailyBehavior = behavior ? scoreBehavior(behavior) : null;
+      if (dailyTiming.flags.length || dailyBehavior?.suspicious) {
+        logger.warn(
+          {
+            attemptId,
+            timingFlags: dailyTiming.flags,
+            behaviorScore: dailyBehavior?.score,
+            behaviorFlags: dailyBehavior?.flags,
+          },
+          "Daily quiz attempt flagged for review"
+        );
       }
 
       const userId = req.jwtUser?.userId;
@@ -331,8 +399,10 @@ export async function quizRoutes(fastify: FastifyInstance) {
         if (isCorrect) correctCount++;
 
         combo = isCorrect ? combo + 1 : 0;
-        const timeTakenSec = (timings[i] ?? 15000) / 1000;
-        const speedBonus = isCorrect && timeTakenSec < 5 ? 5 : 0;
+        // Validated/clamped seconds, not the raw client value.
+        const timeTakenSec = dailyTiming.effectiveTimings[i];
+        const speedBonus =
+          isCorrect && timeTakenSec < 5 && dailyTiming.speedCreditFactor >= 1 ? 5 : 0;
         const basePoints = isCorrect ? 10 : 0;
         const comboMult = getComboMultiplier(combo);
         totalPoints += Math.round((basePoints + speedBonus) * streakMultiplier * comboMult);
@@ -356,7 +426,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await rewardQueue.add("process-reward", {
+        await enqueuePayout({
           attemptId,
           userId,
           rewardAmount: geekEarned,

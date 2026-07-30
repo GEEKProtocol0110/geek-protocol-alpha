@@ -7,6 +7,7 @@ import { logger } from "../lib/logger";
 import { verifyKaspaSignature } from "../lib/kasware";
 import { generateKaspaWallet } from "../lib/kaspa";
 import { encryptPrivateKey } from "../lib/security";
+import { consumeNonce, issueNonce, parseLoginMessage, NONCE_TTL_MS } from "../lib/authNonce";
 
 const SECRET_KEY = new TextEncoder().encode(
   process.env.SECRET_KEY || "dev-secret-key-change-in-production"
@@ -43,6 +44,10 @@ const WalletLoginSchema = z.object({
   walletAddress: z.string(),
   message: z.string(),
   signature: z.string(),
+});
+
+const NonceSchema = z.object({
+  walletAddress: z.string().min(10).max(200),
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -177,6 +182,26 @@ export async function authRoutes(fastify: FastifyInstance) {
       .send({ data: { ...publicUser(fresh as unknown as Record<string, unknown>), token } });
   });
 
+  // POST /api/auth/nonce — issue a single-use login challenge
+  fastify.post(
+    "/nonce",
+    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    async (req, reply) => {
+      const parse = NonceSchema.safeParse(req.body);
+      if (!parse.success) {
+        return reply.code(400).send({ error: parse.error.flatten() });
+      }
+
+      const { nonce, message, expiresAt, expiresInMs } = await issueNonce(
+        fastify.redis,
+        parse.data.walletAddress
+      );
+
+      // The client signs `message` verbatim — it must not compose its own.
+      return reply.send({ data: { nonce, message, expiresAt, expiresInMs } });
+    }
+  );
+
   // POST /api/auth/wallet-login
   fastify.post("/wallet-login", async (req, reply) => {
     const parse = WalletLoginSchema.safeParse(req.body);
@@ -185,17 +210,27 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
     const { walletAddress, message, signature } = parse.data;
 
-    // Validate message format: "Geek Protocol Login\n<address>\n<timestamp>"
-    const msgRegex = /^Geek Protocol Login\n(.+)\n(\d+)$/;
-    const match = message.match(msgRegex);
-    if (!match || match[1] !== walletAddress) {
+    // Message must be one we issued: "Geek Protocol Login\n<address>\n<nonce>\n<issuedAt>"
+    const parsed = parseLoginMessage(message);
+    if (!parsed || parsed.walletAddress !== walletAddress) {
       return reply.code(400).send({ error: "Invalid message format" });
     }
 
-    const timestamp = parseInt(match[2], 10);
-    const ageSec = (Date.now() - timestamp) / 1000;
-    if (ageSec < 0 || ageSec > 300) {
-      return reply.code(400).send({ error: "Message timestamp expired (5 min window)" });
+    // Burn the nonce BEFORE verifying the signature. Consuming first means a
+    // replay is rejected even if the attacker holds a genuinely valid signature,
+    // and it costs an attacker a fresh challenge per verification attempt.
+    const consumed = await consumeNonce(fastify.redis, walletAddress, parsed.nonce);
+    if (!consumed.ok) {
+      logger.warn(
+        { walletAddress, reason: consumed.reason },
+        "Wallet login rejected: nonce already used or expired"
+      );
+      return reply.code(401).send({
+        error:
+          consumed.reason === "expired"
+            ? `Login challenge expired (${NONCE_TTL_MS / 1000}s limit). Please retry.`
+            : "Login challenge already used or unknown. Please retry.",
+      });
     }
 
     const valid = await verifyKaspaSignature(walletAddress, message, signature);

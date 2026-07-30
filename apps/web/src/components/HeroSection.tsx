@@ -29,11 +29,11 @@ export function HeroSection() {
     <section className="relative overflow-hidden bg-[var(--gp-bg)]">
       <div className="gp-dot-grid" />
 
-      <div className="relative mx-auto grid max-w-[1400px] items-center gap-14 px-6 pb-16 pt-16 sm:pb-20 sm:pt-20 lg:grid-cols-2 lg:gap-10 lg:px-10 lg:pb-24 lg:pt-24 xl:gap-16 xl:pb-32 xl:pt-28">
+      <div className="relative mx-auto grid max-w-[1700px] items-center gap-8 px-6 pb-10 pt-10 sm:pb-14 sm:pt-14 lg:grid-cols-[1fr_1.3fr] lg:gap-8 lg:px-10 lg:pb-16 lg:pt-16 xl:gap-12 xl:pb-20 xl:pt-20">
         {/* ── Copy column ── */}
         <motion.div variants={container} initial="hidden" animate="show" className="flex min-w-0 flex-col items-start">
-          <motion.div variants={item} className="flat-badge gp-mono text-[0.7rem] sm:text-xs">
-            <span className="h-2 w-2 rounded-full bg-[var(--gp-white)]" />
+          <motion.div variants={item} className="flat-badge gp-mono text-[0.91rem] sm:text-[0.98rem]" style={{ padding: "1.17rem 2.6rem" }}>
+            <span className="h-[0.65rem] w-[0.65rem] rounded-full bg-[var(--gp-white)]" />
             Live on Kaspa · KRC-20 native
           </motion.div>
 
@@ -42,30 +42,30 @@ export function HeroSection() {
              (public/hero-wordmark.svg|png) when design delivers it; keep the
              sr-only h1 text for accessibility when doing so. Until then this
              renders the CSS hard-extrusion treatment at reference scale. */}
-          <motion.h1 variants={item} className="gp-wordmark mt-8 w-full leading-none sm:mt-10">
+          <motion.h1 variants={item} className="gp-wordmark mt-5 w-full leading-none sm:mt-6">
             {/* Fluid clamp() sizing — scales continuously with viewport width
                instead of snapping between fixed sizes at each breakpoint.
                One deliberate step at lg (1024px): that's where the mascot
                moves from below the text to beside it, so the column really
                does get narrower and the text really should get smaller. */}
-            <span className="block origin-left -skew-x-[8deg] text-[clamp(3rem,1.9rem+4.5vw,4.5rem)] gp-wordmark-cyan lg:text-[clamp(2.25rem,0.75rem+2.3vw,3.75rem)]">GEEK</span>
-            <span className="mt-0 block origin-left -skew-x-[8deg] text-[clamp(3rem,1.9rem+4.5vw,4.5rem)] gp-wordmark-pink lg:text-[clamp(2.25rem,0.75rem+2.3vw,3.75rem)]">PROTOCOL</span>
+            <span className="block origin-left -skew-x-[8deg] text-[clamp(4.9rem,3rem+7.2vw,7.15rem)] gp-wordmark-cyan lg:text-[clamp(3.8rem,1.3rem+3.9vw,6.2rem)]">GEEK</span>
+            <span className="mt-0 block origin-left -skew-x-[8deg] text-[clamp(4.9rem,3rem+7.2vw,7.15rem)] gp-wordmark-pink lg:text-[clamp(3.8rem,1.3rem+3.9vw,6.2rem)]">PROTOCOL</span>
           </motion.h1>
 
-          <motion.p variants={item} className="mt-9 max-w-[520px] text-lg font-bold text-white md:text-xl">
+          <motion.p variants={item} className="mt-5 max-w-[680px] text-[1.46rem] font-bold text-white md:text-[1.63rem]">
             A Quiz2Earn ecosystem… kinda a whole knowledge economy.
           </motion.p>
 
-          <motion.div variants={item} className="mt-10 flex flex-wrap gap-4">
+          <motion.div variants={item} className="mt-6 flex flex-wrap gap-[1.3rem]">
             <Link
               href="/auth/register"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--ink)] bg-[var(--gp-pink)] px-8 py-4 text-base font-bold text-white shadow-[5px_5px_0px_0px_var(--gp-pink-dark)] transition-[transform,box-shadow] duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[7px_7px_0px_0px_var(--gp-pink-dark)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="inline-flex items-center gap-[0.65rem] rounded-2xl border-[2.6px] border-[var(--ink)] bg-[var(--gp-pink)] px-[2.6rem] py-[1.3rem] text-[1.3rem] font-bold text-white shadow-[6.5px_6.5px_0px_0px_var(--gp-pink-dark)] transition-[transform,box-shadow] duration-100 hover:-translate-x-[2.6px] hover:-translate-y-[2.6px] hover:shadow-[9.1px_9.1px_0px_0px_var(--gp-pink-dark)] active:translate-x-[5.2px] active:translate-y-[5.2px] active:shadow-none"
             >
               Get Started →
             </Link>
             <Link
               href="/auth/login"
-              className="inline-flex items-center rounded-xl border-2 border-[var(--border-soft)] bg-transparent px-8 py-4 text-base font-bold text-white transition-colors duration-100 hover:border-[var(--gp-cyan)] hover:text-[var(--gp-cyan)]"
+              className="inline-flex items-center rounded-2xl border-[2.6px] border-[var(--border-soft)] bg-transparent px-[2.6rem] py-[1.3rem] text-[1.3rem] font-bold text-white transition-colors duration-100 hover:border-[var(--gp-cyan)] hover:text-[var(--gp-cyan)]"
             >
               Sign In
             </Link>
@@ -97,7 +97,7 @@ export function HeroSection() {
               width={1536}
               height={1024}
               priority
-              className="h-auto max-w-full w-[clamp(18rem,12rem+34vw,34rem)] lg:w-[clamp(22rem,6rem+26vw,44rem)]"
+              className="h-auto max-w-full w-[clamp(31rem,20.8rem+57vw,60rem)] lg:w-[clamp(35rem,14rem+45vw,58rem)]"
             />
           </motion.div>
         </motion.div>

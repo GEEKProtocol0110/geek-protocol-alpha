@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
+import AlphaStats from '@/components/AlphaStats';
 import { HeroSection } from '@/components/HeroSection';
 import { Footer } from '@/components/Footer';
 import { WavyDivider } from '@/components/WavyDivider';
@@ -191,7 +193,7 @@ const RESOURCES = [
     title: "Litepaper",
     description: "Deep technical dive into how Geek Protocol works",
     href: "/litepaper",
-    status: "Coming Soon"
+    status: "Live"
   },
   {
     icon: FaGithub,
@@ -234,36 +236,44 @@ const RESOURCES = [
   }
 ];
 
-const COMING_SOON = [
+// These were all listed as "Coming Soon" long after they shipped. Each one is a
+// real, reachable page — so link to it rather than telling visitors to wait.
+const ALPHA_FEATURES = [
   {
     icon: FaGamepad,
     title: "Play",
-    description: "Enter the Geek Gauntlet. Prove your knowledge. Earn $GEEK rewards."
+    description: "Enter the Geek Gauntlet. Prove your knowledge. Earn $GEEK rewards.",
+    href: "/gauntlet/setup"
   },
   {
     icon: FaChartLine,
     title: "Dashboard",
-    description: "Track your attempts, XP, and rewards. View your progress and history."
+    description: "Track your attempts, XP, and rewards. View your progress and history.",
+    href: "/dashboard"
   },
   {
     icon: FaTrophy,
     title: "Leaderboard",
-    description: "Global rankings updated in real-time. See who's dominating."
+    description: "Global rankings updated in real-time. See who's dominating.",
+    href: "/leaderboard"
   },
   {
     icon: FaUser,
     title: "Profile",
-    description: "Your personal performance page. Stats, achievements, and history."
+    description: "Your personal performance page. Stats, achievements, and history.",
+    href: "/profile"
   },
   {
     icon: FaBook,
     title: "Litepaper",
-    description: "Deep dive into the protocol. How it works. Why it matters."
+    description: "Deep dive into the protocol. How it works. Why it matters.",
+    href: "/litepaper"
   },
   {
-    icon: FaCog,
-    title: "Admin",
-    description: "Operator console. Monitor attempts, rewards, and system health."
+    icon: FaCoins,
+    title: "Creator Engine",
+    description: "Write questions, review peers' submissions, earn from what you author.",
+    href: "/cce"
   }
 ];
 
@@ -1076,24 +1086,43 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Coming Soon */}
+      {/* Live alpha telemetry */}
+      <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">
+            The alpha, right now
+          </h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">
+            Read live from the database — not marketing figures.
+          </p>
+        </div>
+        <ScrollReveal variant="fade-up">
+          <AlphaStats />
+        </ScrollReveal>
+      </section>
+
+      {/* Playable today */}
       <section className="py-20 px-4 md:px-8 max-w-[1400px] mx-auto">
         <div className="text-center mb-16">
-          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">Coming Soon</h2>
-          <p className="text-[var(--text-2)] text-lg mt-3">All features launching in Q1 2026</p>
+          <h2 className="font-extrabold text-4xl md:text-5xl text-[var(--text-1)]">
+            Playable today
+          </h2>
+          <p className="text-[var(--text-2)] text-lg mt-3">
+            Every one of these is live in the alpha. Go and use it.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-90">
-          {COMING_SOON.map((item, idx) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {ALPHA_FEATURES.map((item, idx) => (
             <ScrollReveal key={idx} delay={(idx % 3) * 90} variant="fade-up">
-              <div className="flat-card p-8">
-                <div className="text-5xl mb-4 text-[var(--text-3)]">
+              <Link href={item.href} className="flat-card p-8 block h-full">
+                <div className="text-5xl mb-4 text-[var(--brand-primary)]">
                   <item.icon />
                 </div>
                 <h3 className="text-2xl font-bold text-[var(--text-1)] mb-2">{item.title}</h3>
                 <p className="text-[var(--text-2)] mb-4">{item.description}</p>
-                <span className="flat-badge">Coming Soon</span>
-              </div>
+                <span className="flat-badge">Open →</span>
+              </Link>
             </ScrollReveal>
           ))}
         </div>

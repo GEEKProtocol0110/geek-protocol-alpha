@@ -24,7 +24,11 @@ export function decryptPrivateKey(encrypted) {
     return decrypted;
 }
 export function makeAttemptToken(payload, ttlSeconds) {
-    const data = { ...payload, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
+    const data = {
+        ...payload,
+        iat: Date.now(),
+        exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+    };
     const json = JSON.stringify(data);
     const sig = crypto.createHmac("sha256", HMAC_SECRET).update(json).digest("hex");
     return Buffer.from(json).toString("base64") + "." + sig;
@@ -43,8 +47,12 @@ export function verifyAttemptToken(token) {
         return { ok: false, error: "Invalid base64" };
     }
     const expectedSig = crypto.createHmac("sha256", HMAC_SECRET).update(json).digest("hex");
-    if (sig !== expectedSig)
+    // Constant-time compare so signature verification can't be probed byte by byte.
+    const sigBuf = Buffer.from(sig, "utf8");
+    const expectedBuf = Buffer.from(expectedSig, "utf8");
+    if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
         return { ok: false, error: "Invalid signature" };
+    }
     let data;
     try {
         data = JSON.parse(json);

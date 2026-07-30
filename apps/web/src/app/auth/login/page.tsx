@@ -55,10 +55,6 @@ function LoginForm() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="badge-pill text-[var(--brand-primary)] mb-4">
-              <span className="w-1.5 h-1.5 bg-[var(--brand-primary)] rounded-full animate-pulse" />
-              Secure Login · KRC-20 Native
-            </div>
             <h1 className="font-extrabold text-4xl"><span className="neon-text">Sign In</span></h1>
             <p className="text-[var(--text-3)] text-sm mt-1">Continue your Proof-of-Learning journey</p>
           </div>

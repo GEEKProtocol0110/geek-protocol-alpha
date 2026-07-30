@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { makeAttemptToken, verifyAttemptToken } from "../lib/security";
+import { logger } from "../lib/logger";
 import { QUIZ_REWARD_TABLE } from "../config/quizRewards";
-import { Queue } from "bullmq";
-import Redis from "ioredis";
+import { enqueuePayout } from "../lib/payoutQueue";
+import { validateAttemptTiming, timeBonusFor } from "../lib/antiCheat";
+import { BehaviorSignalsSchema, scoreBehavior } from "../lib/behaviorScore";
 const QUESTION_TTL = 15 * 60; // 15 minutes
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-const rewardQueue = new Queue("reward-processing", { connection: redis });
 // Zod schemas
 const StartQuizSchema = z.object({
     round: z.number().int().min(1).max(10),
@@ -14,7 +14,25 @@ const SubmitQuizSchema = z.object({
     attemptToken: z.string(),
     answers: z.array(z.number()),
     timeTakenPerQuestion: z.array(z.number()),
+    behavior: BehaviorSignalsSchema.optional(),
 });
+const DailySubmitSchema = z.object({
+    token: z.string(),
+    answers: z.array(z.number()),
+    timings: z.array(z.number()),
+    behavior: BehaviorSignalsSchema.optional(),
+});
+function getComboMultiplier(combo) {
+    if (combo >= 10)
+        return 3.0;
+    if (combo >= 7)
+        return 2.5;
+    if (combo >= 5)
+        return 2.0;
+    if (combo >= 3)
+        return 1.5;
+    return 1.0;
+}
 // Helpers
 function getDailyTheme() {
     const themes = [
@@ -107,27 +125,54 @@ export async function quizRoutes(fastify) {
         if (!parse.success) {
             return reply.code(400).send({ success: false, error: parse.error.flatten() });
         }
-        const { attemptToken, answers, timeTakenPerQuestion } = parse.data;
+        const { attemptToken, answers, timeTakenPerQuestion, behavior } = parse.data;
         const userId = req.jwtUser.userId;
         // Verify attempt token
         const verified = verifyAttemptToken(attemptToken);
         if (!verified.ok) {
             return reply.code(401).send({ success: false, error: verified.error });
         }
-        const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson } = verified.data;
+        const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson, iat } = verified.data;
         const questionIds = JSON.parse(questionIdsJson);
         const correctAnswers = JSON.parse(correctAnswersJson);
         // Validate answers array length
         if (answers.length !== questionIds.length) {
             return reply.code(400).send({ success: false, error: "Answer count mismatch" });
         }
+        // Timing is checked against the server's own signed issue time, not the
+        // client's self-reported numbers. Posting `0` for every question no longer
+        // buys a speed bonus.
+        const timing = validateAttemptTiming({
+            issuedAtMs: typeof iat === "number" ? iat : Date.now(),
+            submittedAtMs: Date.now(),
+            questionCount: questionIds.length,
+            clientTimings: timeTakenPerQuestion,
+        });
+        if (!timing.ok) {
+            logger.warn({ userId, attemptId, reason: timing.reason, flags: timing.flags }, "Quiz submission rejected by timing validation");
+            return reply.code(400).send({ success: false, error: timing.reason });
+        }
+        // Advisory only — never used to withhold a payout, because a false
+        // positive here means refusing to pay a real player.
+        const behaviorVerdict = behavior ? scoreBehavior(behavior) : null;
+        if (timing.flags.length || behaviorVerdict?.suspicious) {
+            logger.warn({
+                userId,
+                attemptId,
+                timingFlags: timing.flags,
+                behaviorScore: behaviorVerdict?.score,
+                behaviorFlags: behaviorVerdict?.flags,
+                elapsedSeconds: timing.elapsedSeconds,
+                claimedSeconds: timing.claimedSeconds,
+            }, "Quiz attempt flagged for review");
+        }
         // Calculate score server-side
         let correctCount = 0;
         let score = 0;
         const results = answers.map((answer, idx) => {
             const isCorrect = answer === correctAnswers[idx];
-            const timeTaken = timeTakenPerQuestion[idx] || 15;
-            const timeBonus = isCorrect ? Math.max(0, (15 - timeTaken) * 10) : 0;
+            const timeTaken = timing.effectiveTimings[idx];
+            const timeBonus = isCorrect ? timeBonusFor(timeTaken, timing.speedCreditFactor) : 0;
             const basePoints = isCorrect ? 100 : 0;
             const totalPoints = basePoints + timeBonus;
             if (isCorrect)
@@ -159,7 +204,7 @@ export async function quizRoutes(fastify) {
             },
         });
         // Enqueue reward job
-        await rewardQueue.add("process-reward", {
+        await enqueuePayout({
             attemptId,
             userId,
             rewardAmount,
@@ -176,6 +221,136 @@ export async function quizRoutes(fastify) {
                 rewardAmount,
                 results,
             },
+        });
+    });
+    // GET /api/quiz/daily - Fetch today's daily themed quiz (no auth required)
+    fastify.get("/daily", async (_req, reply) => {
+        const theme = getDailyTheme();
+        const themed = await fastify.prisma.question.findMany({
+            where: { status: "approved", topic: { name: theme } },
+            include: { topic: true },
+            orderBy: { dateCreated: "desc" },
+            take: 50,
+        });
+        const pool = themed.length >= 10 ? themed : await fastify.prisma.question.findMany({
+            where: { status: "approved" },
+            include: { topic: true },
+            take: 50,
+        });
+        if (!pool.length) {
+            return reply.code(404).send({ success: false, error: "No questions available" });
+        }
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const selected = pool.slice(0, 10);
+        const shuffled = selected.map((q) => ({ q, ...shuffleOptions(q) }));
+        const questionData = shuffled.map(({ q, options, correctIndex }) => ({
+            id: q.id,
+            question: q.question,
+            options,
+            correctIndex,
+            difficulty: q.difficulty,
+            topic: q.topic.name,
+            funFact: q.funFact ?? null,
+        }));
+        const questionIds = selected.map((q) => q.id);
+        const correctAnswers = shuffled.map((s) => s.correctIndex); // post-shuffle, 0-based
+        const attemptId = `daily_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const token = makeAttemptToken({
+            attemptId,
+            questionIds: JSON.stringify(questionIds),
+            correctAnswers: JSON.stringify(correctAnswers),
+        }, 30 * 60 // 30 minutes
+        );
+        return reply.send({
+            success: true,
+            data: { theme, token, questions: questionData },
+        });
+    });
+    // POST /api/quiz/daily/submit - Submit answers for the daily quiz (auth optional)
+    fastify.post("/daily/submit", { preHandler: fastify.authenticateOptional }, async (req, reply) => {
+        const parse = DailySubmitSchema.safeParse(req.body);
+        if (!parse.success) {
+            return reply.code(400).send({ success: false, error: parse.error.flatten() });
+        }
+        const { token, answers, timings, behavior } = parse.data;
+        const verified = verifyAttemptToken(token);
+        if (!verified.ok) {
+            return reply.code(401).send({ success: false, error: verified.error });
+        }
+        const { attemptId, questionIds: questionIdsJson, correctAnswers: correctAnswersJson, iat, } = verified.data;
+        const questionIds = JSON.parse(questionIdsJson);
+        const correctAnswers = JSON.parse(correctAnswersJson);
+        if (answers.length !== questionIds.length || timings.length !== questionIds.length) {
+            return reply.code(400).send({ success: false, error: "Answer count mismatch" });
+        }
+        // Same wall-clock check as the scored quiz. Note `timings` here are in ms.
+        const dailyTiming = validateAttemptTiming({
+            issuedAtMs: typeof iat === "number" ? iat : Date.now(),
+            submittedAtMs: Date.now(),
+            questionCount: questionIds.length,
+            clientTimings: timings.map((t) => (t ?? 15000) / 1000),
+        });
+        if (!dailyTiming.ok) {
+            logger.warn({ attemptId, reason: dailyTiming.reason, flags: dailyTiming.flags }, "Daily quiz submission rejected by timing validation");
+            return reply.code(400).send({ success: false, error: dailyTiming.reason });
+        }
+        const dailyBehavior = behavior ? scoreBehavior(behavior) : null;
+        if (dailyTiming.flags.length || dailyBehavior?.suspicious) {
+            logger.warn({
+                attemptId,
+                timingFlags: dailyTiming.flags,
+                behaviorScore: dailyBehavior?.score,
+                behaviorFlags: dailyBehavior?.flags,
+            }, "Daily quiz attempt flagged for review");
+        }
+        const userId = req.jwtUser?.userId;
+        const streakMultiplier = userId
+            ? (await fastify.prisma.user.findUnique({ where: { id: userId } }))?.streakBonusMultiplier ?? 1
+            : 1;
+        let correctCount = 0;
+        let combo = 0;
+        let totalPoints = 0;
+        for (let i = 0; i < questionIds.length; i++) {
+            const isCorrect = answers[i] === correctAnswers[i];
+            if (isCorrect)
+                correctCount++;
+            combo = isCorrect ? combo + 1 : 0;
+            // Validated/clamped seconds, not the raw client value.
+            const timeTakenSec = dailyTiming.effectiveTimings[i];
+            const speedBonus = isCorrect && timeTakenSec < 5 && dailyTiming.speedCreditFactor >= 1 ? 5 : 0;
+            const basePoints = isCorrect ? 10 : 0;
+            const comboMult = getComboMultiplier(combo);
+            totalPoints += Math.round((basePoints + speedBonus) * streakMultiplier * comboMult);
+        }
+        const totalQuestions = questionIds.length;
+        const xpEarned = correctCount * 8;
+        const geekEarned = Number((correctCount * 0.5).toFixed(2));
+        if (userId) {
+            await fastify.prisma.quizAttempt.create({
+                data: {
+                    attemptId,
+                    userId,
+                    attemptToken: token,
+                    round: 0,
+                    correctCount,
+                    score: totalPoints,
+                    rewardAmount: geekEarned,
+                    status: "pending",
+                },
+            });
+            await enqueuePayout({
+                attemptId,
+                userId,
+                rewardAmount: geekEarned,
+                type: "quiz_reward",
+            });
+        }
+        return reply.send({
+            success: true,
+            data: { correctCount, totalQuestions, totalPoints, xpEarned, geekEarned },
         });
     });
 }
