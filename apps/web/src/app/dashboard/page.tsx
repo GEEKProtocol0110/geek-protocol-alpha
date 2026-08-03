@@ -9,9 +9,12 @@ import { Footer } from "@/components/Footer";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
+// Must stay in step with getDailyTheme() in apps/api/src/routes/quiz.ts —
+// this is only a preview label; the server decides the real theme.
 const THEMES = [
-  "Video Games","Sci-Fi & Fantasy","Movies & TV",
-  "Comics","Anime & Manga","Tech & Programming","History","Pop Culture",
+  "Kaspa Origins", "GHOSTDAG & BlockDAG", "Mining & Consensus",
+  "Tokenomics", "Wallets & Addresses", "KRC-20 & Smart Contracts",
+  "Kaspa Ecosystem", "Crypto Fundamentals",
 ];
 function getTodayTheme() {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000);

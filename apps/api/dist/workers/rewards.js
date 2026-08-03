@@ -1,3 +1,7 @@
+// The worker signs nothing but does decrypt custodial keys and move funds, so it
+// gets the same fail-fast treatment as the API.
+import { assertProductionConfig } from "../lib/config";
+assertProductionConfig();
 import Redis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 import { Worker } from "bullmq";

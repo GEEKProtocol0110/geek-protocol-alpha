@@ -412,7 +412,46 @@ const questions: Array<{
   },
 ];
 
+/**
+ * LEGACY SEED — pop-culture questions from before the Kaspa relaunch.
+ *
+ * Two reasons this is gated behind an explicit flag:
+ *
+ *  1. It is destructive. The deleteMany calls below wipe every question, topic,
+ *     attempt and validation in the database — including real player history and
+ *     the creator earnings attached to it.
+ *  2. Its content is off-brand. Categories are now Kaspa-native, so this would
+ *     file "Which company developed The Witcher 3?" under "Kaspa Origins".
+ *
+ * Use `npm run seed:kaspa` instead. It is additive, idempotent, and preserves
+ * history.
+ */
+function assertDestructiveSeedAllowed() {
+  const forced = process.argv.includes("--force-destructive");
+
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "\n  Refusing to run the destructive legacy seed in production.\n" +
+        "  It would delete every question, attempt and validation in the database.\n"
+    );
+    process.exit(1);
+  }
+
+  if (!forced) {
+    console.error(
+      "\n  This is the LEGACY pop-culture seed, and it is destructive:\n" +
+        "  it deletes all questions, topics, attempts and validations first.\n\n" +
+        "  For Kaspa content use:   npm run seed:kaspa\n" +
+        "  To run this anyway:      npm run seed -- --force-destructive\n"
+    );
+    process.exit(1);
+  }
+
+  console.warn("\n  ! Running destructive legacy seed — all quiz history will be deleted.\n");
+}
+
 async function seed() {
+  assertDestructiveSeedAllowed();
   console.log("🌱 Starting seed...");
 
   try {

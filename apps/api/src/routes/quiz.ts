@@ -38,10 +38,12 @@ function getComboMultiplier(combo: number) {
 
 // Helpers
 function getDailyTheme(): string {
+  // Kaspa-native rotation. Was pop-culture categories, which had nothing to do
+  // with the chain players are being paid on.
   const themes = [
-    "Video Games", "Sci-Fi & Fantasy", "Movies & TV",
-    "Comics", "Anime & Manga", "Tech & Programming",
-    "History", "Pop Culture",
+    "Kaspa Origins", "GHOSTDAG & BlockDAG", "Mining & Consensus",
+    "Tokenomics", "Wallets & Addresses", "KRC-20 & Smart Contracts",
+    "Kaspa Ecosystem", "Crypto Fundamentals",
   ];
   const dayOfYear = Math.floor(
     (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000
@@ -300,14 +302,17 @@ export async function quizRoutes(fastify: FastifyInstance) {
 
     const shuffled = selected.map((q) => ({ q, ...shuffleOptions(q) }));
 
-    const questionData = shuffled.map(({ q, options, correctIndex }) => ({
+    // correctIndex and funFact are deliberately NOT included. This endpoint used
+    // to ship the answer key to the browser, so a scraper could read every
+    // answer out of the JSON before playing — which also made the canvas
+    // question rendering pointless in this mode. Feedback now comes from
+    // POST /daily/answer, one question at a time, after a choice is committed.
+    const questionData = shuffled.map(({ q, options }) => ({
       id: q.id,
       question: q.question,
       options,
-      correctIndex,
       difficulty: q.difficulty,
       topic: q.topic.name,
-      funFact: q.funFact ?? null,
     }));
 
     const questionIds = selected.map((q) => q.id);
@@ -325,6 +330,71 @@ export async function quizRoutes(fastify: FastifyInstance) {
     return reply.send({
       success: true,
       data: { theme, token, questions: questionData },
+    });
+  });
+
+  // POST /api/quiz/daily/answer — commit one answer, then receive feedback.
+  //
+  // Reveal is gated on commitment: the correct index for question i is only
+  // returned once an answer for i has been recorded, and the recording is
+  // write-once. So a client cannot poll this endpoint to harvest the answer key
+  // before playing, and cannot revise an answer after seeing the result.
+  fastify.post("/daily/answer", async (req, reply) => {
+    const Schema = z.object({
+      token: z.string(),
+      questionIndex: z.number().int().min(0).max(99),
+      answer: z.number().int().min(-1).max(3),
+      timeTaken: z.number().min(0).max(600).optional(),
+    });
+    const parse = Schema.safeParse(req.body);
+    if (!parse.success) {
+      return reply.code(400).send({ success: false, error: parse.error.flatten() });
+    }
+    const { token, questionIndex, answer, timeTaken } = parse.data;
+
+    const verified = verifyAttemptToken(token);
+    if (!verified.ok) {
+      return reply.code(401).send({ success: false, error: verified.error });
+    }
+
+    const { attemptId, correctAnswers: correctAnswersJson, questionIds: questionIdsJson } =
+      verified.data as Record<string, string>;
+    const correctAnswers: number[] = JSON.parse(correctAnswersJson);
+    const questionIds: number[] = JSON.parse(questionIdsJson);
+
+    if (questionIndex >= correctAnswers.length) {
+      return reply.code(400).send({ success: false, error: "Question index out of range" });
+    }
+
+    const key = `dailyans:${attemptId}`;
+    // HSETNX makes the first answer for this index the only one that counts.
+    const stored = await fastify.redis.hsetnx(
+      key,
+      String(questionIndex),
+      JSON.stringify({ answer, timeTaken: timeTaken ?? null, at: Date.now() })
+    );
+    await fastify.redis.expire(key, 30 * 60);
+
+    if (stored === 0) {
+      return reply
+        .code(409)
+        .send({ success: false, error: "This question has already been answered" });
+    }
+
+    const correctIndex = correctAnswers[questionIndex];
+    // funFact is looked up now rather than shipped with the question list.
+    const question = await fastify.prisma.question.findUnique({
+      where: { id: questionIds[questionIndex] },
+      select: { funFact: true },
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        isCorrect: answer === correctIndex,
+        correctIndex,
+        funFact: question?.funFact ?? null,
+      },
     });
   });
 
@@ -356,12 +426,49 @@ export async function quizRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ success: false, error: "Answer count mismatch" });
       }
 
+      // Prefer the answers this attempt actually committed via /daily/answer.
+      // Those are write-once and server-held, so they cannot be revised after the
+      // player has seen which choice was correct. The client-supplied array is
+      // only a fallback for an attempt that never used the commit endpoint.
+      const committedRaw = await fastify.redis.hgetall(`dailyans:${attemptId}`);
+      const committedCount = Object.keys(committedRaw || {}).length;
+      const effectiveAnswers = [...answers];
+      const effectiveTimings = [...timings];
+
+      if (committedCount > 0) {
+        for (const [idxStr, blob] of Object.entries(committedRaw)) {
+          const idx = Number(idxStr);
+          if (!Number.isInteger(idx) || idx < 0 || idx >= questionIds.length) continue;
+          try {
+            const rec = JSON.parse(blob) as { answer: number; timeTaken: number | null };
+            effectiveAnswers[idx] = rec.answer;
+            if (typeof rec.timeTaken === "number") effectiveTimings[idx] = rec.timeTaken * 1000;
+          } catch {
+            // Unparseable record: leave the client value in place for this index.
+          }
+        }
+      }
+
+      // One attempt, one submission.
+      const submitLock = await fastify.redis.set(
+        `dailysubmitted:${attemptId}`,
+        "1",
+        "EX",
+        60 * 60,
+        "NX"
+      );
+      if (!submitLock) {
+        return reply
+          .code(409)
+          .send({ success: false, error: "This attempt has already been submitted" });
+      }
+
       // Same wall-clock check as the scored quiz. Note `timings` here are in ms.
       const dailyTiming = validateAttemptTiming({
         issuedAtMs: typeof iat === "number" ? iat : Date.now(),
         submittedAtMs: Date.now(),
         questionCount: questionIds.length,
-        clientTimings: timings.map((t) => (t ?? 15000) / 1000),
+        clientTimings: effectiveTimings.map((t) => (t ?? 15000) / 1000),
       });
 
       if (!dailyTiming.ok) {
@@ -395,7 +502,7 @@ export async function quizRoutes(fastify: FastifyInstance) {
       let totalPoints = 0;
 
       for (let i = 0; i < questionIds.length; i++) {
-        const isCorrect = answers[i] === correctAnswers[i];
+        const isCorrect = effectiveAnswers[i] === correctAnswers[i];
         if (isCorrect) correctCount++;
 
         combo = isCorrect ? combo + 1 : 0;

@@ -33,6 +33,44 @@ services:
       timeout: 3s
       retries: 20
 
+  # ── Application processes ────────────────────────────────────────────────
+  # Enabled with:  docker compose --profile app up
+  # Left behind a profile so `docker compose up` stays a fast infra-only start
+  # for local development.
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://geek:geekpass@postgres:5432/geekdb?schema=public
+      REDIS_URL: redis://redis:6379
+    env_file: [.env]
+    ports:
+      - "5000:5000"
+    command: sh -c "npx prisma migrate deploy && npm run start"
+
+  # The payout worker. Without this process rewards are enqueued and never
+  # settle — the API deliberately does not process the queue itself.
+  worker:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://geek:geekpass@postgres:5432/geekdb?schema=public
+      REDIS_URL: redis://redis:6379
+    env_file: [.env]
+    command: npm run worker
+
 volumes:
   pgdata:
   redisdata:

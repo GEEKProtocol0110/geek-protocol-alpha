@@ -9,15 +9,17 @@ import { playSfx } from "@/lib/sfx";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
+// Must match the active topic names in the database — a mismatch silently
+// falls back to serving questions from every topic.
 const TOPICS = [
-  { name: "Video Games",       icon: "🎮" },
-  { name: "Sci-Fi & Fantasy",  icon: "🚀" },
-  { name: "Movies & TV",       icon: "🎬" },
-  { name: "Comics",            icon: "💥" },
-  { name: "Anime & Manga",     icon: "⛩️" },
-  { name: "Tech & Programming",icon: "💻" },
-  { name: "History",           icon: "📜" },
-  { name: "Pop Culture",       icon: "🌐" },
+  { name: "Kaspa Origins",            icon: "📜" },
+  { name: "GHOSTDAG & BlockDAG",      icon: "🕸️" },
+  { name: "Mining & Consensus",       icon: "⛏️" },
+  { name: "Tokenomics",               icon: "🪙" },
+  { name: "Wallets & Addresses",      icon: "🔑" },
+  { name: "KRC-20 & Smart Contracts", icon: "📦" },
+  { name: "Kaspa Ecosystem",          icon: "🌐" },
+  { name: "Crypto Fundamentals",      icon: "🧠" },
 ];
 
 const ROUND_FEES = [0, 40, 100, 200, 400, 750, 1250, 2000, 3500, 6000];

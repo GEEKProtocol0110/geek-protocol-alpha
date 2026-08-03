@@ -97,14 +97,14 @@ const FEATURES = [
 ];
 
 const CATEGORIES = [
-  { icon: FaGamepad, name: "Video Games" },
-  { icon: FaCoins, name: "Technology" },
-  { icon: FaRocket, name: "Science Fiction" },
-  { icon: FaBolt, name: "Movies" },
-  { icon: FaBrain, name: "Anime" },
-  { icon: FaBook, name: "Comics" },
-  { icon: FaGlobe, name: "History" },
-  { icon: FaUsers, name: "Pop Culture" }
+  { icon: FaBook, name: "Kaspa Origins" },
+  { icon: FaGlobe, name: "GHOSTDAG & BlockDAG" },
+  { icon: FaBolt, name: "Mining & Consensus" },
+  { icon: FaCoins, name: "Tokenomics" },
+  { icon: FaLock, name: "Wallets & Addresses" },
+  { icon: FaRocket, name: "KRC-20 & Smart Contracts" },
+  { icon: FaUsers, name: "Kaspa Ecosystem" },
+  { icon: FaBrain, name: "Crypto Fundamentals" }
 ];
 
 const IMPACT_ITEMS = [

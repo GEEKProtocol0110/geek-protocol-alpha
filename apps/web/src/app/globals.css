@@ -22,6 +22,14 @@
   --gp-violet-dark: #5A3FC7;
   --gp-gold-dark: #C79418;   /* extrusion shade for gold reward headlines only */
 
+  /* Answer-state semantics. Correct/incorrect must read instantly and must not
+     rely on brand hue alone — cyan-vs-pink is not a legible right/wrong signal.
+     Flat fills only, same as everything else. */
+  --gp-success: #24DD84;
+  --gp-success-dark: #129B59;
+  --gp-danger: #FF4767;
+  --gp-danger-dark: #B81E3C;
+
   /* Wordmark 3D treatment shades (logo spec) */
   --gp-cyan-bevel: #00B8B0;
   --gp-pink-bevel: #D92982;
@@ -772,4 +780,112 @@ button:focus-visible {
     animation: none !important;
     opacity: 1 !important;
   }
+}
+
+/* ─── Daily quiz arcade HUD ──────────────────────────────────────────────────
+   Flat fills, 3px ink outlines and hard offset shadows — no gradients, no blur.
+   Matches the arcade mockup: stat chips, segmented progress, answer tiles. */
+
+.q-chip {
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--ink);
+  color: var(--ink);
+}
+
+.q-chip-icon {
+  background: rgba(255, 255, 255, 0.92);
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  color: var(--ink);
+}
+
+/* Answer tile: dark by default, flips to a solid state fill on reveal. */
+.q-option {
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: #0E0E17;
+  box-shadow: 4px 4px 0 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+.q-option:not(:disabled):hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 var(--ink);
+  border-color: var(--gp-cyan);
+}
+.q-option:not(:disabled):active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+.q-option-correct {
+  background: var(--gp-success);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 0 var(--gp-success-dark);
+}
+.q-option-wrong {
+  background: var(--gp-danger);
+  color: #fff;
+  box-shadow: 4px 4px 0 0 var(--gp-danger-dark);
+}
+
+.q-letter {
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--gp-violet);
+  color: #fff;
+}
+.q-option-correct .q-letter,
+.q-option-wrong .q-letter {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+}
+
+/* Segmented 1–10 progress rail */
+.q-rail {
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: #14141F;
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+.q-seg { border-right: 3px solid var(--ink); }
+.q-seg:last-child { border-right: 0; }
+.q-seg-done { background: var(--gp-cyan); }
+.q-seg-now  { background: #0B0B14; box-shadow: inset 0 0 0 3px #fff; }
+
+/* Confetti burst on a correct answer */
+.q-confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+  animation: q-pop 900ms ease-out forwards;
+}
+@keyframes q-pop {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(0.6); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1); }
+}
+
+/* Floating "+250" reward ticker */
+.q-float {
+  animation: q-rise 1400ms ease-out forwards;
+}
+@keyframes q-rise {
+  0%   { opacity: 0; transform: translateY(6px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  75%  { opacity: 1; transform: translateY(-10px); }
+  100% { opacity: 0; transform: translateY(-22px); }
+}
+
+/* Mascot idle bob */
+.q-bob { animation: q-bob-kf 3.2s ease-in-out infinite; }
+@keyframes q-bob-kf {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .q-confetti, .q-float, .q-bob { animation: none !important; }
+  .q-confetti { opacity: 0 !important; }
+  .q-float { opacity: 1 !important; }
 }

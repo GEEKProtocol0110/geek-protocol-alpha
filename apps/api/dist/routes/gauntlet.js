@@ -17,7 +17,19 @@ const ROUND_CONFIG = [
     { round: 9, fee: 3500, difficulty: "expert", rewardPerCorrect: 1100, label: "OMNISCIENT GATE" },
     { round: 10, fee: 6000, difficulty: "expert", rewardPerCorrect: 1800, label: "APEX PROTOCOL" },
 ];
-const TOPICS = ["Video Games", "Sci-Fi & Fantasy", "Movies & TV", "Comics", "Anime & Manga", "Tech & Programming", "History", "Pop Culture"];
+// Default topic pool when a run doesn't specify its own. These must match the
+// active topic names in the database, otherwise every lookup falls through to
+// the "any approved question" fallback below.
+const TOPICS = [
+    "Kaspa Origins",
+    "GHOSTDAG & BlockDAG",
+    "Mining & Consensus",
+    "Tokenomics",
+    "Wallets & Addresses",
+    "KRC-20 & Smart Contracts",
+    "Kaspa Ecosystem",
+    "Crypto Fundamentals",
+];
 const GIGA_TIPS = [
     "Stay calm, trust your gut. My neural net says: instincts are usually right.",
     "Speed bonus activates under 5 seconds. Be fast, be accurate.",
@@ -180,13 +192,26 @@ export async function gauntletRoutes(fastify) {
                 topicAccuracy,
             };
         }));
+        const attemptId = `gauntlet_${runId}_r${round}_${Date.now()}`;
         const token = makeAttemptToken({
-            attemptId: `gauntlet_${runId}_r${round}_${Date.now()}`,
+            attemptId,
             runId: String(runId),
             round: String(round),
             questionIds: JSON.stringify(publicQuestions.map((q) => q.id)),
             correctAnswers: JSON.stringify(publicQuestions.map((q) => q.correctIndex)),
         }, 30 * 60);
+        // Strip the answer key and the funFact before sending. Gauntlet pays the
+        // largest rewards on the platform and was shipping `correctIndex` straight
+        // to the browser, so a scraper could read every answer out of the response
+        // body. Both are now revealed one question at a time by
+        // POST /run/:runId/round/:round/answer, and only after a choice is
+        // committed. correctAnswers stays inside the signed token, which the client
+        // cannot read.
+        const clientQuestions = publicQuestions.map(({ correctIndex: _hidden, funFact: _fact, ...rest }) => {
+            void _hidden;
+            void _fact;
+            return rest;
+        });
         // Save active round
         await fastify.prisma.gauntletRun.update({
             where: { id: runId },
@@ -202,7 +227,7 @@ export async function gauntletRoutes(fastify) {
             data: {
                 roundConfig: { ...cfg, modifier: modifier ?? null, chargedEntryFee: entryFee },
                 token,
-                questions: publicQuestions,
+                questions: clientQuestions,
                 tip: pickTip(character),
                 character,
                 player: {
@@ -215,6 +240,58 @@ export async function gauntletRoutes(fastify) {
         });
     });
     // POST /api/gauntlet/run/:runId/round/:round/submit
+    // POST /api/gauntlet/run/:runId/round/:round/answer — commit one answer, get feedback.
+    // Same commit-then-reveal contract as the daily quiz: the correct index for a
+    // question is only returned once a choice for it has been recorded, and the
+    // recording is write-once, so revealing an answer costs the player their guess.
+    fastify.post("/run/:runId/round/:round/answer", async (request, reply) => {
+        const { runId, round } = z.object({
+            runId: z.coerce.number(),
+            round: z.coerce.number().min(1).max(10),
+        }).parse(request.params);
+        const Schema = z.object({
+            token: z.string(),
+            questionIndex: z.number().int().min(0).max(99),
+            answer: z.number().int().min(-1).max(3),
+            timeTaken: z.number().min(0).max(600).optional(),
+        });
+        const parsed = Schema.safeParse(request.body);
+        if (!parsed.success) {
+            return reply.code(400).send({ success: false, error: parsed.error.flatten() });
+        }
+        const { token, questionIndex, answer, timeTaken } = parsed.data;
+        const verified = verifyAttemptToken(token);
+        if (!verified.ok)
+            return reply.code(401).send({ success: false, error: "Invalid token" });
+        // The token is bound to a specific run and round.
+        if (String(verified.data.runId) !== String(runId) || String(verified.data.round) !== String(round)) {
+            return reply.code(403).send({ success: false, error: "Token does not match this round" });
+        }
+        const attemptId = String(verified.data.attemptId);
+        const correctAnswers = JSON.parse(verified.data.correctAnswers);
+        const questionIds = JSON.parse(verified.data.questionIds);
+        if (questionIndex >= correctAnswers.length) {
+            return reply.code(400).send({ success: false, error: "Question index out of range" });
+        }
+        const key = `gauntletans:${attemptId}`;
+        const stored = await fastify.redis.hsetnx(key, String(questionIndex), JSON.stringify({ answer, timeTaken: timeTaken ?? null, at: Date.now() }));
+        await fastify.redis.expire(key, 30 * 60);
+        if (stored === 0) {
+            return reply.code(409).send({ success: false, error: "This question has already been answered" });
+        }
+        const question = await fastify.prisma.question.findUnique({
+            where: { id: questionIds[questionIndex] },
+            select: { funFact: true },
+        });
+        return reply.send({
+            success: true,
+            data: {
+                isCorrect: answer === correctAnswers[questionIndex],
+                correctIndex: correctAnswers[questionIndex],
+                funFact: question?.funFact ?? null,
+            },
+        });
+    });
     fastify.post("/run/:runId/round/:round/submit", async (request, reply) => {
         const { runId, round } = z.object({
             runId: z.coerce.number(),
@@ -238,6 +315,31 @@ export async function gauntletRoutes(fastify) {
         const cfg = ROUND_CONFIG[round - 1];
         const correctAnswers = JSON.parse(verified.data.correctAnswers);
         const questionIds = JSON.parse(verified.data.questionIds);
+        // Score from the answers committed via /answer, which are write-once and
+        // server-held. The client's array is only a fallback for a round that never
+        // used the commit endpoint.
+        const committedRaw = await fastify.redis.hgetall(`gauntletans:${String(verified.data.attemptId)}`);
+        const effectiveAnswers = [...answers];
+        const effectiveTimings = [...(timings ?? [])];
+        for (const [idxStr, blob] of Object.entries(committedRaw || {})) {
+            const idx = Number(idxStr);
+            if (!Number.isInteger(idx) || idx < 0 || idx >= correctAnswers.length)
+                continue;
+            try {
+                const rec = JSON.parse(blob);
+                effectiveAnswers[idx] = rec.answer;
+                if (typeof rec.timeTaken === "number")
+                    effectiveTimings[idx] = rec.timeTaken * 1000;
+            }
+            catch {
+                // Unparseable record — keep the client value for this index.
+            }
+        }
+        // One submission per round attempt.
+        const roundLock = await fastify.redis.set(`gauntletsubmitted:${String(verified.data.attemptId)}`, "1", "EX", 60 * 60, "NX");
+        if (!roundLock) {
+            return reply.code(409).send({ success: false, error: "This round has already been submitted" });
+        }
         // Gauntlet pays the largest per-question rewards on the platform, so the
         // same wall-clock check applies here: speed bonuses come from validated
         // timings, never from what the client claims.
@@ -245,7 +347,7 @@ export async function gauntletRoutes(fastify) {
             issuedAtMs: typeof verified.data.iat === "number" ? verified.data.iat : Date.now(),
             submittedAtMs: Date.now(),
             questionCount: correctAnswers.length,
-            clientTimings: (timings ?? []).map((t) => (t ?? 20000) / 1000),
+            clientTimings: effectiveTimings.map((t) => (t ?? 20000) / 1000),
             maxSecondsPerQuestion: GAUNTLET_QUESTION_SECONDS,
         });
         if (!timing.ok) {
@@ -263,7 +365,7 @@ export async function gauntletRoutes(fastify) {
                 behaviorFlags: behaviorVerdict?.flags,
             }, "Gauntlet attempt flagged for review");
         }
-        const results = answers.map((ans, i) => {
+        const results = effectiveAnswers.map((ans, i) => {
             const isCorrect = ans === correctAnswers[i];
             const timeTaken = timing.effectiveTimings[i] ?? 15;
             const fullCredit = timing.speedCreditFactor >= 1;
@@ -294,7 +396,7 @@ export async function gauntletRoutes(fastify) {
                     data: {
                         userId,
                         questionId: results[i].questionId,
-                        selectedOption: answers[i] + 1,
+                        selectedOption: effectiveAnswers[i] + 1,
                         isCorrect: results[i].isCorrect,
                         timeTaken: results[i].timeTaken,
                         sessionId,

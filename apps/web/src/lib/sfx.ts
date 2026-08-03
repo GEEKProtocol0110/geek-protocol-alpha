@@ -79,8 +79,14 @@ export function isSfxMuted() {
 
 export function setSfxMuted(v: boolean) {
   muted = v;
-  if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, v ? "1" : "0");
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(STORAGE_KEY, v ? "1" : "0");
+    window.dispatchEvent(new Event(AUDIO_PREFS_EVENT));
+  }
 }
+
+/** Fired whenever any audio preference changes, so UI can re-read it. */
+export const AUDIO_PREFS_EVENT = "gp-audio-prefs";
 
 export function toggleSfxMuted() {
   setSfxMuted(!muted);

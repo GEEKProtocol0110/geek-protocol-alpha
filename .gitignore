@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 !**/.env.example
+# Templates only — these contain no real secrets and must be committed so
+# deployers can see which variables are required.
+!.env.production.example
+!**/.env.production.example
 
 # vercel
 .vercel

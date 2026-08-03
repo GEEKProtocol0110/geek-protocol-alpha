@@ -1,81 +1,82 @@
-import * as KaspaWallet from "@kaspa/wallet";
 import { logger } from "./logger";
-const DEMO_MODE = process.env.DEMO_MODE === "true";
-const KASPA_NETWORK = process.env.KASPA_NETWORK || "testnet";
-const KASPA_NODE_URL = process.env.KASPA_NODE_URL || "https://testnet-10.kaspa.org";
-// Initialize Kaspa
-let kaspaInitialized = false;
-async function initializeKaspa() {
-    if (kaspaInitialized)
-        return;
-    try {
-        // Try to call initKaspa if it exists, otherwise skip
-        if (KaspaWallet.initKaspa) {
-            await KaspaWallet.initKaspa();
-        }
-        kaspaInitialized = true;
-        logger.info("Kaspa initialized successfully");
-    }
-    catch (error) {
-        logger.error({ error }, "Failed to initialize Kaspa");
-        throw error;
+import { generateKeypair, addressFromPrivateKey } from "./kaspaCrypto";
+import { isValidKaspaAddress, networkPrefix } from "./kaspaAddress";
+const KASPA_NETWORK = process.env.KASPA_NETWORK || "mainnet";
+const KASPLEX_API = process.env.KASPLEX_API_URL || "https://api.kasplex.org";
+const PROVIDER = (process.env.KASPA_TRANSFER_PROVIDER || "none");
+const GEEK_TICKER = process.env.GEEK_TOKEN_TICKER || "";
+export class TransferNotConfiguredError extends Error {
+    constructor(detail) {
+        super(`KRC-20 transfer is not configured: ${detail}. ` +
+            `Set KASPA_TRANSFER_PROVIDER and GEEK_TOKEN_TICKER, or keep ENABLE_REWARDS=false ` +
+            `so balances stay off-chain instead of being recorded as settled.`);
+        this.name = "TransferNotConfiguredError";
     }
 }
-// Create a wallet from private key
-export async function createWalletFromPrivateKey(privateKey) {
-    await initializeKaspa();
-    const wallet = new KaspaWallet.Wallet({
-        network: KASPA_NETWORK,
-        privateKey,
-        server: KASPA_NODE_URL,
-    });
-    await wallet.connect();
-    return wallet;
-}
-// Generate a new Kaspa wallet
+/** Generate a new custodial wallet for the configured network. */
 export async function generateKaspaWallet() {
-    await initializeKaspa();
-    const wallet = new KaspaWallet.Wallet({
-        network: KASPA_NETWORK,
-        server: KASPA_NODE_URL,
-    });
-    await wallet.connect();
-    const address = wallet.address?.toString() || "";
-    const privateKey = wallet.privateKey?.toString() || "";
+    const { address, privateKey } = generateKeypair();
     return { address, privateKey };
 }
-// Send KRC-20 tokens
-export async function sendKrc20Tokens(privateKey, toAddress, tokenId, amount, // Amount in atomic units (e.g., 100000000 for 1 GEEK with 8 decimals)
-fee = "1000" // Fee in sompi
-) {
-    await initializeKaspa();
-    if (DEMO_MODE) {
-        logger.info({ toAddress, tokenId, amount }, "Demo mode: simulating KRC-20 transfer");
-        return `demo_tx_${Date.now()}`;
+/** Derive the address controlled by a private key (used to identify the treasury). */
+export async function createWalletFromPrivateKey(privateKey) {
+    return { address: addressFromPrivateKey(privateKey), privateKey };
+}
+/**
+ * Send KRC-20 tokens.
+ *
+ * Returns a real transaction id on success. Throws on any condition where the
+ * transfer did not demonstrably happen — the payout worker treats a throw as a
+ * retryable failure and leaves the reward unsettled, which is the correct
+ * outcome. It must never return a value that merely looks like a txid.
+ */
+export async function sendKrc20Tokens(privateKey, toAddress, tokenId, amount) {
+    if (!privateKey)
+        throw new TransferNotConfiguredError("no treasury private key");
+    const expectedPrefix = networkPrefix(KASPA_NETWORK);
+    if (!isValidKaspaAddress(toAddress, expectedPrefix)) {
+        // Refuse before broadcasting: a malformed destination burns real funds.
+        throw new Error(`Refusing to send to an invalid ${expectedPrefix} address: ${toAddress}`);
     }
+    const numericAmount = BigInt(amount);
+    if (numericAmount <= 0n)
+        throw new Error(`Refusing to send a non-positive amount: ${amount}`);
+    switch (PROVIDER) {
+        case "kasplex":
+            return sendViaKasplex(privateKey, toAddress, tokenId || GEEK_TICKER, amount);
+        case "none":
+        default:
+            throw new TransferNotConfiguredError(`KASPA_TRANSFER_PROVIDER is "${PROVIDER}"`);
+    }
+}
+/**
+ * Kasplex-backed transfer.
+ *
+ * Kasplex indexes KRC-20 but does not custody or broadcast on your behalf: the
+ * commit/reveal pair must be built, signed and submitted by this service. That
+ * work is deliberately not stubbed here — a half-implementation that returns
+ * early would recreate exactly the bug this file exists to remove.
+ */
+async function sendViaKasplex(_privateKey, toAddress, ticker, amount) {
+    if (!ticker)
+        throw new TransferNotConfiguredError("GEEK_TOKEN_TICKER is empty");
+    logger.error({ toAddress, ticker, amount, network: KASPA_NETWORK, api: KASPLEX_API }, "KRC-20 transfer requested but the commit/reveal signer is not implemented");
+    throw new TransferNotConfiguredError("the Kasplex commit/reveal signer is not implemented yet. " +
+        "Implement buildCommitReveal() against your funded treasury before enabling rewards");
+}
+/** Read a KRC-20 balance from the indexer. Safe to call — read-only. */
+export async function getKrc20Balance(address, ticker = GEEK_TICKER) {
+    if (!ticker)
+        return "0";
     try {
-        const wallet = await createWalletFromPrivateKey(privateKey);
-        // TODO: Implement actual KRC-20 transfer logic here
-        // For now, we'll simulate the transfer since KRC-20 specifics depend on the token implementation
-        logger.info({ toAddress, tokenId, amount }, "Sending KRC-20 tokens (simulated)");
-        // Example of sending KAS (not KRC-20, just for reference)
-        // const tx = await wallet.send({
-        //   toAddress,
-        //   amount,
-        //   fee,
-        // });
-        // For KRC-20, you would need to:
-        // 1. Create a transaction that interacts with the KRC-20 token contract
-        // 2. Sign the transaction
-        // 3. Broadcast the transaction to the network
-        // This will depend on the specific KRC-20 implementation
-        // Return a simulated transaction ID for now
-        const txid = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-        logger.info({ txid }, "KRC-20 transfer simulated");
-        return txid;
+        const res = await fetch(`${KASPLEX_API}/v1/krc20/address/${encodeURIComponent(address)}/token/${encodeURIComponent(ticker)}`);
+        if (!res.ok)
+            return "0";
+        const data = (await res.json());
+        return data?.result?.[0]?.balance ?? "0";
     }
     catch (error) {
-        logger.error({ error, toAddress, tokenId, amount }, "Failed to send KRC-20 tokens");
-        throw error;
+        logger.error({ error, address, ticker }, "Failed to read KRC-20 balance");
+        return "0";
     }
 }

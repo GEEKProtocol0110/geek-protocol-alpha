@@ -1,30 +1,14 @@
-import { logger } from "./logger";
-const DEMO_MODE = process.env.DEMO_MODE === "true";
-// Generate a new Kaspa keypair
+import { generateKeypair } from "./kaspaCrypto";
+/**
+ * Generate a new Kaspa keypair.
+ *
+ * Previously this produced fake `kaspatest:demo<random>` strings in DEMO_MODE
+ * and required the uninstalled `@kaspa/core` otherwise. It now always returns a
+ * real, valid keypair for the configured network — a demo build getting
+ * cryptographically valid addresses costs nothing and means test data behaves
+ * like production data.
+ */
 export async function generateKaspaKeypair() {
-    if (DEMO_MODE) {
-        // Generate demo keypair
-        const address = `kaspatest:demo${Math.random().toString(36).substring(2, 15)}`;
-        const privateKey = `demo_priv_${Math.random().toString(36).substring(2, 32)}`;
-        return { address, privateKey };
-    }
-    try {
-        // Load Kaspa core dynamically
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const kaspaCore = await (Function('return m => import(m)')())('@kaspa/core');
-        if (!kaspaCore) {
-            throw new Error("@kaspa/core not available");
-        }
-        // Generate new private key
-        const privateKey = kaspaCore.PrivateKey.random();
-        const address = privateKey.toAddress(kaspaCore.Network.TESTNET); // Use TESTNET for now
-        return {
-            address: address.toString(),
-            privateKey: privateKey.toString(),
-        };
-    }
-    catch (error) {
-        logger.error({ error }, "Failed to generate Kaspa keypair");
-        throw new Error("Failed to generate wallet");
-    }
+    const { address, privateKey } = generateKeypair();
+    return { address, privateKey };
 }

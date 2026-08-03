@@ -93,10 +93,12 @@ export default function LitepaperPage() {
             Kaspa.
           </p>
           <p>
-            Three properties carry the design. Answers never reach the browser, so they
-            cannot be read out of the page. Scoring happens server-side against a signed
-            attempt token, so a player cannot report their own result. And payouts are
-            queued and idempotent, so the same attempt cannot be paid twice.
+            Three properties carry the design. Answers never reach the browser in any
+            mode — a choice is committed to the server before the correct one is revealed,
+            and the commitment is write-once, so learning the answer costs you your guess.
+            Scoring happens server-side against a signed attempt token, so a player cannot
+            report their own result. And payouts are queued and idempotent, so the same
+            attempt cannot be paid twice.
           </p>
         </Section>
 
@@ -180,7 +182,13 @@ export default function LitepaperPage() {
             <div className="flat-card p-6">
               <h3 className="font-bold text-[var(--text-1)] mb-3">Against automation</h3>
               <ul className="space-y-2 text-sm">
-                <li>Correct answers are never sent to the client.</li>
+                <li>
+                  Correct answers are never sent to the client, in any mode.
+                </li>
+                <li>
+                  Answers are committed before they are revealed, and the commitment is
+                  write-once — so harvesting the key and playing are the same act.
+                </li>
                 <li>Options are reshuffled per attempt, so answer positions can&apos;t be memorised.</li>
                 <li>Question text is rendered to canvas, not selectable DOM text.</li>
                 <li>
@@ -232,8 +240,12 @@ export default function LitepaperPage() {
               <h3 className="font-bold text-[var(--text-1)] mb-3">Not done yet</h3>
               <ul className="space-y-2 text-sm">
                 <li>Third-party security audit — not yet started</li>
+                <li>
+                  On-chain KRC-20 transfers — the transfer function is still a stub, so
+                  $GEEK balances are database figures, not settled tokens
+                </li>
                 <li>Mainnet $GEEK deployment (alpha runs on testnet)</li>
-                <li>On-chain confirmation polling rather than post-broadcast settlement</li>
+
                 <li>Tournament infrastructure at scale</li>
                 <li>Mobile applications</li>
               </ul>

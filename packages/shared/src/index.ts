@@ -1,18 +1,59 @@
 import { z } from "zod";
 
 // ============ CATEGORIES ============
+// Every category is Kaspa-native. The quiz is the on-ramp: a player who clears
+// all eight understands the chain they are being paid on.
 export const GEEK_CATEGORIES = [
-  "Video Games",
-  "Sci-Fi & Fantasy",
-  "Movies & TV",
-  "Comics",
-  "Anime & Manga",
-  "Tech & Programming",
-  "History",
-  "Pop Culture",
+  "Kaspa Origins",
+  "GHOSTDAG & BlockDAG",
+  "Mining & Consensus",
+  "Tokenomics",
+  "Wallets & Addresses",
+  "KRC-20 & Smart Contracts",
+  "Kaspa Ecosystem",
+  "Crypto Fundamentals",
 ] as const;
 
 export type GeekCategory = (typeof GEEK_CATEGORIES)[number];
+
+/** Display metadata for each category. */
+export const CATEGORY_META: Record<
+  GeekCategory,
+  { icon: string; description: string }
+> = {
+  "Kaspa Origins": {
+    icon: "📜",
+    description: "The people, papers and decisions behind Kaspa's fair launch.",
+  },
+  "GHOSTDAG & BlockDAG": {
+    icon: "🕸️",
+    description: "How Kaspa orders parallel blocks instead of throwing them away.",
+  },
+  "Mining & Consensus": {
+    icon: "⛏️",
+    description: "Proof of work, kHeavyHash, block rates and security.",
+  },
+  Tokenomics: {
+    icon: "🪙",
+    description: "Supply, emission and the halving that happens every month.",
+  },
+  "Wallets & Addresses": {
+    icon: "🔑",
+    description: "Keys, addresses, UTXOs and keeping your KAS safe.",
+  },
+  "KRC-20 & Smart Contracts": {
+    icon: "📦",
+    description: "Tokens, inscriptions and the programmable layer.",
+  },
+  "Kaspa Ecosystem": {
+    icon: "🌐",
+    description: "Explorers, wallets, tooling and the projects being built.",
+  },
+  "Crypto Fundamentals": {
+    icon: "🧠",
+    description: "The core ideas every Kaspa user should understand.",
+  },
+};
 
 // ============ AUTH ============
 export const NonceResponseSchema = z.object({

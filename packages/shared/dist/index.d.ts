@@ -1,6 +1,11 @@
 import { z } from "zod";
-export declare const GEEK_CATEGORIES: readonly ["Video Games", "Sci-Fi & Fantasy", "Movies & TV", "Comics", "Anime & Manga", "Tech & Programming", "History", "Pop Culture"];
+export declare const GEEK_CATEGORIES: readonly ["Kaspa Origins", "GHOSTDAG & BlockDAG", "Mining & Consensus", "Tokenomics", "Wallets & Addresses", "KRC-20 & Smart Contracts", "Kaspa Ecosystem", "Crypto Fundamentals"];
 export type GeekCategory = (typeof GEEK_CATEGORIES)[number];
+/** Display metadata for each category. */
+export declare const CATEGORY_META: Record<GeekCategory, {
+    icon: string;
+    description: string;
+}>;
 export declare const NonceResponseSchema: z.ZodObject<{
     nonce: z.ZodString;
     expiresAt: z.ZodNumber;

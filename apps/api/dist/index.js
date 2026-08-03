@@ -1,3 +1,7 @@
+// Validate configuration before anything opens a socket or signs a token.
+// This throws in production rather than booting with a public dev secret.
+import { assertProductionConfig, IS_PRODUCTION } from "./lib/config";
+assertProductionConfig();
 import Fastify from "fastify";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyCors from "@fastify/cors";
@@ -45,13 +49,26 @@ fastify.decorate("redis", redis);
 fastify.register(fastifyHelmet);
 fastify.register(fastifyCors, {
     origin: (origin, cb) => {
-        // Allow requests with no origin (curl, server-to-server) and any localhost/LAN origin
-        if (!origin)
-            return cb(null, true);
         const allowed = (process.env.FRONTEND_ORIGIN || "http://localhost:3000")
             .split(",")
-            .map((o) => o.trim());
-        // Also allow the same host on any port (handles LAN IP access)
+            .map((o) => o.trim())
+            .filter(Boolean);
+        // In production the allow-list is the whole rule. The previous logic also
+        // waved through localhost, any RFC1918 address, and any request with no
+        // Origin header — combined with `credentials: true` that let a page on any
+        // LAN host drive an authenticated session.
+        if (IS_PRODUCTION) {
+            if (origin && allowed.includes(origin))
+                return cb(null, true);
+            // No Origin header: not a browser CORS request (curl, health checks,
+            // server-to-server). Allowed through without CORS headers.
+            if (!origin)
+                return cb(null, false);
+            return cb(new Error("CORS: origin not allowed"), false);
+        }
+        // Development keeps the permissive behaviour so LAN device testing works.
+        if (!origin)
+            return cb(null, true);
         const url = new URL(origin);
         const lanIp = process.env.LAN_IP || "";
         if (allowed.includes(origin) ||

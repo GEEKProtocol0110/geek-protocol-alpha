@@ -2,12 +2,16 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
-import { SfxToggle } from "@/components/SfxToggle";
+import { AudioControls } from "@/components/AudioControls";
 import { playSfx } from "@/lib/sfx";
+import { speak, cancelVoice, onVoiceDuck } from "@/lib/voice";
+import { startMusic, stopMusic, duckMusic } from "@/lib/music";
 import CanvasQuestion from "@/components/CanvasQuestion";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { createBehaviorTracker } from "@/lib/behaviorSignals";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
@@ -30,10 +34,8 @@ type GauntletQuestion = {
   id: number;
   question: string;
   options: string[];
-  correctIndex: number;
   difficulty: string;
   topic: string;
-  funFact: string | null;
   seenCount?: number;
   pastAccuracy?: number | null;
   topicAccuracy?: number | null;
@@ -133,6 +135,10 @@ function PlayContent() {
   const [results, setResults] = useState<LocalResult[]>([]);
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
+  // Revealed by the server only after an answer is committed — the round
+  // payload no longer contains the answer key.
+  const [revealedCorrect, setRevealedCorrect] = useState<number | null>(null);
+  const [revealedFact, setRevealedFact] = useState<string | null>(null);
   const [hintUsed, setHintUsed] = useState(false);
   const [hint, setHint] = useState("");
   const [reaction, setReaction] = useState("");
@@ -146,6 +152,16 @@ function PlayContent() {
     const tracker = behavior.current;
     tracker.start();
     return () => tracker.stop();
+  }, []);
+
+  // Duck the music while the AI speaks and stop everything on the way out.
+  useEffect(() => {
+    onVoiceDuck(duckMusic);
+    return () => {
+      onVoiceDuck(null);
+      stopMusic();
+      cancelVoice();
+    };
   }, []);
 
   const cfg = payload?.roundConfig ?? ROUND_CONFIG[round - 1];
@@ -191,6 +207,8 @@ function PlayContent() {
   const beginRound = useCallback(async () => {
     if (!user) return;
     playSfx("start");
+    // This click is the user gesture browsers require before audio may start.
+    startMusic();
     setPhase("loading");
     setError("");
     setQuestionIndex(0);
@@ -234,24 +252,59 @@ function PlayContent() {
     return Number((streak * comboMult * speed * topic * seasonal).toFixed(2));
   }
 
-  function choose(idx: number) {
+  /**
+   * Commit the answer to the server and let it reveal whether it was right.
+   * The round payload no longer carries the answer key, so this round trip is
+   * what produces feedback — and the server records the choice write-once.
+   */
+  async function choose(idx: number) {
     if (phase !== "question" || chosen !== null || !current) return;
     if (idx !== -1) playSfx("click");
     const timeTaken = idx === -1 ? QUESTION_TIME : (Date.now() - startedAt.current) / 1000;
-    const isCorrect = idx === current.correctIndex;
+    setChosen(idx);
+
+    let correctIndex = -1;
+    let fact: string | null = null;
+    try {
+      const res = await fetch(`${API}/api/gauntlet/run/${runId}/round/${round}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          token: payload?.token,
+          questionIndex,
+          answer: idx,
+          timeTaken,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        correctIndex = json.data.correctIndex;
+        fact = json.data.funFact ?? null;
+      }
+    } catch {
+      // Score is recomputed server-side at submit regardless of what shows here.
+    }
+    setRevealedCorrect(correctIndex);
+    setRevealedFact(fact);
+
+    const isCorrect = idx === correctIndex;
     const nextCombo = isCorrect ? combo + 1 : 0;
     const mult = multiplierFor(isCorrect, nextCombo, current.topicAccuracy, timeTaken);
     const lineBank = COMBO_LINES[character];
     if (isCorrect) {
       playSfx("correct");
-      if ([3, 5, 7, 10].includes(nextCombo)) playSfx("combo", { comboLevel: nextCombo });
+      const milestone = [3, 5, 7, 10].includes(nextCombo);
+      if (milestone) playSfx("combo", { comboLevel: nextCombo });
+      speak(milestone ? "streak" : "correct", character);
     } else {
       playSfx("wrong");
+      speak(idx === -1 ? "timeout" : "wrong", character);
     }
     setChosen(idx);
     setAnswers((a) => [...a, idx]);
     setTimings((t) => [...t, Math.round(timeTaken * 1000)]);
-    setResults((r) => [...r, { chosen: idx, correct: current.correctIndex, isCorrect, timeTaken, multiplier: mult }]);
+    setResults((r) => [...r, { chosen: idx, correct: correctIndex, isCorrect, timeTaken, multiplier: mult }]);
     setCombo(nextCombo);
     setMaxCombo((m) => Math.max(m, nextCombo));
     setReaction(isCorrect ? lineBank[Math.min(lineBank.length - 1, Math.max(0, nextCombo - 2))] : "Combo broken. Rebuild clean.");
@@ -261,7 +314,9 @@ function PlayContent() {
   function useHint() {
     if (!current || hintUsed || phase !== "question") return;
     playSfx("click");
-    const eliminable = current.options.findIndex((_, i) => i !== current.correctIndex);
+    // The client no longer knows the answer, so the hint narrows the field
+    // without revealing it — the server is the only holder of the key.
+    const eliminable = Math.floor(Math.random() * current.options.length);
     setHint(`A.C.E. would eliminate option ${String.fromCharCode(65 + eliminable)} first.`);
     setHintUsed(true);
   }
@@ -302,6 +357,8 @@ function PlayContent() {
     }
     setQuestionIndex((i) => i + 1);
     setChosen(null);
+    setRevealedCorrect(null);
+    setRevealedFact(null);
     setHint("");
     setPhase("question");
   }
@@ -400,40 +457,98 @@ function PlayContent() {
   }
 
   if ((phase === "question" || phase === "feedback") && current) {
-    const progress = ((questionIndex + 1) / questions.length) * 100;
-    const timerPct = (timeLeft / QUESTION_TIME) * 100;
+    const total = questions.length;
     const last = results[results.length - 1];
+    const answered = phase === "feedback";
+    const gotItRight = answered && last?.isCorrect;
+    const lowTime = timeLeft <= 5 && !answered;
+    const correctCount = results.filter((r) => r.isCorrect).length;
+
+    const CHIPS = [
+      { label: "TIME",  value: answered ? "0:00" : `0:${String(timeLeft).padStart(2, "0")}`,
+        fill: lowTime ? "var(--gp-danger)" : "var(--gp-cyan)", icon: "🕐" },
+      { label: "ROUND", value: `${round}/10`,
+        fill: "var(--gp-violet)", icon: "🎯" },
+      { label: "COMBO", value: `x${combo}`,
+        fill: "var(--gp-pink)", icon: "⚡" },
+      { label: "MULTI", value: `x${(user.streakBonusMultiplier ?? 1).toFixed(2)}`,
+        fill: "var(--gp-gold)", icon: "🔥" },
+    ];
+
     return (
       <Shell>
-        <div className="max-w-3xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-3)] mb-3">
-            <span>Round {round} · Q {questionIndex + 1}/{questions.length}</span>
-            <span className="text-[var(--brand-accent)]">{current.topic}</span>
-            <span className="text-[var(--brand-primary)]">{money(totalLocalGeek)} GEEK live</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-[var(--surface-2)] mb-2 overflow-hidden"><div className="h-full rounded-full bg-[var(--brand-primary)]" style={{ width: `${progress}%` }} /></div>
-          <div className="h-1.5 rounded-full bg-[var(--surface-2)] mb-5 overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ${timeLeft <= 5 ? "bg-[var(--brand-tertiary)]" : "bg-[var(--brand-secondary)]"}`} style={{ width: `${phase === "feedback" ? 100 : timerPct}%` }} /></div>
+        <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-            {[
-              ["Time", phase === "feedback" ? "Locked" : `${timeLeft}s`],
-              ["Combo", combo ? `x${combo}` : "-"],
-              ["Streak", `x${user.streakBonusMultiplier.toFixed(2)}`],
-              ["Topic Acc", current.topicAccuracy == null ? "New" : `${current.topicAccuracy}%`],
-              ["Seen", String(current.seenCount ?? 0)],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-[var(--surface-1)] border-[3px] border-[var(--ink)] shadow-[var(--shadow-soft)] p-3 text-center">
-                <div className="text-[9px] tracking-widest text-[var(--text-3)] uppercase font-semibold">{label}</div>
-                <div className="font-extrabold text-xl text-[var(--text-1)]">{value}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="soft-card p-6 mb-4">
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="badge-pill text-[var(--brand-accent)]">{current.difficulty}</span>
-              <span className="text-[10px] tracking-widest text-[var(--text-3)] font-semibold uppercase">Past accuracy: {current.pastAccuracy == null ? "First serve" : `${current.pastAccuracy}%`}</span>
+          {/* ── HUD: stat chips + live GEEK ─────────────────────────────── */}
+          <div className="flex flex-wrap items-start gap-3 md:gap-4 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 flex-1 min-w-0">
+              {CHIPS.map((c) => (
+                <div key={c.label} className="q-chip flex items-center gap-2 px-3 py-2" style={{ background: c.fill }}>
+                  <span className="q-chip-icon shrink-0 w-8 h-8 grid place-items-center text-base" aria-hidden="true">{c.icon}</span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-extrabold tracking-widest leading-none">{c.label}</span>
+                    <span className="block text-xl md:text-2xl font-extrabold leading-tight tabular-nums">{c.value}</span>
+                  </span>
+                </div>
+              ))}
             </div>
+
+            <div className="flex flex-col items-end gap-1">
+              <div className="q-chip flex items-center gap-2 px-3 py-2"
+                   style={{ background: "var(--gp-violet)", color: "#fff" }}>
+                <span className="shrink-0 w-8 h-8 grid place-items-center rounded-full border-[2.5px] border-[var(--ink)] text-sm"
+                      style={{ background: "var(--gp-gold)", color: "var(--ink)" }} aria-hidden="true">$</span>
+                <span className="text-xl md:text-2xl font-extrabold tabular-nums">{money(totalLocalGeek)}</span>
+              </div>
+              <AudioControls className="mt-0.5" />
+              {answered && last?.isCorrect && (
+                <div className="q-float flex items-center gap-1.5 pr-1" aria-live="polite">
+                  <span className="w-5 h-5 grid place-items-center rounded-full border-2 border-[var(--ink)] text-[10px] font-extrabold"
+                        style={{ background: "var(--gp-gold)", color: "var(--ink)" }} aria-hidden="true">$</span>
+                  <span className="font-extrabold text-[var(--gp-gold)]">
+                    +{money(cfg.rewardPerCorrect * last.multiplier)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Segmented progress rail ────────────────────────────────── */}
+          <div className="mb-1">
+            <div className="q-rail flex h-7 overflow-hidden" role="progressbar"
+                 aria-valuemin={1} aria-valuemax={total} aria-valuenow={questionIndex + 1}
+                 aria-label={`Question ${questionIndex + 1} of ${total}`}>
+              {Array.from({ length: total }).map((_, i) => (
+                <div key={i} className={`q-seg flex-1 ${i < questionIndex ? "q-seg-done" : i === questionIndex ? "q-seg-now" : ""}`} />
+              ))}
+            </div>
+            <div className="flex mt-1" aria-hidden="true">
+              {Array.from({ length: total }).map((_, i) => (
+                <div key={i} className={`flex-1 text-center text-xs font-extrabold ${i <= questionIndex ? "text-[var(--gp-cyan)]" : "text-[var(--text-3)]"}`}>
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Question card ──────────────────────────────────────────── */}
+          <div className="relative mt-4 rounded-[20px] border-[3px] border-[var(--ink)] bg-[#0B0B14] p-5 md:p-7"
+               style={{ boxShadow: "6px 6px 0 0 var(--ink)" }}>
+
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="px-3 py-1 rounded-lg border-[2.5px] border-[var(--ink)] text-[11px] font-extrabold tracking-widest uppercase"
+                    style={{ background: "var(--gp-pink)", color: "var(--ink)" }}>
+                {current.difficulty}
+              </span>
+              <span className="px-3 py-1 rounded-lg border-[2.5px] border-[var(--ink)] text-[11px] font-extrabold tracking-widest uppercase"
+                    style={{ background: "var(--gp-cyan)", color: "var(--ink)" }}>
+                {current.topic}
+              </span>
+              <span className="text-[10px] tracking-widest text-[var(--text-3)] font-bold uppercase ml-auto">
+                {current.pastAccuracy == null ? "First serve" : `Past: ${current.pastAccuracy}%`}
+              </span>
+            </div>
+
             {/* Canvas-rendered rather than scrapeable DOM text; the accessible
                 name still carries the question for screen readers. */}
             <CanvasQuestion
@@ -442,81 +557,201 @@ function PlayContent() {
               className="mb-6"
               onRendered={(ok) => behavior.current.markCanvasRendered(ok)}
             />
-            <div className="grid gap-3">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {current.options.map((option, index) => {
-                const show = phase === "feedback";
-                const good = index === current.correctIndex;
-                const picked = chosen === index;
-                let cls = "border-[var(--border-soft)] bg-[var(--surface-2)] hover:border-[var(--brand-primary)]/50 text-[var(--text-2)]";
-                if (show && good) cls = "border-[var(--brand-secondary)] bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]";
-                else if (show && picked && !good) cls = "border-[var(--brand-tertiary)] bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]";
-                else if (picked) cls = "border-[var(--brand-primary)] bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]";
+                const isChosen = chosen === index;
+                const isRight = index === revealedCorrect;
+                const showCorrect = answered && isRight;
+                const showWrong = answered && isChosen && !isRight;
+
                 return (
-                  <button key={option} onClick={() => choose(index)} disabled={phase === "feedback"} className={`border rounded-2xl px-5 py-4 text-left text-sm font-medium transition ${cls}`}>
-                    <span className="text-[var(--text-3)] mr-3 font-bold">{String.fromCharCode(65 + index)}.</span>{option}
+                  <button
+                    key={option}
+                    onClick={() => choose(index)}
+                    disabled={answered || chosen !== null}
+                    aria-label={`${String.fromCharCode(65 + index)}. ${option}`}
+                    className={`q-option relative flex items-center gap-3 px-3.5 py-3.5 text-left ${
+                      showCorrect ? "q-option-correct" : showWrong ? "q-option-wrong" : "text-[var(--text-1)]"
+                    }`}
+                  >
+                    <span className="q-letter shrink-0 w-9 h-9 grid place-items-center font-extrabold text-sm">
+                      {String.fromCharCode(65 + index)}
+                    </span>
+                    <span className="flex-1 font-bold text-[15px] leading-snug">{option}</span>
+                    {showCorrect && (
+                      <span className="shrink-0 w-7 h-7 grid place-items-center rounded-full bg-white border-2 border-[var(--ink)] text-[var(--gp-success-dark)] font-extrabold text-sm">✓</span>
+                    )}
+                    {showWrong && (
+                      <span className="shrink-0 w-7 h-7 grid place-items-center rounded-full bg-white border-2 border-[var(--ink)] text-[var(--gp-danger-dark)] font-extrabold text-sm">✕</span>
+                    )}
                   </button>
                 );
               })}
             </div>
+
+            {gotItRight && <ConfettiBurst className="rounded-[20px]" />}
           </div>
 
-          {hint && <div className="rounded-2xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/10 p-3 mb-4 text-xs text-[var(--brand-primary)] font-medium">{hint}</div>}
-
+          {/* ── Hint ───────────────────────────────────────────────────── */}
           {phase === "question" && (
-            <button onClick={useHint} disabled={hintUsed} className="rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/5 hover:bg-[var(--brand-primary)]/10 disabled:opacity-40 text-[var(--brand-primary)] font-bold text-lg px-5 py-3 transition">
-              Use A.C.E. Hint Token
-            </button>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                onClick={useHint}
+                disabled={hintUsed}
+                className="q-option px-5 py-3 font-extrabold disabled:opacity-40"
+                style={{ background: "var(--gp-violet)", color: "#fff", boxShadow: "4px 4px 0 0 var(--gp-violet-dark)" }}
+              >
+                {hintUsed ? "Hint used" : "Use A.C.E. Hint Token"}
+              </button>
+              {hint && (
+                <span className="text-sm font-semibold text-[var(--gp-cyan)]">{hint}</span>
+              )}
+            </div>
           )}
 
-          {phase === "feedback" && (
-            <div className="soft-card p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-[10px] tracking-widest text-[var(--brand-accent)] font-bold">{character}</div>
-                  <div className="font-bold text-[var(--text-1)]">{reaction}</div>
-                  {current.funFact && <div className="text-xs text-[var(--text-3)] mt-2">{current.funFact}</div>}
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] text-[var(--text-3)] font-semibold">Bonus multiplier</div>
-                  <div className="font-extrabold text-3xl text-[var(--brand-primary)]">x{last?.multiplier.toFixed(2) ?? "0.00"}</div>
+          {/* ── Mascot + verdict + next ────────────────────────────────── */}
+          {answered && (
+            <div className="mt-3 flex flex-col md:flex-row md:items-end gap-4">
+              <div className="flex items-end gap-3 flex-1 min-w-0">
+                <Image
+                  src="/mascot-quiz.png"
+                  alt=""
+                  width={236}
+                  height={306}
+                  priority
+                  aria-hidden="true"
+                  className="q-bob w-[130px] md:w-[172px] h-auto shrink-0 select-none -mb-1"
+                />
+                <div className="relative mb-4 flex-1 min-w-0 rounded-[18px] border-[3px] border-[var(--ink)] bg-white px-4 py-3 text-[var(--ink)]"
+                     style={{ boxShadow: "5px 5px 0 0 var(--ink)" }}>
+                  <span aria-hidden="true" className="absolute left-[-14px] bottom-6 w-0 h-0"
+                        style={{ borderTop: "11px solid transparent", borderBottom: "11px solid transparent", borderRight: "14px solid var(--ink)" }} />
+                  <span aria-hidden="true" className="absolute left-[-9px] bottom-[26px] w-0 h-0"
+                        style={{ borderTop: "8px solid transparent", borderBottom: "8px solid transparent", borderRight: "10px solid #fff" }} />
+                  <div className="font-extrabold text-lg leading-tight">
+                    {gotItRight ? "Nice one!" : "Not this time."}
+                  </div>
+                  <div className="text-sm font-semibold text-[#3a3a4a]">{reaction}</div>
+                  {last?.isCorrect && (
+                    <div className="mt-2 pt-2 border-t-2 border-[#e6e6ee] font-extrabold text-[var(--gp-gold-dark)]">
+                      +{money(cfg.rewardPerCorrect * last.multiplier)} GEEK · ×{last.multiplier.toFixed(2)}
+                    </div>
+                  )}
+                  {revealedFact && (
+                    <div className="mt-2 pt-2 border-t-2 border-[#e6e6ee] text-xs font-medium text-[#3a3a4a]">
+                      💡 {revealedFact}
+                    </div>
+                  )}
                 </div>
               </div>
-              <button onClick={nextQuestion} className="pill-btn pill-btn-primary w-full mt-5 text-xl py-3">
-                {questionIndex >= questions.length - 1 ? "Complete Round" : "Next Question"}
+
+              <button
+                onClick={nextQuestion}
+                className="q-option w-full md:w-auto md:min-w-[280px] justify-center px-8 py-5 text-xl md:text-2xl font-extrabold"
+                style={{ background: "var(--gp-cyan)", color: "var(--ink)", boxShadow: "6px 6px 0 0 var(--gp-cyan-dark)" }}
+              >
+                {questionIndex >= total - 1 ? "Complete Round" : "Next Question →"}
               </button>
             </div>
           )}
+
+          <div className="mt-4 text-xs font-semibold text-[var(--text-3)]">
+            Round {round} · {cfg.label}
+            {results.length > 0 && ` · ${correctCount} of ${results.length} correct so far`}
+          </div>
         </div>
       </Shell>
     );
   }
 
+
   if (phase === "roundComplete" && serverResult) {
     const allDone = round >= 10;
+    const pct = serverResult.totalQuestions
+      ? Math.round((serverResult.correctCount / serverResult.totalQuestions) * 100)
+      : 0;
+    const strong = pct >= 60;
+    const verdict = allDone ? "GAUNTLET CLEARED" : strong ? "ROUND CLEARED" : "ROUND SURVIVED";
+    const tint = strong ? "var(--gp-cyan)" : "var(--gp-violet)";
+    const tintShade = strong ? "var(--gp-cyan-dark)" : "var(--gp-violet-dark)";
+
+    const TILES = [
+      { label: "Correct", value: `${serverResult.correctCount}/${serverResult.totalQuestions}`, color: "var(--text-1)" },
+      { label: "GEEK Earned", value: `+${money(serverResult.geekEarned + serverResult.refund)}`, color: "var(--gp-gold)" },
+      { label: "Run Total", value: `+${money(totalLocalGeek)}`, color: "var(--gp-gold)" },
+      { label: "XP Gained", value: `+${serverResult.xpEarned}`, color: "var(--gp-cyan)" },
+      { label: "Best Combo", value: maxCombo > 0 ? `🔥 ×${maxCombo}` : "—", color: "var(--text-1)" },
+      { label: "Accuracy", value: `${pct}%`, color: "var(--text-1)", highlight: true },
+    ];
+
     return (
       <Shell>
-        <div className="max-w-3xl mx-auto px-4 py-12">
-          <div className="text-center mb-8">
-            <div className="badge-pill text-[var(--brand-accent)] mb-4">Round Complete</div>
-            <h1 className="font-extrabold text-5xl text-[var(--text-1)]">Round {round} Cleared</h1>
-            <p className="text-xs text-[var(--text-3)]">Best combo x{maxCombo}. Sudden death phases survived by accuracy, mostly.</p>
+        <div className="max-w-3xl mx-auto px-4 py-10 md:py-14">
+          <div className="flex justify-center mb-6">
+            <span className="px-5 py-2 rounded-xl border-[3px] border-[var(--ink)] text-xs md:text-sm font-extrabold tracking-widest uppercase text-white text-center"
+                  style={{ background: "var(--gp-violet)", boxShadow: "4px 4px 0 0 var(--ink)" }}>
+              Round {round} Complete · {cfg.label}
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            {[
-              ["Correct", `${serverResult.correctCount}/${serverResult.totalQuestions}`],
-              ["GEEK Earned", `+${money(serverResult.geekEarned + serverResult.refund)}`],
-              ["Run GEEK", `+${money(totalLocalGeek)}`],
-              ["XP Gained", `+${serverResult.xpEarned}`],
-            ].map(([label, value]) => (
-              <div key={label} className="soft-card p-5 text-center">
-                <div className="text-[10px] tracking-widest text-[var(--text-3)] uppercase font-semibold">{label}</div>
-                <div className="font-extrabold text-3xl text-[var(--brand-primary)]">{value}</div>
-              </div>
-            ))}
+
+          <div className="relative flex justify-center mb-4 md:mb-3">
+            <Image
+              src="/mascot-quiz.png"
+              alt=""
+              width={236}
+              height={306}
+              priority
+              aria-hidden="true"
+              className="w-[150px] md:w-[190px] h-auto select-none"
+            />
+            <span className="absolute top-2 left-[calc(50%+58px)] md:left-[calc(50%+72px)] px-4 py-2 rounded-2xl border-[3px] border-[var(--ink)] bg-white text-[var(--ink)] font-extrabold text-base md:text-lg leading-none whitespace-nowrap"
+                  style={{ boxShadow: "4px 4px 0 0 var(--ink)" }}>
+              {strong ? "Nice run!" : "Keep going…"}
+            </span>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            {!allDone && <button onClick={continueNext} className="pill-btn pill-btn-primary flex-1 text-2xl py-4">Continue to Round {round + 1}</button>}
-            <button onClick={cashOut} className="flex-1 rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/5 hover:bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-bold text-2xl py-4 transition">
+
+          <h1 className="text-center font-extrabold leading-none tracking-tight text-[clamp(2.25rem,8vw,4.5rem)]"
+              style={{ color: tint, textShadow: `5px 5px 0 ${tintShade}` }}>
+            {verdict}
+          </h1>
+          <p className="text-center text-[var(--text-2)] font-semibold mt-3 mb-8 text-lg">{pct}% accuracy</p>
+
+          <div className="rounded-[20px] border-[3px] border-[var(--ink)] bg-[#0B0B14] p-5 md:p-7 mb-5"
+               style={{ boxShadow: "6px 6px 0 0 var(--ink)" }}>
+            <div className="text-[11px] tracking-widest font-extrabold uppercase mb-4" style={{ color: "var(--gp-pink)" }}>
+              Round Breakdown
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {TILES.map((t) => (
+                <div key={t.label} className="rounded-xl border-2 bg-[#12121D] px-3 py-4 text-center"
+                     style={{ borderColor: t.highlight ? "var(--gp-pink)" : "var(--border-soft)" }}>
+                  <div className="text-[10px] tracking-widest uppercase font-bold text-[var(--text-3)] mb-1.5">{t.label}</div>
+                  <div className="font-extrabold text-2xl md:text-[26px] leading-none tabular-nums" style={{ color: t.color }}>
+                    {t.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-center text-[var(--text-3)] font-semibold mb-6">
+            {allDone
+              ? "You reached the end of the Gauntlet. Cash out and take the win."
+              : "Cash out to bank your run, or push deeper for bigger rewards."}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            {!allDone && (
+              <button onClick={continueNext}
+                      className="q-option flex items-center justify-center px-6 py-4 text-lg font-extrabold"
+                      style={{ background: "var(--gp-cyan)", color: "var(--ink)", boxShadow: "5px 5px 0 0 var(--gp-cyan-dark)" }}>
+                Continue to Round {round + 1}
+              </button>
+            )}
+            <button onClick={cashOut}
+                    className="q-option flex items-center justify-center px-6 py-4 text-lg font-extrabold"
+                    style={{ background: "#0B0B14", color: "var(--gp-cyan)", borderColor: "var(--gp-cyan)" }}>
               {allDone ? "Final Results" : "Cash Out"}
             </button>
           </div>
@@ -525,6 +760,7 @@ function PlayContent() {
     );
   }
 
+
   return <Loading label="Assembling gauntlet" />;
 }
 
@@ -532,9 +768,6 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen text-[var(--text-1)]">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 pt-4 flex justify-end">
-        <SfxToggle />
-      </div>
       {children}
     </div>
   );

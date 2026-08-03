@@ -177,7 +177,7 @@ export default function AdminPage() {
           <textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            placeholder='{ "questions": [ { "category": "Video Games", "question": "...", "options": ["A","B","C","D"], "correctIndex": 0, "difficulty": "easy" } ] }'
+            placeholder='{ "questions": [ { "category": "Kaspa Origins", "question": "...", "options": ["A","B","C","D"], "correctIndex": 0, "difficulty": "easy" } ] }'
             rows={14}
             className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-2)] p-4 text-xs font-mono text-[var(--text-1)] focus:outline-none focus:border-[var(--brand-primary)]/50"
           />
