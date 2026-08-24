@@ -21,5 +21,14 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    // Playwright's default is 60s. Under `npm run verify` this task starts
+    // alongside the other turbo tasks, and a cold Next dev boot on a loaded
+    // machine regularly runs past a minute — which failed the suite before a
+    // single test had run. Two minutes is slack, not patience for a real hang.
+    timeout: 120_000,
+    // Surface Next's own startup output when it does fail, rather than leaving
+    // only "Timed out waiting for http://localhost:3000".
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });

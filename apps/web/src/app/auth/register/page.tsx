@@ -60,7 +60,7 @@ export default function RegisterPage() {
   const perks = [
     "Earn $GEEK tokens for every correct answer",
     "Compete on global real-time leaderboards",
-    "Build permanent on-chain reputation",
+    "Build a persistent knowledge profile",
     "Sub-6 second reward settlement on Kaspa",
   ];
 
@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
           <div className="mt-8 border-t border-[var(--border-soft)] pt-6">
             <p className="text-[10px] tracking-widest text-[var(--text-3)] font-semibold uppercase">
-              Built on Kaspa · KRC-20 Native · Open Source
+              Built on Kaspa · Live KRC-20 token · Open Source
             </p>
           </div>
         </div>

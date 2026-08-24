@@ -2,8 +2,13 @@
   "$schema": "https://turbo.build/json-schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
     },
     "lint": {
       "outputs": []
@@ -13,6 +18,21 @@
       "persistent": true
     },
     "type-check": {
+      "outputs": []
+    },
+    "test": {
+      "outputs": []
+    },
+    "lint:economy": {
+      "outputs": []
+    },
+    "lint:claims": {
+      "outputs": []
+    },
+    "lint:brand": {
+      "outputs": []
+    },
+    "test:unit": {
       "outputs": []
     }
   }

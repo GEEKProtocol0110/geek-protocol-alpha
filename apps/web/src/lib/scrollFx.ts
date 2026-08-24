@@ -30,12 +30,29 @@ export function useScrollProgress() {
 export function useCountUp<T extends HTMLElement>(end: number, opts: { duration?: number; decimals?: number } = {}) {
   const { duration = 1400, decimals = 0 } = opts;
   const ref = useRef<T>(null);
-  const [value, setValue] = useState(0);
+  // Start AT the final value, not at zero.
+  //
+  // Seeding this with 0 meant the server-rendered HTML said "0 categories",
+  // "0 questions" and "0-second timer" — which is what search engines,
+  // accessibility tools and any visitor without JavaScript actually saw. The
+  // animation now begins only once the element is on screen in a real browser,
+  // and it rewinds to 0 at that moment rather than shipping a zero as the
+  // page's factual content.
+  const [value, setValue] = useState(end);
   const started = useRef(false);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
+
+    // Respect the OS motion preference: no rewind, no animation, final value.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setValue(end);
+      return;
+    }
+
+    // Only now, with JavaScript running, is it safe to show a transient zero.
+    setValue(0);
 
     const observer = new IntersectionObserver(
       ([entry]) => {

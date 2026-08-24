@@ -889,3 +889,168 @@ button:focus-visible {
   .q-confetti { opacity: 0 !important; }
   .q-float { opacity: 1 !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPACE FIGHTER — battle animations
+   Transform and opacity only. No gradients, no blur: impact is carried by
+   hard offsets, flat fills and snap timing, same as the rest of the system.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Idle breathing, so a waiting fighter never looks like a static image. */
+.bf-idle       { animation: bf-idle-kf 2.6s ease-in-out infinite; }
+.bf-idle-slow  { animation: bf-idle-kf 3.8s ease-in-out infinite; }
+@keyframes bf-idle-kf {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50%      { transform: translateY(-6px) scaleY(1.015); }
+}
+
+/* Attack lunges — a hard dash in, a slower settle back. */
+.bf-lunge-r { animation: bf-lunge-r-kf 620ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes bf-lunge-r-kf {
+  0%   { transform: translateX(0) scaleX(1); }
+  18%  { transform: translateX(-18px) scaleX(0.94); }
+  38%  { transform: translateX(74px) scaleX(1.08); }
+  60%  { transform: translateX(60px); }
+  100% { transform: translateX(0); }
+}
+
+.bf-lunge-l { animation: bf-lunge-l-kf 620ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes bf-lunge-l-kf {
+  0%   { transform: translateX(0) scaleX(1); }
+  18%  { transform: translateX(18px) scaleX(0.94); }
+  38%  { transform: translateX(-74px) scaleX(1.08); }
+  60%  { transform: translateX(-60px); }
+  100% { transform: translateX(0); }
+}
+
+/* Recoil on the receiving end. */
+.bf-hit { animation: bf-hit-kf 420ms steps(1, end) 120ms both; }
+@keyframes bf-hit-kf {
+  0%, 100% { transform: translateX(0);   opacity: 1; }
+  10%      { transform: translateX(14px); opacity: 0.35; }
+  22%      { transform: translateX(-10px); opacity: 1; }
+  34%      { transform: translateX(10px); opacity: 0.5; }
+  46%      { transform: translateX(-6px); opacity: 1; }
+  58%      { transform: translateX(4px);  opacity: 0.75; }
+}
+
+/* Whole-arena shake, reserved for criticals and specials. */
+.bf-quake { animation: bf-quake-kf 380ms steps(2, end) both; }
+@keyframes bf-quake-kf {
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-6px, 3px); }
+  40%      { transform: translate(5px, -4px); }
+  60%      { transform: translate(-4px, -2px); }
+  80%      { transform: translate(3px, 3px); }
+}
+
+/* Damage number rising off the target. */
+.bf-dmg { animation: bf-dmg-kf 1000ms cubic-bezier(0.15, 0.8, 0.3, 1) both; }
+@keyframes bf-dmg-kf {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.6); }
+  14%  { opacity: 1; transform: translateY(-6px) scale(1.25); }
+  28%  { transform: translateY(-14px) scale(1); }
+  70%  { opacity: 1; transform: translateY(-36px) scale(1); }
+  100% { opacity: 0; transform: translateY(-58px) scale(0.9); }
+}
+
+/* Hit-tier banner — snaps in, holds, snaps out. */
+.bf-banner { animation: bf-banner-kf 1100ms cubic-bezier(0.2, 1.4, 0.3, 1) both; }
+@keyframes bf-banner-kf {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-6deg); }
+  12%  { opacity: 1; transform: scale(1.14) rotate(-2deg); }
+  22%  { transform: scale(1) rotate(-2deg); }
+  78%  { opacity: 1; transform: scale(1) rotate(-2deg); }
+  100% { opacity: 0; transform: scale(1.1) rotate(-2deg); }
+}
+
+/* Flat energy bolt crossing the arena. */
+.bf-bolt-r { animation: bf-bolt-r-kf 460ms linear 140ms both; }
+@keyframes bf-bolt-r-kf {
+  0%   { opacity: 0; transform: translateX(0) scaleX(0.4); }
+  12%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(var(--bf-bolt-dist, 260px)) scaleX(1.6); }
+}
+.bf-bolt-l { animation: bf-bolt-l-kf 460ms linear 140ms both; }
+@keyframes bf-bolt-l-kf {
+  0%   { opacity: 0; transform: translateX(0) scaleX(0.4); }
+  12%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(calc(-1 * var(--bf-bolt-dist, 260px))) scaleX(1.6); }
+}
+
+/* Impact burst — concentric flat rings, scaled out. */
+.bf-burst { animation: bf-burst-kf 520ms cubic-bezier(0.1, 0.8, 0.3, 1) 260ms both; }
+@keyframes bf-burst-kf {
+  0%   { opacity: 0; transform: scale(0.2); }
+  20%  { opacity: 1; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(2.1); }
+}
+
+/* Full-bleed colour flash on a special. Flat fill, opacity only. */
+.bf-flash { animation: bf-flash-kf 480ms steps(1, end) both; }
+@keyframes bf-flash-kf {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.22; }
+  25%  { opacity: 0; }
+  40%  { opacity: 0.12; }
+  100% { opacity: 0; }
+}
+
+/* HP bar reacting to a hit. */
+.bf-bar-hit { animation: bf-bar-hit-kf 400ms steps(1, end) both; }
+@keyframes bf-bar-hit-kf {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-3px); }
+  50%      { transform: translateX(3px); }
+  75%      { transform: translateX(-2px); }
+}
+
+/* Special-ready pulse on the meter. */
+.bf-charged { animation: bf-charged-kf 900ms steps(2, end) infinite; }
+@keyframes bf-charged-kf {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* Timer bar draining. Duration is set inline from the question clock. */
+.bf-timer-fill { transform-origin: left center; }
+
+/* Combo counter kick. */
+.bf-combo-pop { animation: bf-combo-pop-kf 420ms cubic-bezier(0.2, 1.6, 0.3, 1) both; }
+@keyframes bf-combo-pop-kf {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* Victory / defeat card entrance. */
+.bf-card-in { animation: bf-card-in-kf 460ms cubic-bezier(0.2, 1.2, 0.3, 1) both; }
+@keyframes bf-card-in-kf {
+  0%   { opacity: 0; transform: translateY(22px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bf-row-in { animation: bf-row-in-kf 380ms ease-out both; }
+@keyframes bf-row-in-kf {
+  0%   { opacity: 0; transform: translateX(-14px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* Defeated fighter slumping out. */
+.bf-ko { animation: bf-ko-kf 900ms cubic-bezier(0.4, 0, 0.6, 1) both; }
+@keyframes bf-ko-kf {
+  0%   { opacity: 1; transform: rotate(0) translateY(0); }
+  100% { opacity: 0.25; transform: rotate(-14deg) translateY(26px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-idle, .bf-idle-slow, .bf-lunge-r, .bf-lunge-l, .bf-hit, .bf-quake,
+  .bf-bolt-r, .bf-bolt-l, .bf-burst, .bf-flash, .bf-bar-hit, .bf-charged,
+  .bf-combo-pop, .bf-ko {
+    animation: none !important;
+  }
+  .bf-dmg, .bf-banner { animation-duration: 1ms !important; }
+  .bf-card-in, .bf-row-in { animation: none !important; opacity: 1 !important; }
+}

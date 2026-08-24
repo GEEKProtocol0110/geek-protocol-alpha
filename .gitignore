@@ -55,3 +55,8 @@ mintty.*.png
 .scripts*
 apps/web/.next/
 apps/api/.next/
+
+# Test artefacts
+/apps/web/playwright-report/
+/apps/web/test-results/
+/apps/api/node_modules/.vite/

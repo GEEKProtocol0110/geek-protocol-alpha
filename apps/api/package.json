@@ -17,7 +17,16 @@
     "type-check": "tsc --noEmit",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint:economy": "node scripts/lint-economy.mjs",
+    "economy:seed": "tsx src/scripts/economySeed.ts",
+    "economy:reconcile": "tsx src/scripts/economyReconcile.ts",
+    "economy:migrate-balances": "tsx src/scripts/economyMigrateBalances.ts",
+    "economy:health": "tsx src/scripts/economyHealth.ts",
+    "dev:economy-worker": "tsx watch src/workers/economy.ts",
+    "start:economy-worker": "node dist/workers/economy.js"
   },
   "dependencies": {
     "@fastify/cookie": "^9.0.0",
@@ -46,6 +55,7 @@
     "@types/node": "^20",
     "prisma": "^5.8.0",
     "tsx": "^4.7.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

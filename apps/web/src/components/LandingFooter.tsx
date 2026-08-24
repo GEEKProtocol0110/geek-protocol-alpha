@@ -95,13 +95,19 @@ export function LandingFooter() {
         <div className="mt-12 flex flex-col gap-4 border-t border-[var(--border-soft)] pt-6 text-sm text-[var(--text-3)] md:flex-row md:items-center md:justify-between">
           <div>© {new Date().getFullYear()} Geek Protocol. All rights reserved.</div>
           <div className="flex flex-wrap gap-4">
-            <Link href="/" className="hover:text-[var(--brand-primary)]">
+            <Link href="/legal/terms" className="hover:text-[var(--brand-primary)]">
               Terms
             </Link>
-            <Link href="/" className="hover:text-[var(--brand-primary)]">
+            <Link href="/legal/privacy" className="hover:text-[var(--brand-primary)]">
               Privacy
             </Link>
-            <span className="text-[var(--brand-secondary)] font-semibold">Kaspa mainnet ready</span>
+            <Link href="/legal/risk" className="hover:text-[var(--brand-primary)]">
+              Alpha Risks
+            </Link>
+            <Link href="/support/report" className="hover:text-[var(--brand-primary)]">
+              Report a problem
+            </Link>
+            <span className="text-[var(--brand-secondary)] font-semibold">Mainnet KRC-20 payouts in development</span>
           </div>
         </div>
       </div>

@@ -180,8 +180,11 @@ export default function LeaderboardPage() {
               <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : entries.length === 0 ? (
-            <div className="text-center text-[var(--text-3)] text-sm py-20">
-              No players yet. Be the first!
+            <div className="text-center text-[var(--text-3)] text-sm py-20 px-6">
+              <p className="font-semibold text-[var(--text-2)]">No ranked players yet.</p>
+              <p className="mt-2">
+                Complete the Daily Quiz or the Gauntlet to become the first.
+              </p>
             </div>
           ) : (
             <div>

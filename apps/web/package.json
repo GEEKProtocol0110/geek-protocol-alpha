@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "lint:brand": "! grep -rnE 'linear-gradient|radial-gradient|conic-gradient|bg-gradient|backdrop-blur|blur-\\[|blur-2xl|blur-3xl' --include='*.tsx' --include='*.css' src || (echo 'BRAND VIOLATION: gradients/blur are banned — use flat fills + hard offset shadows (see globals.css)' && exit 1)",
+    "lint:brand": "! grep -rnE 'linear-gradient|radial-gradient|conic-gradient|bg-gradient|backdrop-blur|blur-\\[|blur-2xl|blur-3xl' --include='*.tsx' --include='*.css' src || (echo 'BRAND VIOLATION: gradients/blur are banned \u2014 use flat fills + hard offset shadows (see globals.css)' && exit 1)",
     "type-check": "tsc --noEmit",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@geek/shared": "*",

@@ -2,10 +2,24 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { makeAttemptToken, verifyAttemptToken } from "../lib/security";
 import { logger } from "../lib/logger";
-import { QUIZ_REWARD_TABLE } from "../config/quizRewards";
-import { enqueuePayout } from "../lib/payoutQueue";
 import { validateAttemptTiming, timeBonusFor } from "../lib/antiCheat";
 import { BehaviorSignalsSchema, scoreBehavior } from "../lib/behaviorScore";
+import {
+  economyService,
+  getEconomyConfig,
+  isBreakerOpen,
+  fromAtomic,
+  toAtomic,
+  utcDayKey,
+} from "../services/economy";
+import {
+  calculateDailyReward,
+  capToDaily,
+  meetsAccountAge,
+  rewardedPlayKeys,
+  riskScoreFrom,
+} from "../services/dailyQuizRewards";
+import { creditRoyaltiesForServedQuestions } from "../services/cceRoyalties";
 
 const QUESTION_TTL = 15 * 60; // 15 minutes
 
@@ -67,6 +81,22 @@ function shuffleOptions(q: any) {
 
 // Routes
 export async function quizRoutes(fastify: FastifyInstance) {
+  const economy = economyService(fastify.prisma);
+
+  // GET /api/quiz/config — the live daily-quiz rules, for the client and the site
+  fastify.get("/config", async (_req, reply) => {
+    const config = await getEconomyConfig(fastify.prisma);
+    reply.header("Cache-Control", "public, max-age=30");
+    return reply.send({
+      success: true,
+      data: {
+        ...config.rules.dailyQuiz,
+        rewardsEnabled: config.rewardsEnabled,
+        dailyQuizOpen: await isBreakerOpen(fastify.prisma, "DAILY_QUIZ"),
+      },
+    });
+  });
+
   // POST /api/quiz/start - Start a new quiz round
   fastify.post("/start",
     { preHandler: fastify.authenticate },
@@ -231,44 +261,36 @@ export async function quizRoutes(fastify: FastifyInstance) {
         };
       });
 
-      // Calculate reward amount
-      const roundConfig = QUIZ_REWARD_TABLE[round as number];
-      const rewardAmount = Math.min(
-        correctCount * roundConfig.rewardPerQuestion,
-        roundConfig.maxEarn
-      );
-
-      // Create QuizAttempt
-      const quizAttempt = await fastify.prisma.quizAttempt.create({
-        data: {
-          attemptId,
-          userId,
-          attemptToken,
-          round: round as number,
-          correctCount,
-          score,
-          rewardAmount,
-          status: "pending",
-        },
-      });
-
-      // Enqueue reward job
-      await enqueuePayout({
-        attemptId,
+      // Reward goes through the economy service — the route never touches a
+      // balance and never enqueues an ad-hoc payout job. The reward table, the
+      // daily cap and the global budget all live in the economy config.
+      const settlement = await settleDailyQuizReward(fastify, {
         userId,
-        rewardAmount,
-        type: "quiz_reward",
+        attemptId,
+        attemptToken,
+        round: round as number,
+        correctCount,
+        totalQuestions: questionIds.length,
+        score,
+        averageSeconds:
+          timing.effectiveTimings.reduce((s, t) => s + t, 0) / Math.max(timing.effectiveTimings.length, 1),
+        fullSpeedCredit: timing.speedCreditFactor >= 1,
+        riskScore: riskScoreFrom(timing.flags, behaviorVerdict?.score, behaviorVerdict?.suspicious),
+        questionIds,
       });
 
       return reply.send({
         success: true,
         data: {
           attemptId,
-          status: "settling",
+          status: settlement.granted > 0n ? "credited" : "no_reward",
           correctCount,
           totalQuestions: questionIds.length,
           score,
-          rewardAmount,
+          rewardAmount: Number(fromAtomic(settlement.granted)),
+          rewardPending: settlement.pending,
+          rewardNotice: settlement.message,
+          balances: settlement.balances,
           results,
         },
       });
@@ -517,33 +539,226 @@ export async function quizRoutes(fastify: FastifyInstance) {
 
       const totalQuestions = questionIds.length;
       const xpEarned = correctCount * 8;
-      const geekEarned = Number((correctCount * 0.5).toFixed(2));
 
-      if (userId) {
-        await fastify.prisma.quizAttempt.create({
+      // Guests play for fun; only a signed-in account can earn.
+      if (!userId) {
+        return reply.send({
+          success: true,
           data: {
-            attemptId,
-            userId,
-            attemptToken: token,
-            round: 0,
             correctCount,
-            score: totalPoints,
-            rewardAmount: geekEarned,
-            status: "pending",
+            totalQuestions,
+            totalPoints,
+            xpEarned: 0,
+            geekEarned: 0,
+            rewardNotice:
+              "Sign in to earn XP and Alpha GEEK for the Daily Quiz. Guest rounds are practice only.",
+            guest: true,
           },
-        });
-
-        await enqueuePayout({
-          attemptId,
-          userId,
-          rewardAmount: geekEarned,
-          type: "quiz_reward",
         });
       }
 
+      const settlement = await settleDailyQuizReward(fastify, {
+        userId,
+        attemptId,
+        attemptToken: token,
+        round: 0,
+        correctCount,
+        totalQuestions,
+        score: totalPoints,
+        averageSeconds:
+          dailyTiming.effectiveTimings.reduce((s, t) => s + t, 0) /
+          Math.max(dailyTiming.effectiveTimings.length, 1),
+        fullSpeedCredit: dailyTiming.speedCreditFactor >= 1,
+        riskScore: riskScoreFrom(dailyTiming.flags, dailyBehavior?.score, dailyBehavior?.suspicious),
+        questionIds,
+      });
+
+      // XP is reputation and is always awarded, whatever the reward budget says.
+      await fastify.prisma.user.update({
+        where: { id: userId },
+        data: { xp: { increment: xpEarned } },
+      });
+
       return reply.send({
         success: true,
-        data: { correctCount, totalQuestions, totalPoints, xpEarned, geekEarned },
+        data: {
+          correctCount,
+          totalQuestions,
+          totalPoints,
+          xpEarned,
+          geekEarned: Number(fromAtomic(settlement.granted)),
+          rewardPending: settlement.pending,
+          rewardNotice: settlement.message,
+          balances: settlement.balances,
+        },
       });
     });
+
+  /**
+   * The one place a Daily Quiz reward is decided and credited.
+   *
+   * Both the authenticated `/submit` route and the `/daily/submit` route funnel
+   * through here, so "one rewarded play per UTC day" is a single rule with a
+   * single key rather than two endpoints each with their own idea of it.
+   */
+  async function settleDailyQuizReward(
+    instance: FastifyInstance,
+    input: {
+      userId: number;
+      attemptId: string;
+      attemptToken: string;
+      round: number;
+      correctCount: number;
+      totalQuestions: number;
+      score: number;
+      averageSeconds: number;
+      fullSpeedCredit: boolean;
+      riskScore: number;
+      questionIds: number[];
+    }
+  ): Promise<{ granted: bigint; pending: boolean; message: string | null; balances: unknown }> {
+    const config = await getEconomyConfig(instance.prisma);
+    const rules = config.rules;
+    const dayKey = utcDayKey();
+
+    const noReward = async (message: string | null) => ({
+      granted: 0n,
+      pending: false,
+      message,
+      balances: await economy.getBalanceView(input.userId),
+    });
+
+    // Record the attempt regardless of whether it pays — the play history is
+    // not conditional on the reward.
+    await instance.prisma.quizAttempt
+      .create({
+        data: {
+          attemptId: input.attemptId,
+          userId: input.userId,
+          attemptToken: input.attemptToken,
+          round: input.round,
+          correctCount: input.correctCount,
+          score: input.score,
+          rewardAmount: 0,
+          status: "recorded",
+        },
+      })
+      .catch(() => {
+        // Duplicate attemptId: this attempt was already recorded. Not fatal.
+      });
+
+    if (!(await isBreakerOpen(instance.prisma, "DAILY_QUIZ"))) {
+      return noReward("GEEK rewards are paused right now. Your XP and streak still count.");
+    }
+
+    if (!(await meetsAccountAge(instance.prisma, input.userId, rules.dailyQuiz.minAccountAgeHours))) {
+      return noReward(
+        `New accounts can earn GEEK after ${rules.dailyQuiz.minAccountAgeHours} hours. You're still earning XP.`
+      );
+    }
+
+    // One rewarded play per UTC day, keyed on the user AND their wallet, so a
+    // ring of accounts sharing one wallet collectively gets one rewarded play.
+    const keys = await rewardedPlayKeys(instance.prisma, input.userId, dayKey);
+    const claimed: string[] = [];
+    for (const key of keys) {
+      const ok = await instance.redis.set(key, input.attemptId, "EX", 172_800, "NX");
+      if (!ok) {
+        // Roll back any key we claimed in this loop, or a wallet collision
+        // would permanently consume the user's own daily slot.
+        if (claimed.length) await instance.redis.del(...claimed);
+        return noReward(
+          rules.dailyQuiz.practiceAllowed
+            ? "You've already claimed today's Daily Quiz reward. Keep playing for practice and XP — GEEK resets at 00:00 UTC."
+            : "You've already played today's Daily Quiz."
+        );
+      }
+      claimed.push(key);
+    }
+
+    const breakdown = calculateDailyReward(rules, {
+      correctCount: input.correctCount,
+      totalQuestions: input.totalQuestions,
+      averageSeconds: input.averageSeconds,
+      fullSpeedCredit: input.fullSpeedCredit,
+      streakDays: await currentStreakDays(instance, input.userId),
+      riskScore: input.riskScore,
+    });
+
+    if (!breakdown.eligible) {
+      // A play that earns nothing should not burn the day's rewarded slot.
+      if (claimed.length) await instance.redis.del(...claimed);
+      return noReward(breakdown.reason);
+    }
+
+    const flagged = input.riskScore >= rules.dailyQuiz.maxRiskScore / 2;
+
+    const grant = await economy.grantReward({
+      userId: input.userId,
+      type: "DAILY_REWARD",
+      amount: capToDaily(breakdown.grossAtomic, rules),
+      budget: "DAILY_QUIZ",
+      breaker: "DAILY_QUIZ",
+      pending: true,
+      holdHours: rules.dailyQuiz.pendingHoldHours,
+      idempotencyKey: `daily:${input.userId}:${dayKey}`,
+      referenceType: "QUIZ_ATTEMPT",
+      referenceId: input.attemptId,
+      userCap: {
+        name: "daily:quiz",
+        periodKey: dayKey,
+        limit: toAtomic(rules.dailyQuiz.perUserDailyCapGeek),
+      },
+      flagged,
+      flagReason: flagged ? `Anti-cheat risk score ${input.riskScore}` : undefined,
+      metadata: {
+        correctCount: input.correctCount,
+        base: breakdown.baseAtomic.toString(),
+        speedBonus: breakdown.speedBonusAtomic.toString(),
+        streakBonus: breakdown.streakBonusAtomic.toString(),
+        riskScore: input.riskScore,
+      },
+    });
+
+    // Nothing was granted: release the daily slot so the player is not charged
+    // a day for a reward they never received.
+    if (grant.granted <= 0n && claimed.length) await instance.redis.del(...claimed);
+
+    if (grant.granted > 0n) {
+      await instance.prisma.quizAttempt
+        .update({
+          where: { attemptId: input.attemptId },
+          data: { rewardAmount: fromAtomic(grant.granted), status: grant.pending ? "pending" : "paid" },
+        })
+        .catch(() => undefined);
+
+      // Creator royalties for the questions this attempt served.
+      await creditRoyaltiesForServedQuestions(instance.prisma, {
+        questionIds: input.questionIds,
+        playerId: input.userId,
+        sessionId: input.attemptId,
+      });
+    }
+
+    const holdNote =
+      grant.granted > 0n && grant.pending
+        ? ` It clears to your available balance in ${rules.dailyQuiz.pendingHoldHours}h after validation.`
+        : "";
+
+    return {
+      granted: grant.granted,
+      pending: grant.pending,
+      message: grant.granted > 0n ? `${grant.message}${holdNote}` : grant.message,
+      balances: await economy.getBalanceView(input.userId),
+    };
+  }
+
+  /** Consecutive daily-quiz days, used for the streak bonus. */
+  async function currentStreakDays(instance: FastifyInstance, userId: number): Promise<number> {
+    const user = await instance.prisma.user.findUnique({
+      where: { id: userId },
+      select: { currentStreak: true },
+    });
+    return user?.currentStreak ?? 0;
+  }
 }

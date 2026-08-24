@@ -34,7 +34,7 @@ export function HeroSection() {
         <motion.div variants={container} initial="hidden" animate="show" className="flex min-w-0 flex-col items-start">
           <motion.div variants={item} className="flat-badge gp-mono text-[0.91rem] sm:text-[0.98rem]" style={{ padding: "1.17rem 2.6rem" }}>
             <span className="h-[0.65rem] w-[0.65rem] rounded-full bg-[var(--gp-white)]" />
-            Live on Kaspa · KRC-20 native
+            Public Alpha · Live KRC-20 token on Kaspa
           </motion.div>
 
           {/* WORDMARK SLOT — the chunky beveled "GEEK / PROTOCOL" lockup.

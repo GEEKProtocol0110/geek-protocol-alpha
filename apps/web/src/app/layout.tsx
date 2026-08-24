@@ -3,6 +3,7 @@ import { Baloo_2, Space_Grotesk, JetBrains_Mono, Bungee, Press_Start_2P, Luckies
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CyberBackground } from "@/components/CyberBackground";
+import AlphaBanner from "@/components/AlphaBanner";
 
 const baloo = Baloo_2({ variable: "--font-baloo", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 const grotesk = Space_Grotesk({ variable: "--font-grotesk", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
@@ -60,6 +61,9 @@ export default function RootLayout({
           <div className="relative min-h-screen text-[var(--text-1)]">
             <CyberBackground />
             <div className="relative z-10 flex min-h-screen flex-col">
+              {/* Site-wide Alpha disclosure, server-rendered so it is present
+                  in the initial HTML rather than appearing after hydration. */}
+              <AlphaBanner />
               <div className="flex-1">{children}</div>
             </div>
           </div>

@@ -55,8 +55,10 @@ function useCountUp(target: number, active: boolean, durationMs = 900) {
   }, [target, active, durationMs, reducedMotion]);
 
   // With reduced motion the final number is shown immediately rather than
-  // animated, so the value is derived rather than pushed through state.
-  if (reducedMotion) return active ? target : 0;
+  // animated. Before the tile scrolls into view we also show the real target
+  // rather than 0 — a zero in the DOM reads as a factual claim that the
+  // platform is empty, and it is what search engines and screen readers see.
+  if (reducedMotion || !active) return target;
   return value;
 }
 

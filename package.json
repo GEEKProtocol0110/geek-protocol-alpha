@@ -16,7 +16,13 @@
     "build:web": "turbo build --filter=web",
     "build:api": "turbo build --filter=api",
     "lint": "turbo lint",
-    "type-check": "turbo type-check"
+    "type-check": "turbo type-check",
+    "test": "turbo test",
+    "lint:economy": "turbo lint:economy",
+    "lint:claims": "turbo lint:claims",
+    "lint:brand": "turbo lint:brand",
+    "verify": "turbo type-check lint:economy lint:claims lint:brand test:unit test",
+    "test:unit": "turbo test:unit"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

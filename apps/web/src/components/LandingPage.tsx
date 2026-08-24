@@ -41,19 +41,19 @@ const HOW_IT_WORKS = [
     icon: FaWallet,
     tile: "rgba(180,77,255,0.18)",
     title: "Connect",
-    description: "Link your Kaspa wallet in one click. No passwords, no signups, no central database holding your data.",
+    description: "Connect with KasWare, or create an Alpha account with email. Wallet users keep control of their own wallet; email accounts use a protocol-managed encrypted wallet during Alpha.",
   },
   {
     icon: FaGamepad,
     tile: "rgba(255,46,196,0.18)",
     title: "Play",
-    description: "Face 10 rapid-fire questions across any of 8 categories. 15 seconds each. Server-side scoring keeps it fair.",
+    description: "Face 10 rapid-fire questions across 8 Kaspa and crypto categories. Timers, scoring and anti-cheat all run server-side.",
   },
   {
     icon: FaCoins,
     tile: "rgba(45,255,179,0.18)",
     title: "Earn",
-    description: "Get paid in $GEEK the moment you finish. Settlement lands on Kaspa in under 6 seconds — no waiting around.",
+    description: "Finish a round and your Alpha GEEK balance updates immediately. Balances are internal during Alpha — on-chain KRC-20 withdrawals are not enabled yet.",
   },
 ];
 
@@ -61,14 +61,14 @@ const FEATURES = [
   {
     icon: FaGamepad,
     title: "The Gauntlet",
-    description: "10 rounds of 10 questions (100 total) with progressing difficulty. 15 seconds each. Server-side validation prevents cheating. Real players, real rewards.",
+    description: "10 rounds of 10 questions (100 total) with progressing difficulty. Server-side validation prevents cheating, and every entry fee and reward is written to an auditable ledger.",
     details: ["Server-side scoring", "HMAC attempt tokens", "Anti-cheat orchestration"]
   },
   {
     icon: FaCoins,
     title: "$GEEK Rewards",
-    description: "Native KRC-20 token earned through gameplay. No play-to-earn fatigue. Transparent, auditable payouts via Redis queue.",
-    details: ["Redis worker automation", "Sub-6 second settlements", "Wallet-level payouts"]
+    description: "A live KRC-20 token on Kaspa. Gameplay currently credits internal Alpha balances, each one recorded in the public economy ledger.",
+    details: ["Immutable economy ledger", "70/30 recycle and burn", "Published treasury health"]
   },
   {
     icon: FaChartLine,
@@ -79,20 +79,20 @@ const FEATURES = [
   {
     icon: FaLock,
     title: "Kasware Auth",
-    description: "Sign in with your Kaspa wallet. No passwords. No central database. Your identity, your data, your control.",
+    description: "Sign in with your Kaspa wallet using a Schnorr signature challenge — no password involved. Email accounts are also supported during Alpha.",
     details: ["Schnorr signature verification", "Nonce challenges", "JWT sessions"]
   },
   {
     icon: FaClock,
-    title: "Sub-6 Second Settlements",
-    description: "Proof of signal hits your wallet faster than you can reload the page. This is instant settlement in practice.",
-    details: ["Real-time queue monitoring", "Worker heartbeat tracking", "Instant confirmation"]
+    title: "Transparent Alpha Economy",
+    description: "Every GEEK movement is a permanent ledger entry. Treasury balances, liabilities and reward budgets are published live.",
+    details: ["Public economy health endpoint", "Reward budgets and caps", "Reconciled against the ledger"]
   },
   {
     icon: FaGlobe,
     title: "Built on Kaspa",
-    description: "Fastest smart contract blockchain. Sub-second block times. Scalability that doesn't compromise security. This is where it lives.",
-    details: ["KRC-20 integration", "Kaspa wallets", "Fee-efficient payouts"]
+    description: "A fair-launched proof-of-work blockDAG running at 10 blocks per second, now supporting covenant-based programmability through Toccata.",
+    details: ["KRC-20 via Kasplex", "Kaspa wallets", "Fee-efficient transfers"]
   }
 ];
 
@@ -111,11 +111,11 @@ const IMPACT_ITEMS = [
   {
     icon: FaLightbulb,
     title: "Your Knowledge Has Value",
-    description: "Stop giving away your expertise for free. Every answer you provide proves your knowledge. Every correct response generates real, verifiable signal that gets rewarded immediately.",
+    description: "Stop giving away your expertise for free. Every answer you provide proves your knowledge, and every correct response is scored server-side and recorded.",
     points: [
-      "Monetize your geek knowledge instantly",
+      "Earn Alpha GEEK for what you know",
       "No middleman taking a cut",
-      "Direct rewards to your wallet"
+      "Every reward written to the public ledger"
     ],
     accent: "cyan"
   },
@@ -132,23 +132,23 @@ const IMPACT_ITEMS = [
   },
   {
     icon: FaBolt,
-    title: "Instant Rewards, Real Settlement",
-    description: "You don't wait days for your earnings. Rewards settle in under 6 seconds. The blockchain doesn't lie. Your token hits your wallet almost before the game ends.",
+    title: "Instant Alpha Balances, Settlement In Development",
+    description: "Your Alpha GEEK balance updates the moment a round is validated — no waiting for a manual payout. On-chain KRC-20 settlement is still being built and will be enabled only after an external audit.",
     points: [
-      "Sub-6 second settlement times",
-      "No waiting for manual payouts",
-      "Cryptographically verified rewards"
+      "Balance credited as each round settles",
+      "Every movement in an immutable ledger",
+      "On-chain withdrawals: not yet enabled"
     ],
     accent: "cyan"
   },
   {
     icon: FaStar,
-    title: "Build Your On-Chain Reputation",
-    description: "Every achievement is recorded. Your skill profile is permanent. Your reputation isn't deleted by algorithm changes. It lives on the blockchain—forever.",
+    title: "Build Your Knowledge Profile",
+    description: "Build a persistent GEEK Protocol knowledge profile: XP, streaks, category accuracy and achievements. These are protocol records today; future releases will explore portable and on-chain achievement proofs.",
     points: [
-      "Permanent on-chain proof of knowledge",
-      "Portable reputation across platforms",
-      "XP streaks and achievement tracking"
+      "Persistent XP and streak history",
+      "Per-category accuracy tracking",
+      "Portable proofs planned, not yet live"
     ],
     accent: "emerald"
   }
@@ -280,13 +280,14 @@ const ALPHA_FEATURES = [
 const ROADMAP = [
   {
     year: 1,
-    title: "Year 1",
-    subtitle: "2026 – Launch & Traction",
+    title: "Now",
+    subtitle: "2026 – Public Alpha",
     items: [
-      { status: "done", text: "Public beta on Kaspa mainnet" },
-      { status: "done", text: "First major live tournament" },
-      { status: "next", text: "Content velocity expansion" },
-      { status: "next", text: "Telegram mini app + Geek Wallet" }
+      { status: "done", text: "Alpha platform live" },
+      { status: "done", text: "Internal reward balances + economy ledger" },
+      { status: "progress", text: "Mainnet KRC-20 payouts — in development" },
+      { status: "next", text: "Public beta" },
+      { status: "next", text: "First live tournament" }
     ],
     accent: "cyan"
   },
@@ -491,7 +492,7 @@ const AnimatedRewardCurve = () => {
   );
 };
 
-export default function LandingPage() {
+export default function LandingPage({ gauntletTable }: { gauntletTable?: React.ReactNode }) {
   const scrollProgress = useScrollProgress();
   const aceParallax = useParallax<HTMLDivElement>(-0.1);
 
@@ -534,12 +535,12 @@ export default function LandingPage() {
               The future of proof-of-learning
             </h2>
             <p className="mt-4 text-base md:text-lg text-[var(--text-1)] opacity-80 max-w-[520px]">
-              Meet <strong>GIGA</strong>, the golden face of the community, and <strong>A.C.E.</strong>, the AI quizmaster who runs the Gauntlet and settles rewards on-chain. Together they turn what you already know into something worth real money.
+              Meet <strong>GIGA</strong>, the golden face of the community, and <strong>A.C.E.</strong>, the analytical counterpart who hosts the Gauntlet. Today they are the protocol&rsquo;s characters and presentation layer; the intelligence behind them grows with each release.
             </p>
             <div className="flex flex-wrap gap-2 mt-5">
               <span className="flat-badge">#Community</span>
               <span className="flat-badge">#Quizmaster</span>
-              <span className="flat-badge">#OnChain</span>
+              <span className="flat-badge">#ProofOfLearning</span>
             </div>
           </ScrollReveal>
         </div>
@@ -594,7 +595,7 @@ export default function LandingPage() {
 
       {/* ── Ticker ───────────────────────────────────────────────────────────── */}
       <Marquee
-        items={['#KRC-20', '#PROOF-OF-LEARNING', '#ALL-HOPE-NO-HYPE', '#SUB-6-SECOND-SETTLEMENT', '#QUIZ2EARN', '#BUILT-ON-KASPA']}
+        items={['#KRC-20', '#PROOF-OF-LEARNING', '#ALL-HOPE-NO-HYPE', '#PUBLIC-ALPHA', '#QUIZ2EARN', '#BUILT-ON-KASPA']}
       />
 
       {/* Gauntlet */}
@@ -602,105 +603,10 @@ export default function LandingPage() {
         <div className="py-4">
           <SectionLabel>Challenge Module</SectionLabel>
           <h2 className="font-extrabold text-3xl md:text-4xl text-[var(--text-1)]">The Geek Gauntlet</h2>
-          <p className="text-[var(--text-2)] mt-3 text-lg">10 rounds · Increasing difficulty · Real rewards</p>
+          <p className="text-[var(--text-2)] mt-3 text-lg">10 rounds · Increasing difficulty · Live round table</p>
 
           <div className="grid md:grid-cols-2 gap-8 mt-10">
-            <div className="flat-card overflow-x-auto p-2">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Rnd</th>
-                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Entry</th>
-                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Reward/Q</th>
-                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Max Earn</th>
-                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">B/E</th>
-                    <th className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold">Diff</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">01</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">Free</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">10 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">100 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">0</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">Easy</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">02</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">40 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">20 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">200 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">2</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">Easy+</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">03</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">100 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">40 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">400 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]">Medium</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">04</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">200 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">75 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">750 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]">Med+</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">05</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">400 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">125 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">1,250 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">4</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">Hard</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">06</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">750 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">200 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">2,000 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">4</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">Hard</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">07</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">1,250 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">350 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3,500 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">4</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">V.Hard</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">08</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">2,000 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">500 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">5,000 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">5</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-tertiary)]/10 text-[var(--brand-tertiary)]">V.Hard</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">09</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">3,500 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">750 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">7,500 GEEK</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]">5</td>
-                    <td className="px-3 py-2 border-b border-[var(--border-soft)]"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary-light)]/10 text-[var(--brand-primary-light)]">Expert</span></td>
-                  </tr>
-                  <tr className="hover:bg-[var(--flat-cream)] transition">
-                    <td className="px-3 py-2 text-[var(--brand-primary)] font-bold">10</td>
-                    <td className="px-3 py-2">6,000 GEEK</td>
-                    <td className="px-3 py-2">1,000 GEEK</td>
-                    <td className="px-3 py-2">10,000 GEEK</td>
-                    <td className="px-3 py-2">7</td>
-                    <td className="px-3 py-2"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--brand-primary-light)]/10 text-[var(--brand-primary-light)]">Expert</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            {gauntletTable}
 
             <div>
               <div className="flat-card p-6">
@@ -711,8 +617,11 @@ export default function LandingPage() {
               <div className="grid grid-cols-1 gap-4 mt-4">
                 <div className="flat-card p-6 text-center">
                   <FaClock className="text-[var(--brand-primary)] text-2xl mx-auto mb-3" />
-                  <div className="font-bold text-[var(--text-1)]">15-Second Timer</div>
-                  <p className="text-[var(--text-2)] text-sm">Speed matters. Time bonus: (15 − TimeTaken) × 10 pts</p>
+                  {/* The per-question timer is configuration, not a constant —
+                      the site used to advertise 15s while the Gauntlet enforced
+                      20s. The live value is shown in the round table above. */}
+                  <div className="font-bold text-[var(--text-1)]">Timed Questions</div>
+                  <p className="text-[var(--text-2)] text-sm">Speed matters. Answer faster, earn a speed bonus — the exact timer is shown in the live round table.</p>
                 </div>
                 <div className="flat-card p-6 text-center">
                   <FaLock className="text-[var(--brand-tertiary)] text-2xl mx-auto mb-3" />
@@ -822,32 +731,48 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <div className="flat-badge mb-4">Token Allocation</div>
+              <div className="flat-badge mb-4">Supply &amp; Project Holdings</div>
+              <p className="text-sm text-[var(--text-2)] mb-4">
+                $GEEK was fair-launched: the supply was minted publicly, with no tokens reserved
+                at genesis for the team, advisors, or investors. The figures below therefore
+                describe what the project actually holds and what it intends to do with it &mdash;
+                not an allocation assigned at launch.
+              </p>
               <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm font-semibold"><span>Quiz2Earn Rewards</span><span className="text-[var(--text-3)]">30% (43.2B)</span></div>
-                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '30%', background: 'var(--brand-primary)' }} /></div>
+                <div className="flex justify-between py-2 border-b border-[var(--ink)]">
+                  <span className="text-sm font-semibold">Total minted supply</span>
+                  <span className="text-sm text-[var(--text-3)]">144,000,000,000 GEEK</span>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm font-semibold"><span>Staking Rewards</span><span className="text-[var(--text-3)]">20% (28.8B)</span></div>
-                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '20%', background: 'var(--brand-secondary)' }} /></div>
+                <div className="flex justify-between py-2 border-b border-[var(--ink)]">
+                  <span className="text-sm font-semibold">Reserved at genesis for the team</span>
+                  <span className="text-sm text-[var(--text-3)]">None</span>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm font-semibold"><span>Liquidity Fund</span><span className="text-[var(--text-3)]">20% (28.8B)</span></div>
-                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '20%', background: 'var(--brand-tertiary)' }} /></div>
+                <div className="flex justify-between py-2 border-b border-[var(--ink)]">
+                  <span className="text-sm font-semibold">Held by the project</span>
+                  <span className="text-sm text-[var(--text-3)]">Published live on the economy page</span>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm font-semibold"><span>Team & Advisors</span><span className="text-[var(--text-3)]">15% (21.6B)</span></div>
-                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '15%', background: 'var(--brand-accent)' }} /></div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm font-semibold"><span>Marketing & Ecosystem</span><span className="text-[var(--text-3)]">15% (21.6B)</span></div>
-                  <div className="h-2 bg-[var(--surface-2)] rounded-full mt-1 overflow-hidden border border-[var(--ink)]"><div className="h-full" style={{ width: '15%', background: 'var(--brand-primary-light)' }} /></div>
+                <div className="flex justify-between py-2 border-b border-[var(--ink)]">
+                  <span className="text-sm font-semibold">Source of project-held tokens</span>
+                  <span className="text-sm text-[var(--text-3)]">Community and treasury contributions</span>
                 </div>
               </div>
 
+              <div className="flat-badge mt-6 mb-3">Intended Use Of Project-Held Reserves</div>
+              <ul className="space-y-2 text-sm text-[var(--text-2)]">
+                <li>&bull; Funding the reward reserve that pays Daily Quiz and Gauntlet rewards</li>
+                <li>&bull; Funding the creator reward pool for the Community Content Engine</li>
+                <li>&bull; Liquidity, once a funded venue exists</li>
+                <li>&bull; Operations and ecosystem growth</li>
+              </ul>
+              <p className="text-xs text-[var(--text-3)] mt-4">
+                Target proportions are not fixed. Economic policy for the reserves has not been
+                finalised and will be published before Beta. There is no staking system.
+                Live treasury balances, total user liabilities, and reward budgets are available
+                from the protocol&rsquo;s public economy health endpoint.
+              </p>
+
               <div className="flat-card p-6 mt-6" style={{ background: 'var(--flat-cream)' }}>
-                <div className="text-[10px] tracking-widest uppercase text-[var(--text-3)] font-bold text-center mb-4">70/30 Recycle & Burn Model</div>
+                <div className="text-[10px] tracking-widest uppercase text-[var(--text-3)] font-bold text-center mb-4">70/30 Recycle &amp; Burn Model</div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-[var(--surface-1)] rounded-2xl border-2 border-[var(--ink)] text-center py-4">
                     <span className="text-2xl font-extrabold text-[var(--brand-primary)] block">70%</span>
@@ -855,9 +780,17 @@ export default function LandingPage() {
                   </div>
                   <div className="bg-[var(--surface-1)] rounded-2xl border-2 border-[var(--ink)] text-center py-4">
                     <span className="text-2xl font-extrabold text-[var(--brand-tertiary)] block">30%</span>
-                    <span className="text-sm text-[var(--text-2)]">Permanently Burned</span>
+                    <span className="text-sm text-[var(--text-2)]">Burned</span>
                   </div>
                 </div>
+                {/* The burn share is real accounting, but nothing has been sent
+                    to a burn address yet — say so rather than implying tokens
+                    have already been destroyed. */}
+                <p className="text-xs text-[var(--text-3)] mt-4 text-center">
+                  During Alpha the burn share accrues as a pending burn obligation and is published
+                  in the economy ledger. No tokens have been sent to a burn address; a burn is only
+                  recorded as confirmed once it has a real on-chain transaction.
+                </p>
               </div>
             </div>
           </div>
@@ -996,8 +929,14 @@ export default function LandingPage() {
                   <ul className="space-y-3 text-[var(--text-2)] text-sm">
                     {item.items.map((sub, idx) => (
                       <li key={idx} className="flex gap-2">
-                        <span style={{ color: accent, opacity: sub.status === 'done' ? 1 : 0.6 }}>
-                          {sub.status === 'done' ? '✓' : '→'}
+                        {/* Three states, not two. "In development" needs its own
+                            mark: showing it as a tick is what made the roadmap
+                            claim mainnet payouts and tournaments were finished. */}
+                        <span
+                          style={{ color: accent, opacity: sub.status === 'done' ? 1 : sub.status === 'progress' ? 0.85 : 0.6 }}
+                          aria-label={sub.status === 'done' ? 'Complete' : sub.status === 'progress' ? 'In development' : 'Planned'}
+                        >
+                          {sub.status === 'done' ? '✓' : sub.status === 'progress' ? '⟳' : '→'}
                         </span>
                         {sub.text}
                       </li>
@@ -1015,9 +954,9 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl gp-extrude-cyan mb-8">Why Kaspa</h2>
           <p className="text-lg md:text-xl text-[var(--text-2)] leading-relaxed mb-10">
-            Kaspa isn&rsquo;t the loudest blockchain. It&rsquo;s the fastest. Sub-second blocks without sacrificing decentralization or security.
+            Kaspa is a fair-launched proof-of-work blockDAG operating at 10 blocks per second, now supporting covenant-based programmability through Toccata.
             <br /><br />
-            While others promise, Kaspa delivers. Which is exactly what we needed for a protocol that handles real rewards, real payouts, real stakes.
+            Fast block inclusion and low fees are what make small, frequent reward transfers practical &mdash; which is exactly what a protocol built on answering questions needs.
             <br /><br />
             <span className="text-[var(--brand-secondary)] font-semibold">Geek Protocol exists because Kaspa made it possible.</span>
           </p>
@@ -1025,8 +964,8 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-4 mt-8">
             <div className="flat-card p-6">
               <FaBolt className="text-4xl mx-auto mb-3 text-[var(--brand-secondary)]" />
-              <h3 className="text-[var(--text-1)] font-bold mb-2">Sub-Second Blocks</h3>
-              <p className="text-sm text-[var(--text-2)]">Finality in milliseconds, not minutes.</p>
+              <h3 className="text-[var(--text-1)] font-bold mb-2">10 Blocks Per Second</h3>
+              <p className="text-sm text-[var(--text-2)]">Rapid block inclusion, with proof-of-work confirmation confidence that grows quickly.</p>
             </div>
             <div className="flat-card p-6">
               <FaLock className="text-4xl mx-auto mb-3 text-[var(--brand-primary)]" />

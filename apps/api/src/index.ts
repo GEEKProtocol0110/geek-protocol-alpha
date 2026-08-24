@@ -26,7 +26,10 @@ import { purchaseRoutes } from "./routes/purchase";
 import { withdrawalRoutes } from "./routes/withdrawal";
 import { kycRoutes } from "./routes/kyc";
 import { statsRoutes } from "./routes/stats";
+import { economyRoutes } from "./routes/economy";
+import { adminEconomyRoutes } from "./routes/adminEconomy";
 import { closePayoutQueues } from "./lib/payoutQueue";
+import { ensureEconomyBootstrapped } from "./services/economy/bootstrap";
 
 // Decimal fields (geekBalance, totalEarnedGeek) serialize as strings by
 // default; every consumer (frontend + this API's own routes) treats them
@@ -133,6 +136,8 @@ fastify.register(healthRoutes, { prefix: "/health" });
       instance.register(withdrawalRoutes, { prefix: "/wallet" });
       instance.register(kycRoutes, { prefix: "/kyc" });
       instance.register(statsRoutes, { prefix: "/stats" });
+      instance.register(economyRoutes, { prefix: "/economy" });
+      instance.register(adminEconomyRoutes, { prefix: "/admin/economy" });
     },
     { prefix: "/api" }
   );
@@ -191,7 +196,14 @@ const start = async () => {
     });
     logger.info("Connected to Redis");
 
-    console.log("Step 3: Starting Fastify server...");
+    console.log("Step 3: Bootstrapping economy...");
+    // Treasury accounts, budgets, breakers and the runtime config row must
+    // exist before the first request, or the first reward of a fresh deploy
+    // fails on a missing treasury account.
+    await ensureEconomyBootstrapped(prisma);
+    logger.info("Economy bootstrapped");
+
+    console.log("Step 4: Starting Fastify server...");
     const port = parseInt(process.env.PORT || "5000");
     const host = "0.0.0.0";
     await fastify.listen({ port, host });

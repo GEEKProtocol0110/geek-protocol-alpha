@@ -6,11 +6,19 @@ import {
   REJECTION_THRESHOLD,
   MIN_LEVEL,
   MIN_REVIEW_SECONDS,
-  REVIEW_REWARD_GEEK,
   cappedCreatorIds,
   getReviewEligibility,
   recomputeReviewerAccuracy,
 } from "../lib/reviewIntegrity";
+import {
+  economyService,
+  getEconomyConfig,
+  isBreakerOpen,
+  toAtomic,
+  fromAtomic,
+  utcDayKey,
+} from "../services/economy";
+import { royaltyHeadroom } from "../services/cceRoyalties";
 
 const SubmitSchema = z.object({
   question: z.string().min(10).max(500),
@@ -35,6 +43,35 @@ const ReviewSchema = z.object({
 });
 
 export async function cceRoutes(fastify: FastifyInstance) {
+  const economy = economyService(fastify.prisma);
+
+  // GET /api/cce/rates — the live, tunable CCE economics.
+  //
+  // Served so the website can show real numbers with the honest caveat attached
+  // instead of publishing fixed rates as promises (ECONOMY.md §19.1).
+  fastify.get("/rates", async (_req, reply) => {
+    const config = await getEconomyConfig(fastify.prisma);
+    reply.header("Cache-Control", "public, max-age=60");
+    return reply.send({
+      success: true,
+      data: {
+        approvalRewardGeek: config.rules.cce.approvalRewardGeek,
+        royaltyPerServeGeek: config.rules.cce.royaltyPerServeGeek,
+        royaltyLifetimeCapPerQuestionGeek: config.rules.cce.royaltyLifetimeCapPerQuestionGeek,
+        royaltyDailyCapGeek: config.rules.cce.royaltyDailyCapGeek,
+        reviewRewardGeek: config.rules.cce.reviewRewardGeek,
+        reviewDailyCap: config.rules.cce.reviewDailyCap,
+        maxSubmissionsPerDay: config.rules.cce.maxSubmissionsPerDay,
+        maxPendingSubmissions: config.rules.cce.maxPendingSubmissions,
+        provisional: true,
+        disclaimer:
+          "Qualified creators and accurate reviewers can earn configurable Alpha rewards. " +
+          "Rates and limits are being tested and may change before Beta.",
+        rewardsEnabled: config.cceRewardsEnabled && (await isBreakerOpen(fastify.prisma, "CCE")),
+      },
+    });
+  });
+
   // GET /api/cce/dashboard — creator stats for the current user
   fastify.get("/dashboard", { preHandler: fastify.authenticate }, async (req, reply) => {
     const userId = req.jwtUser!.userId;
@@ -82,6 +119,8 @@ export async function cceRoutes(fastify: FastifyInstance) {
         ? Math.round((user.questionsApproved / user.questionsSubmitted) * 100)
         : 0;
 
+    const headroom = await royaltyHeadroom(fastify.prisma, userId);
+
     return reply.send({
       data: {
         level: user.level,
@@ -92,7 +131,13 @@ export async function cceRoutes(fastify: FastifyInstance) {
         reviewsCompleted: user.reviewsCompleted,
         reviewAccuracy: Math.round(user.reviewAccuracy),
         totalEarnedGeek: user.totalEarnedGeek,
-        geekBalance: user.geekBalance,
+        balances: await economy.getBalanceView(userId),
+        royalties: {
+          dailyRemaining: fromAtomic(headroom.dailyRemainingAtomic),
+          weeklyRemaining: fromAtomic(headroom.weeklyRemainingAtomic),
+          dailyCapGeek: headroom.dailyCapGeek,
+          weeklyCapGeek: headroom.weeklyCapGeek,
+        },
         topQuestions,
         reviewAvailable: !!reviewAvailable,
       },
@@ -122,6 +167,27 @@ export async function cceRoutes(fastify: FastifyInstance) {
 
     const parse = SubmitSchema.safeParse(req.body);
     if (!parse.success) return reply.code(400).send({ error: parse.error.flatten() });
+
+    // Submission throttles. "Unlimited questions" is an invitation to spam the
+    // review queue and farm approval rewards, so both caps are enforced here.
+    const { rules } = await getEconomyConfig(fastify.prisma);
+    const [pendingCount, todayCount] = await Promise.all([
+      fastify.prisma.question.count({ where: { createdBy: userId, status: "pending" } }),
+      fastify.prisma.question.count({
+        where: { createdBy: userId, dateCreated: { gte: new Date(`${utcDayKey()}T00:00:00.000Z`) } },
+      }),
+    ]);
+
+    if (pendingCount >= rules.cce.maxPendingSubmissions) {
+      return reply.code(429).send({
+        error: `You have ${pendingCount} questions awaiting review. Wait for some to be decided before submitting more (limit ${rules.cce.maxPendingSubmissions}).`,
+      });
+    }
+    if (todayCount >= rules.cce.maxSubmissionsPerDay) {
+      return reply.code(429).send({
+        error: `Daily submission limit of ${rules.cce.maxSubmissionsPerDay} reached. Resets at 00:00 UTC.`,
+      });
+    }
 
     const d = parse.data;
     const question = await fastify.prisma.question.create({
@@ -274,7 +340,8 @@ export async function cceRoutes(fastify: FastifyInstance) {
     });
     if (already) return reply.code(409).send({ error: "Already reviewed this question" });
 
-    const geekReward = REVIEW_REWARD_GEEK;
+    const config = await getEconomyConfig(fastify.prisma);
+    const geekReward = config.rules.cce.reviewRewardGeek;
 
     await fastify.prisma.questionValidation.create({
       data: {
@@ -307,11 +374,28 @@ export async function cceRoutes(fastify: FastifyInstance) {
         data: { status: "approved", dateApproved: new Date() },
       });
       await fastify.prisma.reviewQueue.deleteMany({ where: { questionId } });
-      // Reward creator
+
       if (updatedQ.createdBy) {
         await fastify.prisma.user.update({
           where: { id: updatedQ.createdBy },
           data: { questionsApproved: { increment: 1 } },
+        });
+
+        // Creator approval reward. Pending until the clearing period passes, so
+        // a question later removed for fraud can still have its reward reversed
+        // before the creator can spend it.
+        await economy.grantReward({
+          userId: updatedQ.createdBy,
+          type: "CCE_CREATOR_REWARD",
+          amount: toAtomic(config.rules.cce.approvalRewardGeek),
+          budget: "CCE_CREATOR",
+          breaker: "CCE",
+          pending: true,
+          holdHours: config.rules.cce.approvalClearingHours,
+          idempotencyKey: `cce:approval:${questionId}`,
+          referenceType: "QUESTION",
+          referenceId: String(questionId),
+          metadata: { questionId, approvalsCount: updatedQ.approvalsCount },
         });
       }
       finalStatus = "approved";
@@ -332,14 +416,32 @@ export async function cceRoutes(fastify: FastifyInstance) {
       resolved = true;
     }
 
-    // Reward reviewer
+    // Reward the reviewer. Pending until the question reaches a final decision
+    // (or the clearing window elapses), so a review ring's earnings can still
+    // be reversed before they become spendable.
     await fastify.prisma.user.update({
       where: { id: userId },
-      data: {
-        reviewsCompleted: { increment: 1 },
-        geekBalance: { increment: geekReward },
-        totalEarnedGeek: { increment: geekReward },
+      data: { reviewsCompleted: { increment: 1 } },
+    });
+
+    const reviewGrant = await economy.grantReward({
+      userId,
+      type: "CCE_REVIEW_REWARD",
+      amount: toAtomic(geekReward),
+      budget: "CCE_REVIEWER",
+      breaker: "CCE",
+      pending: true,
+      // A resolved question needs no further validation window.
+      holdHours: resolved ? 0 : config.rules.cce.reviewClearingHours,
+      idempotencyKey: `cce:review:${questionId}:${userId}`,
+      referenceType: "REVIEW",
+      referenceId: `${questionId}:${userId}`,
+      userCap: {
+        name: "cce:review:daily",
+        periodKey: utcDayKey(),
+        limit: toAtomic(config.rules.cce.reviewRewardGeek * config.rules.cce.reviewDailyCap),
       },
+      metadata: { questionId, action },
     });
 
     // On resolution, re-score everyone who voted on it. reviewAccuracy was
@@ -360,9 +462,12 @@ export async function cceRoutes(fastify: FastifyInstance) {
     return reply.send({
       data: {
         status: finalStatus,
-        geekAwarded: geekReward,
+        geekAwarded: Number(fromAtomic(reviewGrant.granted)),
+        geekPending: reviewGrant.pending,
+        rewardNotice: reviewGrant.granted > 0n ? null : reviewGrant.message,
         reviewsRemainingToday: after.reviewsRemainingToday,
         accuracyPct: after.accuracyPct,
+        balances: await economy.getBalanceView(userId),
       },
     });
   });

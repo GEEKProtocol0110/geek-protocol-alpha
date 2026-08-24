@@ -36,7 +36,7 @@ export function Hero() {
         <div className="space-y-8">
           <div className="inline-flex items-center gap-3 border border-[#b87333] px-3 py-1.5 text-xs tracking-widest text-[#b87333] font-mono">
             <span className="size-2 animate-pulse rounded-full bg-[#cc44ff]" />
-            LIVE ON KASPA · KRC-20 NATIVE
+            PUBLIC ALPHA · LIVE KRC-20 TOKEN ON KASPA
           </div>
 
           <div className="space-y-6">

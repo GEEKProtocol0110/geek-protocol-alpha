@@ -51,7 +51,7 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-sm text-[var(--brand-primary)] tracking-wide mb-4">Protocol</h4>
             <div className="flex flex-col gap-3">
-              <a href="#"          className="text-[var(--text-3)] hover:text-[var(--brand-primary)] transition text-sm">$GEEK Token</a>
+              <a href="/token"     className="text-[var(--text-3)] hover:text-[var(--brand-primary)] transition text-sm">$GEEK Token</a>
               <a href="/litepaper" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] transition text-sm">Litepaper</a>
               <a href="https://github.com/GEEKProtocol0110/geek-protocol-alpha/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] transition text-sm">Architecture</a>
             </div>
@@ -72,12 +72,14 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <span className="text-[var(--text-3)] text-sm">© 2026 Geek Protocol. All rights reserved.</span>
           <div className="flex gap-6">
-            <a href="#" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] text-sm transition">Terms</a>
-            <a href="#" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] text-sm transition">Privacy</a>
+            <a href="/legal/terms" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] text-sm transition">Terms</a>
+            <a href="/legal/privacy" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] text-sm transition">Privacy</a>
+            <a href="/legal/risk" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] text-sm transition">Alpha Risks</a>
+            <a href="/support/report" className="text-[var(--text-3)] hover:text-[var(--brand-primary)] text-sm transition">Report a problem</a>
           </div>
           <span className="text-[var(--brand-secondary)] text-xs font-semibold flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-[var(--brand-secondary)] rounded-full animate-pulse" />
-            Kaspa mainnet ready
+            Mainnet KRC-20 payouts in development
           </span>
         </div>
       </div>

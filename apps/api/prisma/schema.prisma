@@ -11,56 +11,76 @@ datasource db {
 }
 
 model User {
-  id                        Int       @id @default(autoincrement())
-  username                  String    @unique
-  email                     String    @unique
-  passwordHash              String
-  walletAddress             String?   @unique
-  encryptedPrivKey          String?   @db.Text
-  points                    Int       @default(0)
-  geekBalance               Decimal   @default(0) @db.Decimal(20, 8)
-  xp                        Int       @default(0)
-  level                     Int       @default(1)
-  currentStreak             Int       @default(0)
-  longestStreak             Int       @default(0)
-  lastLoginDate             DateTime?
-  streakMilestoneRewards    String    @default("[]") // JSON array
-  role                      String    @default("player")
-  isAdmin                   Boolean   @default(false)
-  kycVerified               Boolean   @default(false)
-  dateCreated               DateTime  @default(now())
-  reputationScore           Float     @default(100)
-  totalEarnedGeek           Decimal   @default(0) @db.Decimal(20, 8)
-  questionsSubmitted        Int       @default(0)
-  questionsApproved         Int       @default(0)
-  questionsRejected         Int       @default(0)
-  reviewsCompleted          Int       @default(0)
-  reviewAccuracy            Float     @default(0)
-  streakBonusMultiplier     Float     @default(1)
-  favoriteCharacter         String    @default("GIGA")
-  characterAffinityGiga     Float     @default(50)
-  characterAffinityAce      Float     @default(50)
-  lastCharacterInteraction  DateTime?
-  preferredDifficulty       String    @default("mixed")
-  averageResponseTime       Float     @default(15)
-  categoryAccuracies        String    @default("{}") // JSON object
-  learningStyle             String    @default("balanced")
-  wordChallengeWins         Int       @default(0)
-  wordChallengeLosses       Int       @default(0)
-  wordChallengeHighScore    Int       @default(0)
-  wordChallengeTotalScore   Int       @default(0)
-  wordChallengeBingos       Int       @default(0)
-  aiInteractionCount        Int       @default(0)
-  lastAiRecommendation      String?   @db.Text
-  characterInteractionHistory String  @default("[]") @db.Text
-  wordChallengeDraws        Int       @default(0)
-  wordChallengeLongestWord  String?
+  id               Int     @id @default(autoincrement())
+  username         String  @unique
+  email            String  @unique
+  passwordHash     String
+  walletAddress    String? @unique
+  encryptedPrivKey String? @db.Text
+  points           Int     @default(0)
+  // DEPRECATED shadow column. Kept for one release so any caller missed by the
+  // migration is caught by reconciliation. EconomyService keeps it equal to
+  // availableBalance (in whole GEEK). Never read it for accounting — read the
+  // four buckets below. See ECONOMY.md §20.1.
+  geekBalance      Decimal @default(0) @db.Decimal(20, 8)
+
+  // ---- Economy: four balances, integer atomic units (1 GEEK = 1e8) ----
+  // Decimal(30,0) holds integers only. Never a float, never a single balance.
+  pendingBalance   Decimal @default(0) @db.Decimal(30, 0)
+  availableBalance Decimal @default(0) @db.Decimal(30, 0)
+  lockedBalance    Decimal @default(0) @db.Decimal(30, 0)
+  withdrawnBalance Decimal @default(0) @db.Decimal(30, 0)
+
+  // Anti-abuse clustering signals
+  signupIp               String?
+  lastIp                 String?
+  deviceFingerprint      String?
+  economySuspended       Boolean @default(false)
+  economySuspendedReason String?
+  withdrawalFailureCount Int     @default(0)
+
+  xp                          Int       @default(0)
+  level                       Int       @default(1)
+  currentStreak               Int       @default(0)
+  longestStreak               Int       @default(0)
+  lastLoginDate               DateTime?
+  streakMilestoneRewards      String    @default("[]") // JSON array
+  role                        String    @default("player")
+  isAdmin                     Boolean   @default(false)
+  kycVerified                 Boolean   @default(false)
+  dateCreated                 DateTime  @default(now())
+  reputationScore             Float     @default(100)
+  totalEarnedGeek             Decimal   @default(0) @db.Decimal(20, 8)
+  questionsSubmitted          Int       @default(0)
+  questionsApproved           Int       @default(0)
+  questionsRejected           Int       @default(0)
+  reviewsCompleted            Int       @default(0)
+  reviewAccuracy              Float     @default(0)
+  streakBonusMultiplier       Float     @default(1)
+  favoriteCharacter           String    @default("GIGA")
+  characterAffinityGiga       Float     @default(50)
+  characterAffinityAce        Float     @default(50)
+  lastCharacterInteraction    DateTime?
+  preferredDifficulty         String    @default("mixed")
+  averageResponseTime         Float     @default(15)
+  categoryAccuracies          String    @default("{}") // JSON object
+  learningStyle               String    @default("balanced")
+  wordChallengeWins           Int       @default(0)
+  wordChallengeLosses         Int       @default(0)
+  wordChallengeHighScore      Int       @default(0)
+  wordChallengeTotalScore     Int       @default(0)
+  wordChallengeBingos         Int       @default(0)
+  aiInteractionCount          Int       @default(0)
+  lastAiRecommendation        String?   @db.Text
+  characterInteractionHistory String    @default("[]") @db.Text
+  wordChallengeDraws          Int       @default(0)
+  wordChallengeLongestWord    String?
   wordChallengeFavoriteLetter String?
 
   // Relations
-  createdQuestions         Question[]              @relation("CreatedBy")
-  approvedQuestions        Question[]              @relation("ApprovedBy")
-  validatedQuestions       Question[]              @relation("ValidatedBy")
+  createdQuestions         Question[]                    @relation("CreatedBy")
+  approvedQuestions        Question[]                    @relation("ApprovedBy")
+  validatedQuestions       Question[]                    @relation("ValidatedBy")
   validations              QuestionValidation[]
   attempts                 Attempt[]
   userAchievements         UserAchievement[]
@@ -69,16 +89,16 @@ model User {
   geekDust                 GeekDust?
   dustTransactions         DustTransaction[]
   seriesCompletions        SeriesCompletion[]
-  creatorEarnings          CreatorEarning[]        @relation("CreatorEarnings")
-  playedEarnings           CreatorEarning[]        @relation("PlayedEarnings")
+  creatorEarnings          CreatorEarning[]              @relation("CreatorEarnings")
+  playedEarnings           CreatorEarning[]              @relation("PlayedEarnings")
   rewards                  Reward[]
   conversionTransactions   PointsConversionTransaction[]
   purchaseTransactions     StickerPurchaseTransaction[]
-  exchangeListings         ExchangeListing[]       @relation("Seller")
-  completedListings        ExchangeListing[]       @relation("CompletedBy")
+  exchangeListings         ExchangeListing[]             @relation("Seller")
+  completedListings        ExchangeListing[]             @relation("CompletedBy")
   exchangeOffers           ExchangeOffer[]
-  sellerTransactions       ExchangeTransaction[]   @relation("Seller")
-  buyerTransactions        ExchangeTransaction[]   @relation("Buyer")
+  sellerTransactions       ExchangeTransaction[]         @relation("Seller")
+  buyerTransactions        ExchangeTransaction[]         @relation("Buyer")
   notifications            UserNotification[]
   gauntletClaims           GauntletClaim[]
   gauntletRuns             GauntletRun[]
@@ -86,19 +106,24 @@ model User {
   aiRecommendations        AIRecommendation[]
   aiMessageHistory         AIMessageHistory[]
   kaspaPayments            KaspaPayment[]
-  wordChallengesWon        WordChallenge[]         @relation("Winner")
+  wordChallengesWon        WordChallenge[]               @relation("Winner")
   wordChallengePlayers     WordChallengePlayer[]
   wordChallengeChats       WordChallengeChat[]
-  wordChallengeInvitesSent WordChallengeInvite[] @relation("Inviter")
-  wordChallengeInvitesRecv WordChallengeInvite[] @relation("Invitee")
+  wordChallengeInvitesSent WordChallengeInvite[]         @relation("Inviter")
+  wordChallengeInvitesRecv WordChallengeInvite[]         @relation("Invitee")
   wordChallengeProgress    WordChallengeUserProgress[]
   quizAttempts             QuizAttempt[]
   purchases                Purchase[]
   withdrawals              Withdrawal[]
   kyc                      KYC?
+  economyTransactions      EconomyTransaction[]
+  powerUpPurchases         PowerUpPurchase[]
+  abuseSignals             AbuseSignal[]
 
-  @@map("users")
   @@index([id])
+  @@index([deviceFingerprint])
+  @@index([signupIp])
+  @@map("users")
 }
 
 model Topic {
@@ -109,7 +134,7 @@ model Topic {
   isActive    Boolean  @default(true)
   dateCreated DateTime @default(now())
 
-  questions   Question[]
+  questions Question[]
 
   @@map("topics")
 }
@@ -146,93 +171,98 @@ model Question {
   yearReleased        Int?
   dateFirstServed     DateTime?
   dateLastServed      DateTime?
+  /// Lifetime royalty paid for this question, atomic units. Capped by
+  /// cce.royaltyLifetimeCapPerQuestionGeek so one question cannot mint forever.
+  royaltyPaidAtomic   Decimal   @default(0) @db.Decimal(30, 0)
+  /// Set when a question is removed for fraud: royalties stop immediately.
+  fraudFlagged        Boolean   @default(false)
 
   // Relations
-  topic               Topic                 @relation(fields: [topicId], references: [id])
-  creator             User?                 @relation("CreatedBy", fields: [createdBy], references: [id])
-  approver            User?                 @relation("ApprovedBy", fields: [approvedBy], references: [id])
-  validator           User?                 @relation("ValidatedBy", fields: [validatedBy], references: [id])
-  validations         QuestionValidation[]
-  creatorEarnings     CreatorEarning[]
-  reviewQueueEntries  ReviewQueue[]
-  attempts            Attempt[]
+  topic              Topic                @relation(fields: [topicId], references: [id])
+  creator            User?                @relation("CreatedBy", fields: [createdBy], references: [id])
+  approver           User?                @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  validator          User?                @relation("ValidatedBy", fields: [validatedBy], references: [id])
+  validations        QuestionValidation[]
+  creatorEarnings    CreatorEarning[]
+  reviewQueueEntries ReviewQueue[]
+  attempts           Attempt[]
 
-  @@map("questions")
   @@index([topicId])
   @@index([status])
+  @@map("questions")
 }
 
 model QuestionValidation {
-  id              Int      @id @default(autoincrement())
-  questionId      Int
-  validatorId     Int
-  action          String
-  pointsAwarded   Int      @default(0)
-  geekAwarded     Float    @default(0.1)
-  timestamp       DateTime @default(now())
-  reviewTime      Float    @default(0)
+  id               Int      @id @default(autoincrement())
+  questionId       Int
+  validatorId      Int
+  action           String
+  pointsAwarded    Int      @default(0)
+  geekAwarded      Float    @default(0.1)
+  timestamp        DateTime @default(now())
+  reviewTime       Float    @default(0)
   detailedFeedback String?  @db.Text
 
-  question        Question @relation(fields: [questionId], references: [id])
-  validator       User     @relation(fields: [validatorId], references: [id])
+  question  Question @relation(fields: [questionId], references: [id])
+  validator User     @relation(fields: [validatorId], references: [id])
 
   @@map("question_validations")
 }
 
 model Attempt {
-  id                  Int       @id @default(autoincrement())
-  userId              Int
-  questionId          Int
-  selectedOption      Int
-  isCorrect           Boolean
-  timeTaken           Float     @default(15)
-  sessionId           String?
-  dateAttempted       DateTime  @default(now())
-  wasSkipped          Boolean   @default(false)
-  questionRating      Int?
-  streakBonusApplied  Float     @default(1)
-  characterPresent    String?
-  characterMessageShown String? @db.Text
-  confidenceLevel     Int?
-  deviceType          String?
-  hourOfDay           Int?
-  dayOfWeek           Int?
+  id                    Int      @id @default(autoincrement())
+  userId                Int
+  questionId            Int
+  selectedOption        Int
+  isCorrect             Boolean
+  timeTaken             Float    @default(15)
+  sessionId             String?
+  dateAttempted         DateTime @default(now())
+  wasSkipped            Boolean  @default(false)
+  questionRating        Int?
+  streakBonusApplied    Float    @default(1)
+  characterPresent      String?
+  characterMessageShown String?  @db.Text
+  confidenceLevel       Int?
+  deviceType            String?
+  hourOfDay             Int?
+  dayOfWeek             Int?
 
-  user                User      @relation(fields: [userId], references: [id])
-  question            Question  @relation(fields: [questionId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
 
-  @@map("attempts")
   @@index([userId])
   @@index([sessionId])
+  @@map("attempts")
 }
 
 model Achievement {
-  id                      Int      @id @default(autoincrement())
-  name                    String
-  description             String   @db.Text
-  icon                    String
-  criteriaType            String
-  criteriaValue           Int
-  nftTokenId              String?
-  badgeRarity             String   @default("common")
-  badgeFrame              String   @default("bronze")
-  badgeXpBonus            Int      @default(5)
-  badgeTokenReward        Float    @default(0)
-  tier                    String   @default("bronze")
-  tierOrder               Int      @default(1)
-  trackName               String?
-  isHidden                String   @default("false")
-  isSecret                Boolean  @default(false)
+  id                        Int     @id @default(autoincrement())
+  name                      String
+  description               String  @db.Text
+  icon                      String
+  criteriaType              String
+  criteriaValue             Int
+  nftTokenId                String?
+  badgeRarity               String  @default("common")
+  badgeFrame                String  @default("bronze")
+  badgeXpBonus              Int     @default(5)
+  badgeTokenReward          Float   @default(0)
+  tier                      String  @default("bronze")
+  tierOrder                 Int     @default(1)
+  trackName                 String?
+  isHidden                  String  @default("false")
+  isSecret                  Boolean @default(false)
   prerequisiteAchievementId Int?
-  unlockAnimation         String   @default("standard")
-  geekReward              Float    @default(0)
-  xpReward                Int      @default(0)
-  stickerPackReward       Int      @default(0)
+  unlockAnimation           String  @default("standard")
+  geekReward                Float   @default(0)
+  xpReward                  Int     @default(0)
+  stickerPackReward         Int     @default(0)
 
   // Relations
-  prerequisite            Achievement?      @relation("Prerequisite", fields: [prerequisiteAchievementId], references: [id])
-  dependentAchievements   Achievement[]     @relation("Prerequisite")
-  userAchievements        UserAchievement[]
+  prerequisite          Achievement?      @relation("Prerequisite", fields: [prerequisiteAchievementId], references: [id])
+  dependentAchievements Achievement[]     @relation("Prerequisite")
+  userAchievements      UserAchievement[]
 
   @@map("achievements")
 }
@@ -246,79 +276,79 @@ model UserAchievement {
   wasHidden         Boolean  @default(false)
   notificationShown Boolean  @default(false)
 
-  user              User     @relation(fields: [userId], references: [id])
-  achievement       Achievement @relation(fields: [achievementId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
 
-  @@map("user_achievements")
   @@index([userId])
+  @@map("user_achievements")
 }
 
 model StickerSeries {
-  id            Int      @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   name          String
-  description   String?  @db.Text
+  description   String? @db.Text
   totalStickers Int
-  isActive      Boolean  @default(true)
+  isActive      Boolean @default(true)
 
-  stickers      Sticker[]
-  stickerPacks  StickerPack[]
-  completions   SeriesCompletion[]
+  stickers     Sticker[]
+  stickerPacks StickerPack[]
+  completions  SeriesCompletion[]
 
   @@map("sticker_series")
 }
 
 model Sticker {
-  id        Int      @id @default(autoincrement())
-  seriesId  Int
-  name      String
-  image     String
-  rarity    String   @default("common")
-  number    Int
+  id       Int    @id @default(autoincrement())
+  seriesId Int
+  name     String
+  image    String
+  rarity   String @default("common")
+  number   Int
 
-  series    StickerSeries @relation(fields: [seriesId], references: [id])
-  userStickers UserSticker[]
-  dustTransactions DustTransaction[]
+  series               StickerSeries                @relation(fields: [seriesId], references: [id])
+  userStickers         UserSticker[]
+  dustTransactions     DustTransaction[]
   purchaseTransactions StickerPurchaseTransaction[]
-  exchangeListings ExchangeListing[]
+  exchangeListings     ExchangeListing[]
   exchangeTransactions ExchangeTransaction[]
 
   @@map("stickers")
 }
 
 model UserSticker {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  stickerId     Int
-  isDuplicate   Boolean  @default(false)
-  dateAcquired  DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  stickerId    Int
+  isDuplicate  Boolean  @default(false)
+  dateAcquired DateTime @default(now())
 
-  user          User     @relation(fields: [userId], references: [id])
-  sticker       Sticker  @relation(fields: [stickerId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  sticker          Sticker           @relation(fields: [stickerId], references: [id])
   exchangeListings ExchangeListing[]
 
-  @@map("user_stickers")
   @@index([userId])
+  @@map("user_stickers")
 }
 
 model StickerPack {
-  id                Int       @id @default(autoincrement())
-  userId            Int
-  packType          String    @default("standard")
-  seriesId          Int?
-  stickersPerPack   Int       @default(5)
-  guaranteedRarity  String?
-  source            String?
-  sourceDetail      String?
-  createdAt         DateTime  @default(now())
-  openedAt          DateTime?
-  isOpened          Boolean   @default(false)
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  packType         String    @default("standard")
+  seriesId         Int?
+  stickersPerPack  Int       @default(5)
+  guaranteedRarity String?
+  source           String?
+  sourceDetail     String?
+  createdAt        DateTime  @default(now())
+  openedAt         DateTime?
+  isOpened         Boolean   @default(false)
 
-  user              User      @relation(fields: [userId], references: [id])
-  series            StickerSeries? @relation(fields: [seriesId], references: [id])
+  user   User           @relation(fields: [userId], references: [id])
+  series StickerSeries? @relation(fields: [seriesId], references: [id])
 
-  @@map("sticker_packs")
   @@index([userId])
   @@index([isOpened])
+  @@map("sticker_packs")
 }
 
 model GeekDust {
@@ -329,25 +359,25 @@ model GeekDust {
   totalSpent  Int      @default(0)
   updatedAt   DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("geek_dust")
   @@index([userId])
+  @@map("geek_dust")
 }
 
 model DustTransaction {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  amount      Int
-  reason      String
-  stickerId   Int?
-  timestamp   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  amount    Int
+  reason    String
+  stickerId Int?
+  timestamp DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id])
-  sticker     Sticker? @relation(fields: [stickerId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  sticker Sticker? @relation(fields: [stickerId], references: [id])
 
-  @@map("dust_transactions")
   @@index([userId])
+  @@map("dust_transactions")
 }
 
 model SeriesCompletion {
@@ -356,34 +386,42 @@ model SeriesCompletion {
   seriesId      Int
   dateCompleted DateTime @default(now())
 
-  user          User     @relation(fields: [userId], references: [id])
-  series        StickerSeries @relation(fields: [seriesId], references: [id])
+  user   User          @relation(fields: [userId], references: [id])
+  series StickerSeries @relation(fields: [seriesId], references: [id])
 
   @@map("series_completions")
 }
 
 model GauntletRun {
-  id                  Int       @id @default(autoincrement())
-  userId              Int
-  highestRound        Int       @default(0)
-  totalCorrect        Int       @default(0)
-  totalQuestions      Int       @default(0)
-  totalGeekEarned     Float     @default(0)
-  totalXpEarned       Int       @default(0)
-  selectedTopics      String?   @db.Text // JSON
-  completed           Boolean   @default(false)
-  activeRound         Int?
-  activeState         String?   @db.Text // JSON
+  id                   Int       @id @default(autoincrement())
+  userId               Int
+  highestRound         Int       @default(0)
+  totalCorrect         Int       @default(0)
+  totalQuestions       Int       @default(0)
+  totalGeekEarned      Float     @default(0)
+  totalXpEarned        Int       @default(0)
+  selectedTopics       String?   @db.Text // JSON
+  completed            Boolean   @default(false)
+  activeRound          Int?
+  activeState          String?   @db.Text // JSON
   activeStateUpdatedAt DateTime?
-  dateStarted         DateTime  @default(now())
-  dateCompleted       DateTime?
+  dateStarted          DateTime  @default(now())
+  dateCompleted        DateTime?
 
-  user                User      @relation(fields: [userId], references: [id])
-  claims              GauntletClaim[]
+  // Economy: atomic-unit truth for this run, plus the leaderboard split.
+  entryFeesPaidAtomic Decimal @default(0) @db.Decimal(30, 0)
+  rewardsPaidAtomic   Decimal @default(0) @db.Decimal(30, 0)
+  /// True once a 50/50, skip or extra-time power-up is used. Assisted runs are
+  /// ranked on their own leaderboard, never against standard runs.
+  assisted            Boolean @default(false)
 
-  @@map("gauntlet_runs")
+  user   User            @relation(fields: [userId], references: [id])
+  claims GauntletClaim[]
+
   @@index([userId])
   @@index([completed])
+  @@index([assisted])
+  @@map("gauntlet_runs")
 }
 
 model GauntletClaim {
@@ -394,8 +432,8 @@ model GauntletClaim {
   status    String   @default("claimed")
   timestamp DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  run       GauntletRun @relation(fields: [runId], references: [id])
+  user User        @relation(fields: [userId], references: [id])
+  run  GauntletRun @relation(fields: [runId], references: [id])
 
   @@map("gauntlet_claims")
 }
@@ -415,34 +453,34 @@ model WordChallenge {
   passCount     Int       @default(0)
   maxPasses     Int       @default(3)
 
-  winner        User?     @relation("Winner", fields: [winnerId], references: [id])
-  players       WordChallengePlayer[]
-  moves         WordChallengeMove[]
-  chats         WordChallengeChat[]
-  invites       WordChallengeInvite[]
+  winner  User?                 @relation("Winner", fields: [winnerId], references: [id])
+  players WordChallengePlayer[]
+  moves   WordChallengeMove[]
+  chats   WordChallengeChat[]
+  invites WordChallengeInvite[]
 
-  @@map("word_challenges")
   @@index([status])
+  @@map("word_challenges")
 }
 
 model WordChallengePlayer {
-  id            Int      @id @default(autoincrement())
-  challengeId   Int
-  userId        Int
-  playerNumber  Int
-  score         Int      @default(0)
-  rack          String   @default("[]") @db.Text // JSON
-  isReady       Boolean  @default(false)
-  isTurn        Boolean  @default(false)
-  turnOrder     Int      @default(0)
-  joinedAt      DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  challengeId  Int
+  userId       Int
+  playerNumber Int
+  score        Int      @default(0)
+  rack         String   @default("[]") @db.Text // JSON
+  isReady      Boolean  @default(false)
+  isTurn       Boolean  @default(false)
+  turnOrder    Int      @default(0)
+  joinedAt     DateTime @default(now())
 
-  user          User     @relation(fields: [userId], references: [id])
-  challenge     WordChallenge @relation(fields: [challengeId], references: [id])
-  moves         WordChallengeMove[]
+  user      User                @relation(fields: [userId], references: [id])
+  challenge WordChallenge       @relation(fields: [challengeId], references: [id])
+  moves     WordChallengeMove[]
 
-  @@map("word_challenge_players")
   @@index([userId])
+  @@map("word_challenge_players")
 }
 
 model WordChallengeMove {
@@ -457,8 +495,8 @@ model WordChallengeMove {
   moveNumber  Int
   timestamp   DateTime @default(now())
 
-  player      WordChallengePlayer @relation(fields: [playerId], references: [id])
-  challenge   WordChallenge @relation(fields: [challengeId], references: [id])
+  player    WordChallengePlayer @relation(fields: [playerId], references: [id])
+  challenge WordChallenge       @relation(fields: [challengeId], references: [id])
 
   @@map("word_challenge_moves")
 }
@@ -470,8 +508,8 @@ model WordChallengeChat {
   message     String   @db.Text
   timestamp   DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id])
-  challenge   WordChallenge @relation(fields: [challengeId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  challenge WordChallenge @relation(fields: [challengeId], references: [id])
 
   @@map("word_challenge_chats")
 }
@@ -485,9 +523,9 @@ model WordChallengeInvite {
   createdAt   DateTime @default(now())
   expiresAt   DateTime
 
-  challenge   WordChallenge @relation(fields: [challengeId], references: [id])
-  inviter     User     @relation("Inviter", fields: [inviterId], references: [id])
-  invitee     User     @relation("Invitee", fields: [inviteeId], references: [id])
+  challenge WordChallenge @relation(fields: [challengeId], references: [id])
+  inviter   User          @relation("Inviter", fields: [inviterId], references: [id])
+  invitee   User          @relation("Invitee", fields: [inviteeId], references: [id])
 
   @@map("word_challenge_invites")
 }
@@ -502,56 +540,56 @@ model WordChallengeDailyChallenge {
   description String?  @db.Text
   createdAt   DateTime @default(now())
 
-  progress    WordChallengeUserProgress[]
+  progress WordChallengeUserProgress[]
 
   @@map("word_challenge_daily_challenges")
 }
 
 model WordChallengeUserProgress {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  challengeId     Int
-  challengesPlayed Int     @default(0)
-  totalScore      Int      @default(0)
-  totalWords      Int      @default(0)
-  completed       Boolean  @default(false)
-  rewardClaimed   Boolean  @default(false)
-  lastUpdated     DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  challengeId      Int
+  challengesPlayed Int      @default(0)
+  totalScore       Int      @default(0)
+  totalWords       Int      @default(0)
+  completed        Boolean  @default(false)
+  rewardClaimed    Boolean  @default(false)
+  lastUpdated      DateTime @default(now())
 
-  user            User     @relation(fields: [userId], references: [id])
-  challenge       WordChallengeDailyChallenge @relation(fields: [challengeId], references: [id])
+  user      User                        @relation(fields: [userId], references: [id])
+  challenge WordChallengeDailyChallenge @relation(fields: [challengeId], references: [id])
 
-  @@map("word_challenge_user_progress")
   @@index([userId])
+  @@map("word_challenge_user_progress")
 }
 
 model KaspaPayment {
-  id                Int       @id @default(autoincrement())
-  userId            Int
-  transactionId     String    @unique
-  kaspaAmount       Float
-  geekAmount        Float
-  rate              Float
-  status            String    @default("pending")
-  walletAddress     String
-  confirmations     Int       @default(0)
-  createdAt         DateTime  @default(now())
-  confirmedAt       DateTime?
-  paymentReference  String?   @unique
-  expiresAt         DateTime?
-  sompiAmount       BigInt?
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  transactionId    String    @unique
+  kaspaAmount      Float
+  geekAmount       Float
+  rate             Float
+  status           String    @default("pending")
+  walletAddress    String
+  confirmations    Int       @default(0)
+  createdAt        DateTime  @default(now())
+  confirmedAt      DateTime?
+  paymentReference String?   @unique
+  expiresAt        DateTime?
+  sompiAmount      BigInt?
 
-  user              User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("kaspa_payments")
   @@index([userId])
+  @@map("kaspa_payments")
 }
 
 model KaspaPrice {
-  id          Int      @id @default(autoincrement())
-  usdPrice    Float    @default(0.04)
-  geekPerKas  Float    @default(25)
-  updatedAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  usdPrice   Float    @default(0.04)
+  geekPerKas Float    @default(25)
+  updatedAt  DateTime @default(now())
 
   @@map("kaspa_prices")
 }
@@ -570,53 +608,53 @@ model ExchangeListing {
   cancelledAt             DateTime?
   completedById           Int?
 
-  seller                  User      @relation("Seller", fields: [sellerId], references: [id])
-  completedBy             User?     @relation("CompletedBy", fields: [completedById], references: [id])
-  userSticker             UserSticker @relation(fields: [sellerUserStickerId], references: [id])
-  sticker                 Sticker   @relation(fields: [stickerId], references: [id])
-  offers                  ExchangeOffer[]
-  transactions            ExchangeTransaction[]
+  seller       User                  @relation("Seller", fields: [sellerId], references: [id])
+  completedBy  User?                 @relation("CompletedBy", fields: [completedById], references: [id])
+  userSticker  UserSticker           @relation(fields: [sellerUserStickerId], references: [id])
+  sticker      Sticker               @relation(fields: [stickerId], references: [id])
+  offers       ExchangeOffer[]
+  transactions ExchangeTransaction[]
 
-  @@map("exchange_listings")
   @@index([sellerId])
   @@index([status])
+  @@map("exchange_listings")
 }
 
 model ExchangeOffer {
-  id                      Int      @id @default(autoincrement())
-  listingId               Int
-  offererId               Int
-  offeredUserStickerIdsJson String  @db.Text
-  note                    String?
-  status                  String   @default("pending")
-  createdAt               DateTime @default(now())
+  id                        Int      @id @default(autoincrement())
+  listingId                 Int
+  offererId                 Int
+  offeredUserStickerIdsJson String   @db.Text
+  note                      String?
+  status                    String   @default("pending")
+  createdAt                 DateTime @default(now())
 
-  listing                 ExchangeListing @relation(fields: [listingId], references: [id])
-  offerer                 User     @relation(fields: [offererId], references: [id])
+  listing ExchangeListing @relation(fields: [listingId], references: [id])
+  offerer User            @relation(fields: [offererId], references: [id])
 
-  @@map("exchange_offers")
   @@index([offererId])
+  @@map("exchange_offers")
 }
 
 model ExchangeTransaction {
-  id                    Int      @id @default(autoincrement())
-  listingId             Int
-  sellerId              Int
-  buyerId               Int
-  txType                String
-  geekAmount            Float    @default(0)
-  sellerStickerId       Int
-  buyerStickerIdsJson   String?  @db.Text
-  createdAt             DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  listingId           Int
+  sellerId            Int
+  buyerId             Int
+  txType              String
+  geekAmount          Float    @default(0)
+  sellerStickerId     Int
+  buyerStickerIdsJson String?  @db.Text
+  createdAt           DateTime @default(now())
 
-  listing               ExchangeListing @relation(fields: [listingId], references: [id])
-  seller                User     @relation("Seller", fields: [sellerId], references: [id])
-  buyer                 User     @relation("Buyer", fields: [buyerId], references: [id])
-  sellerSticker         Sticker  @relation(fields: [sellerStickerId], references: [id])
+  listing       ExchangeListing @relation(fields: [listingId], references: [id])
+  seller        User            @relation("Seller", fields: [sellerId], references: [id])
+  buyer         User            @relation("Buyer", fields: [buyerId], references: [id])
+  sellerSticker Sticker         @relation(fields: [sellerStickerId], references: [id])
 
-  @@map("exchange_transactions")
   @@index([sellerId])
   @@index([buyerId])
+  @@map("exchange_transactions")
 }
 
 model UserNotification {
@@ -628,18 +666,18 @@ model UserNotification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("user_notifications")
   @@index([userId])
+  @@map("user_notifications")
 }
 
 model EconomyConfig {
-  id                          Int      @id @default(autoincrement())
-  pointsPerGeek               Int      @default(100)
-  minimumPoints               Int      @default(100)
-  exchangeListingExpiryHours  Int      @default(72)
-  updatedAt                   DateTime @default(now())
+  id                         Int      @id @default(autoincrement())
+  pointsPerGeek              Int      @default(100)
+  minimumPoints              Int      @default(100)
+  exchangeListingExpiryHours Int      @default(72)
+  updatedAt                  DateTime @default(now())
 
   @@map("economy_config")
 }
@@ -652,52 +690,52 @@ model PointsConversionTransaction {
   ratePointsPerGeek Int
   createdAt         DateTime @default(now())
 
-  user              User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("points_conversion_transactions")
   @@index([userId])
+  @@map("points_conversion_transactions")
 }
 
 model StickerPurchaseTransaction {
-  id            Int      @id @default(autoincrement())
-  buyerId       Int
-  stickerId     Int
-  priceGeek     Float
-  wasDuplicate  Boolean  @default(false)
-  dustAwarded   Int      @default(0)
-  source        String   @default("direct_shop")
-  createdAt     DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  buyerId      Int
+  stickerId    Int
+  priceGeek    Float
+  wasDuplicate Boolean  @default(false)
+  dustAwarded  Int      @default(0)
+  source       String   @default("direct_shop")
+  createdAt    DateTime @default(now())
 
-  buyer         User     @relation(fields: [buyerId], references: [id])
-  sticker       Sticker  @relation(fields: [stickerId], references: [id])
+  buyer   User    @relation(fields: [buyerId], references: [id])
+  sticker Sticker @relation(fields: [stickerId], references: [id])
 
   @@map("sticker_purchase_transactions")
 }
 
 model CreatorEarning {
-  id          Int      @id @default(autoincrement())
-  creatorId   Int
-  questionId  Int
-  amount      Float    @default(0)
-  timestamp   DateTime @default(now())
-  sessionId   String?
-  playerId    Int?
+  id         Int      @id @default(autoincrement())
+  creatorId  Int
+  questionId Int
+  amount     Float    @default(0)
+  timestamp  DateTime @default(now())
+  sessionId  String?
+  playerId   Int?
 
-  creator     User     @relation("CreatorEarnings", fields: [creatorId], references: [id])
-  question    Question @relation(fields: [questionId], references: [id])
-  player      User?    @relation("PlayedEarnings", fields: [playerId], references: [id])
+  creator  User     @relation("CreatorEarnings", fields: [creatorId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+  player   User?    @relation("PlayedEarnings", fields: [playerId], references: [id])
 
   @@map("creator_earnings")
 }
 
 model ReviewQueue {
-  id          Int       @id @default(autoincrement())
-  questionId  Int
-  dateAdded   DateTime  @default(now())
-  priority    Int       @default(0)
-  lastShown   DateTime?
+  id         Int       @id @default(autoincrement())
+  questionId Int
+  dateAdded  DateTime  @default(now())
+  priority   Int       @default(0)
+  lastShown  DateTime?
 
-  question    Question  @relation(fields: [questionId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
 
   @@map("review_queue")
 }
@@ -711,25 +749,25 @@ model CharacterInteraction {
   context         String?
   timestamp       DateTime @default(now())
 
-  user            User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("character_interactions")
   @@index([userId])
+  @@map("character_interactions")
 }
 
 model AIRecommendation {
-  id                  Int      @id @default(autoincrement())
-  userId              Int
-  recommendationType  String
-  content             String   @db.Text
-  context             String?
-  timestamp           DateTime @default(now())
-  wasActedUpon        Boolean  @default(false)
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  recommendationType String
+  content            String   @db.Text
+  context            String?
+  timestamp          DateTime @default(now())
+  wasActedUpon       Boolean  @default(false)
 
-  user                User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("ai_recommendations")
   @@index([userId])
+  @@map("ai_recommendations")
 }
 
 model AIMessageHistory {
@@ -741,120 +779,414 @@ model AIMessageHistory {
   userSentiment String?
   timestamp     DateTime @default(now())
 
-  user          User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("ai_message_history")
   @@index([userId])
+  @@map("ai_message_history")
 }
 
 model QuizAttempt {
-  id             Int       @id @default(autoincrement())
-  attemptId      String    @unique
-  userId         Int
-  attemptToken   String
-  round          Int
-  correctCount   Int
-  score          Int
-  rewardAmount   Decimal   @db.Decimal(20, 8)
-  status         String    @default("pending")
-  createdAt      DateTime  @default(now())
+  id           Int      @id @default(autoincrement())
+  attemptId    String   @unique
+  userId       Int
+  attemptToken String
+  round        Int
+  correctCount Int
+  score        Int
+  rewardAmount Decimal  @db.Decimal(20, 8)
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
 
-  user           User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("quiz_attempts")
   @@index([userId])
   @@index([attemptId])
+  @@map("quiz_attempts")
 }
 
 model Purchase {
-  id                Int       @id @default(autoincrement())
-  userId            Int
-  fiatAmount        Decimal   @db.Decimal(20, 2)
-  fiatCurrency      String
-  kasEquivalent     Decimal   @db.Decimal(20, 8)
-  geekAmount        Decimal   @db.Decimal(20, 8)
-  stripeSessionId   String    @unique
-  status            String    @default("pending")
-  lockedRate        Decimal   @db.Decimal(20, 8)
-  createdAt         DateTime  @default(now())
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  fiatAmount      Decimal  @db.Decimal(20, 2)
+  fiatCurrency    String
+  kasEquivalent   Decimal  @db.Decimal(20, 8)
+  geekAmount      Decimal  @db.Decimal(20, 8)
+  stripeSessionId String   @unique
+  status          String   @default("pending")
+  lockedRate      Decimal  @db.Decimal(20, 8)
+  createdAt       DateTime @default(now())
 
-  user              User      @relation(fields: [userId], references: [id])
+  geekAmountAtomic    Decimal   @default(0) @db.Decimal(30, 0)
+  /// Purchased GEEK sits in pendingBalance until this moment, so a chargeback
+  /// inside the risk window can still be reversed.
+  settlementHoldUntil DateTime?
+  refundedAt          DateTime?
+  disputedAt          DateTime?
 
-  @@map("purchases")
+  user User @relation(fields: [userId], references: [id])
+
   @@index([userId])
   @@index([stripeSessionId])
+  @@map("purchases")
+}
+
+/// Stripe webhook de-duplication. Stripe redelivers events; without this a
+/// redelivery credits the same purchase twice.
+model StripeWebhookEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+  payloadHash String?
+
+  @@map("stripe_webhook_events")
 }
 
 model Withdrawal {
-  id             Int       @id @default(autoincrement())
-  userId         Int
-  toAddress      String
-  amount         Decimal   @db.Decimal(20, 8)
-  txid           String?
-  status         String    @default("pending")
-  createdAt      DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  toAddress String
+  amount    Decimal  @db.Decimal(20, 8)
+  txid      String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
 
-  user           User      @relation(fields: [userId], references: [id])
+  // Economy fields. amountAtomic is the accounting truth; `amount` above is the
+  // legacy display column.
+  amountAtomic  Decimal   @default(0) @db.Decimal(30, 0)
+  feeAtomic     Decimal   @default(0) @db.Decimal(30, 0)
+  netAtomic     Decimal   @default(0) @db.Decimal(30, 0)
+  network       String    @default("mainnet")
+  commitTxid    String?
+  revealTxid    String?
+  confirmations Int       @default(0)
+  failureReason String?   @db.Text
+  lockedAt      DateTime?
+  confirmedAt   DateTime?
+  releasedAt    DateTime?
 
-  @@map("withdrawals")
+  user User @relation(fields: [userId], references: [id])
+
   @@index([userId])
+  @@index([status])
+  @@map("withdrawals")
 }
 
 model KYC {
-  id             Int       @id @default(autoincrement())
-  userId         Int       @unique
-  status         String    @default("pending") // pending, approved, rejected, under_review
-  provider       String?   // e.g., "sumsub", "persona"
-  providerId     String?   // Provider-specific ID
-  firstName      String?
-  lastName       String?
-  email          String?
-  phone          String?
-  dateOfBirth    DateTime?
-  address        String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String?
-  idDocumentType String?   // e.g., "passport", "driver_license", "national_id"
-  idDocumentUrl  String?
-  submittedAt    DateTime?
-  reviewedAt     DateTime?
-  reviewedBy     Int?
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique
+  status          String    @default("pending") // pending, approved, rejected, under_review
+  provider        String? // e.g., "sumsub", "persona"
+  providerId      String? // Provider-specific ID
+  firstName       String?
+  lastName        String?
+  email           String?
+  phone           String?
+  dateOfBirth     DateTime?
+  address         String?
+  city            String?
+  state           String?
+  postalCode      String?
+  country         String?
+  idDocumentType  String? // e.g., "passport", "driver_license", "national_id"
+  idDocumentUrl   String?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  reviewedBy      Int?
   rejectionReason String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  user           User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("kyc_verifications")
 }
 
 model TreasuryLedger {
-  id             Int       @id @default(autoincrement())
-  amount         Decimal   @db.Decimal(20, 8)
-  reason         String
-  recipient      String?
-  triggeringId   String?
-  createdAt      DateTime  @default(now())
+  id           Int      @id @default(autoincrement())
+  amount       Decimal  @db.Decimal(20, 8)
+  reason       String
+  recipient    String?
+  triggeringId String?
+  createdAt    DateTime @default(now())
 
   @@map("treasury_ledger")
 }
 
 model Reward {
-  id            Int      @id @default(autoincrement())
-  attemptId     String?  @unique
-  userId        Int
-  amount        Decimal  @db.Decimal(20, 8)
-  status        String   @default("pending")
-  txid          String?
-  error         String?  @db.Text
-  createdAt     DateTime @default(now())
-  confirmedAt   DateTime?
+  id          Int       @id @default(autoincrement())
+  attemptId   String?   @unique
+  userId      Int
+  amount      Decimal   @db.Decimal(20, 8)
+  status      String    @default("pending")
+  txid        String?
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
 
-  user          User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("rewards")
   @@index([userId])
   @@index([status])
+  @@map("rewards")
+}
+
+// ===================================================================
+// ECONOMY  —  see ECONOMY.md
+//
+// Everything below is written exclusively by src/services/economy/.
+// All GEEK amounts are integer ATOMIC UNITS in Decimal(30,0).
+// 1 GEEK = 100_000_000 atomic units.
+// ===================================================================
+
+/// Append-only ledger. Every GEEK movement in the protocol is a row here.
+/// There is no update path and no delete path: a reversal is a NEW row of the
+/// opposite direction pointing back at the original via reversalOfId.
+model EconomyTransaction {
+  id                String    @id @default(cuid())
+  userId            Int?
+  transactionType   String
+  /// Always POSITIVE. Direction is expressed by the from/to buckets.
+  amountAtomic      Decimal   @db.Decimal(30, 0)
+  balanceBucketFrom String
+  balanceBucketTo   String
+  referenceType     String?
+  referenceId       String?
+  status            String    @default("CONFIRMED")
+  /// The single most important column: makes every write safe to retry.
+  idempotencyKey    String    @unique
+  onChainCommitTxid String?
+  onChainRevealTxid String?
+  metadata          Json?
+  /// Flagged rows can never clear from pending to available.
+  flagged           Boolean   @default(false)
+  flagReason        String?
+  reversalOfId      String?
+  /// When a PENDING credit becomes eligible to clear to AVAILABLE.
+  clearsAt          DateTime?
+  createdAt         DateTime  @default(now())
+  confirmedAt       DateTime?
+  reversedAt        DateTime?
+
+  user       User?                @relation(fields: [userId], references: [id])
+  reversalOf EconomyTransaction?  @relation("Reversal", fields: [reversalOfId], references: [id])
+  reversals  EconomyTransaction[] @relation("Reversal")
+
+  @@index([userId, createdAt])
+  @@index([transactionType])
+  @@index([status])
+  @@index([referenceType, referenceId])
+  @@index([clearsAt])
+  @@index([flagged])
+  @@map("economy_transactions")
+}
+
+/// The eight treasury buckets. One row per account, created by economy:seed.
+model TreasuryAccount {
+  id            Int      @id @default(autoincrement())
+  account       String   @unique
+  balanceAtomic Decimal  @default(0) @db.Decimal(30, 0)
+  /// Balance below which this account is considered critically low.
+  floorAtomic   Decimal  @default(0) @db.Decimal(30, 0)
+  description   String?
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@map("treasury_accounts")
+}
+
+/// Reward budgets with a daily and a monthly ceiling, consumed atomically in
+/// the same transaction as the reward they fund.
+model RewardBudget {
+  id                 Int      @id @default(autoincrement())
+  name               String   @unique
+  enabled            Boolean  @default(true)
+  dailyLimitAtomic   Decimal  @default(0) @db.Decimal(30, 0)
+  monthlyLimitAtomic Decimal  @default(0) @db.Decimal(30, 0)
+  treasuryAccount    String   @default("REWARD_RESERVE")
+  description        String?
+  updatedAt          DateTime @default(now()) @updatedAt
+
+  periods RewardBudgetPeriod[]
+
+  @@map("reward_budgets")
+}
+
+/// Consumption for one budget in one UTC period. The unique constraint on
+/// (budgetId, periodType, periodKey) is what makes concurrent grants safe.
+model RewardBudgetPeriod {
+  id             Int      @id @default(autoincrement())
+  budgetId       Int
+  /// "DAY" | "MONTH"
+  periodType     String
+  /// "2026-08-17" for DAY, "2026-08" for MONTH
+  periodKey      String
+  consumedAtomic Decimal  @default(0) @db.Decimal(30, 0)
+  grantCount     Int      @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  budget RewardBudget @relation(fields: [budgetId], references: [id])
+
+  @@unique([budgetId, periodType, periodKey])
+  @@map("reward_budget_periods")
+}
+
+/// Per-user, per-period reward caps (daily quiz cap, CCE royalty caps, …).
+model UserRewardCap {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  capName        String
+  periodKey      String
+  consumedAtomic Decimal  @default(0) @db.Decimal(30, 0)
+  count          Int      @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  @@unique([userId, capName, periodKey])
+  @@index([periodKey])
+  @@map("user_reward_caps")
+}
+
+/// Circuit breakers. State: OPEN (healthy) | TRIPPED (automatic) | MANUAL_PAUSE.
+model CircuitBreaker {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  state     String    @default("OPEN")
+  reason    String?   @db.Text
+  trippedAt DateTime?
+  trippedBy String?
+  resetAt   DateTime?
+  resetBy   String?
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@map("circuit_breakers")
+}
+
+/// Single-row (id=1) tunable economy configuration. Every reward value, price,
+/// limit and hold period lives here so admins can change them without a deploy.
+model EconomyRuntimeConfig {
+  id                 Int      @id @default(1)
+  /// Alpha rollout stage 1-6. Withdrawals/purchases require stage >= 5.
+  stage              Int      @default(1)
+  withdrawalsEnabled Boolean  @default(false)
+  purchasesEnabled   Boolean  @default(false)
+  rewardsEnabled     Boolean  @default(true)
+  cceRewardsEnabled  Boolean  @default(true)
+  burnEnabled        Boolean  @default(false)
+  /// Full rules document as JSON — round table, quiz table, CCE rates,
+  /// power-up prices, sticker prices, withdrawal limits, hold periods.
+  rules              Json
+  version            Int      @default(1)
+  updatedAt          DateTime @default(now()) @updatedAt
+  updatedBy          String?
+
+  @@map("economy_runtime_config")
+}
+
+/// Burn batches. A burn is only CONFIRMED with a real on-chain reveal txid.
+model BurnBatch {
+  id            Int       @id @default(autoincrement())
+  amountAtomic  Decimal   @default(0) @db.Decimal(30, 0)
+  /// OPEN | APPROVED | BROADCAST | CONFIRMED | FAILED
+  status        String    @default("OPEN")
+  burnAddress   String?
+  commitTxid    String?
+  revealTxid    String?
+  approvedBy    String?
+  approvedAt    DateTime?
+  broadcastAt   DateTime?
+  confirmedAt   DateTime?
+  failureReason String?   @db.Text
+  createdAt     DateTime  @default(now())
+
+  @@index([status])
+  @@map("burn_batches")
+}
+
+/// Append-only record of every administrative economy action.
+model AdminAuditLog {
+  id          Int      @id @default(autoincrement())
+  actorId     Int?
+  actorName   String?
+  action      String
+  targetType  String?
+  targetId    String?
+  beforeValue Json?
+  afterValue  Json?
+  reason      String?  @db.Text
+  ip          String?
+  userAgent   String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
+}
+
+/// Operational alerts surfaced on the admin dashboard (budget exhausted,
+/// breaker tripped, reconciliation drift, solvency warning).
+model EconomyAlert {
+  id             Int       @id @default(autoincrement())
+  severity       String    @default("WARNING")
+  code           String
+  message        String    @db.Text
+  metadata       Json?
+  acknowledged   Boolean   @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([acknowledged])
+  @@index([code])
+  @@map("economy_alerts")
+}
+
+/// Anti-abuse signals: shared wallets, device fingerprint clusters, impossible
+/// timings, review rings, self-dealing.
+model AbuseSignal {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  signalType String
+  severity   Int      @default(1)
+  detail     String?  @db.Text
+  clusterKey String?
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([signalType])
+  @@index([clusterKey])
+  @@map("abuse_signals")
+}
+
+/// Power-up purchases. Daily limits are enforced by the economy service.
+model PowerUpPurchase {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  powerUp     String
+  priceAtomic Decimal  @db.Decimal(30, 0)
+  mode        String
+  contextType String?
+  contextId   String?
+  consumed    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("power_up_purchases")
+}
+
+/// Result of a reconciliation run, so drift is visible historically.
+model ReconciliationRun {
+  id               Int      @id @default(autoincrement())
+  ok               Boolean
+  usersChecked     Int      @default(0)
+  driftCount       Int      @default(0)
+  totalDriftAtomic Decimal  @default(0) @db.Decimal(30, 0)
+  solvencyRatio    Float    @default(0)
+  report           Json?
+  createdAt        DateTime @default(now())
+
+  @@map("reconciliation_runs")
 }

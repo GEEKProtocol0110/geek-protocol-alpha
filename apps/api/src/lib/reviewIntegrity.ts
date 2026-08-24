@@ -48,7 +48,11 @@ export const MIN_ACCURACY_PCT = num("CCE_MIN_ACCURACY_PCT", 40);
 /** Reviews faster than this are reflex clicks, not reads. */
 export const MIN_REVIEW_SECONDS = num("CCE_MIN_REVIEW_SECONDS", 5);
 
-export const REVIEW_REWARD_GEEK = 0.1;
+// The reviewer reward is NOT defined here any more. It is a tunable economy
+// value (`cce.reviewRewardGeek`) read from the runtime config, so admins can
+// change it without a deploy. A duplicate constant here would be a second
+// source of truth that silently disagrees with what the ledger actually pays.
+// See ECONOMY.md §7.2.
 
 export function startOfUtcDay(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
