@@ -1,119 +1,235 @@
 "use client";
 
 /**
- * Boss sprites. Each rung of the ladder gets a bigger, meaner silhouette so
- * the level you are on is readable before you read the name plate.
+ * Boss sprites, cel-shaded to match the roster.
+ *
+ * Same construction rule as the fighters: a tone ramp per material, one
+ * upper-left light, hard specular shapes and a rim light on the shadow edge —
+ * dimensional without a gradient anywhere. Each rung of the ladder gets a
+ * larger, meaner silhouette so the level reads before the name plate does.
  */
 
-const INK = "var(--ink)";
+import { BOSS_PALETTES, type SpritePalette } from "./spritePalettes";
 
 interface Props {
   bossId: string;
-  color: string;
-  colorDark: string;
+  color?: string;
+  colorDark?: string;
   className?: string;
 }
 
-function Drone({ c, d }: { c: string; d: string }) {
+/** A shaded block: base, shadow half, lit corner, hard highlight. */
+function Block({
+  x, y, w, h, r = 8, p,
+}: { x: number; y: number; w: number; h: number; r?: number; p: SpritePalette }) {
   return (
-    <>
-      <path d="M56 46 L124 46 L134 104 L46 104 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M96 46 L124 46 L134 104 L96 104 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M74 64 L108 64 L108 88 L74 88 Z" fill={INK} />
-      <path d="M82 70 L100 70 L100 82 L82 82 Z" fill="var(--gp-danger)" />
-      <path d="M40 52 L58 58 L54 92 L34 86 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M122 58 L142 52 L146 86 L126 92 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M84 20 L98 20 L104 46 L78 46 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M62 106 L120 106 L112 132 L70 132 Z" fill={d} stroke={INK} strokeWidth="3" />
-    </>
+    <g>
+      <rect x={x} y={y} width={w} height={h} rx={r} fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d={`M${x + w / 2} ${y} H${x + w - r} a${r} ${r} 0 0 1 ${r} ${r} V${y + h - r} a${r} ${r} 0 0 1 -${r} ${r} H${x + w / 2} Z`} fill={p.dark} />
+      <rect x={x + w * 0.08} y={y + h * 0.08} width={w * 0.3} height={h * 0.36} rx={r * 0.5} fill={p.light} opacity="0.9" />
+      <rect x={x + w * 0.13} y={y + h * 0.13} width={w * 0.11} height={h * 0.18} rx={2} fill={p.spec} opacity="0.9" />
+      <rect x={x} y={y} width={w} height={h} rx={r} fill="none" stroke={p.outline} strokeWidth="3" />
+    </g>
   );
 }
 
-function Raider({ c, d }: { c: string; d: string }) {
+/** Glowing optic with a dark socket and a hot centre. */
+function Optic({ cx, cy, r, p }: { cx: number; cy: number; r: number; p: SpritePalette }) {
   return (
-    <>
-      <path d="M52 58 L132 58 L142 118 L44 118 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M96 58 L132 58 L142 118 L96 118 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M70 76 L112 76 L106 100 L76 100 Z" fill={INK} />
-      <path d="M80 82 L102 82 L98 94 L84 94 Z" fill="var(--gp-white)" />
-      <path d="M24 44 L56 54 L50 100 L18 88 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M128 54 L162 44 L166 88 L134 100 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M76 22 L110 22 L118 58 L68 58 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M84 32 L102 32 L102 44 L84 44 Z" fill="var(--gp-danger)" stroke={INK} strokeWidth="3" />
-      <path d="M66 2 L78 22 L58 24 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M120 2 L128 24 L108 22 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M58 120 L128 120 L118 148 L68 148 Z" fill={d} stroke={INK} strokeWidth="3" />
-    </>
+    <g>
+      <circle cx={cx} cy={cy} r={r + 4} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <circle cx={cx} cy={cy} r={r} fill={p.glow} />
+      <circle cx={cx - r * 0.3} cy={cy - r * 0.3} r={r * 0.35} fill="#FFFFFF" opacity="0.85" />
+    </g>
   );
 }
 
-function Hunter({ c, d }: { c: string; d: string }) {
+function Drone({ p }: { p: SpritePalette }) {
   return (
-    <>
-      <path d="M48 62 L138 62 L150 126 L38 126 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M94 62 L138 62 L150 126 L94 126 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M66 80 L120 80 L112 108 L74 108 Z" fill={INK} />
-      <path d="M78 86 L108 86 L102 102 L84 102 Z" fill="var(--gp-cyan)" />
-      <path d="M14 40 L52 56 L46 108 L8 92 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M134 56 L172 40 L178 92 L140 108 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M0 60 L18 52 L24 84 L4 90 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M168 52 L186 60 L182 90 L162 84 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M70 18 L116 18 L126 62 L60 62 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M78 30 L108 30 L108 46 L78 46 Z" fill="var(--gp-danger)" stroke={INK} strokeWidth="3" />
-      <path d="M56 0 L72 18 L46 22 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M130 0 L140 22 L114 18 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M54 128 L132 128 L122 158 L64 158 Z" fill={d} stroke={INK} strokeWidth="3" />
-    </>
+    <g>
+      {/* side thrusters */}
+      <Block x={18} y={92} w={30} h={54} r={12} p={p} />
+      <Block x={162} y={92} w={30} h={54} r={12} p={p} />
+      <rect x={24} y={140} width={18} height={10} rx={4} fill={p.glow} opacity="0.8" />
+      <rect x={168} y={140} width={18} height={10} rx={4} fill={p.glow} opacity="0.8" />
+
+      {/* core pod */}
+      <ellipse cx={105} cy={110} rx={58} ry={52} fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 58 a58 52 0 0 1 0 104 z" fill={p.dark} />
+      <ellipse cx={82} cy={88} rx={22} ry={16} fill={p.light} opacity="0.85" />
+      <ellipse cx={76} cy={82} rx={8} ry={6} fill={p.spec} opacity="0.9" />
+      <path d="M158 92 a58 52 0 0 1 -10 44" stroke={p.spec} strokeWidth="3" fill="none" opacity="0.6" strokeLinecap="round" />
+
+      {/* face band */}
+      <rect x={62} y={96} width={86} height={30} rx={13} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <Optic cx={105} cy={111} r={9} p={p} />
+
+      {/* antenna */}
+      <path d="M105 58 v-22" stroke={p.outline} strokeWidth="6" strokeLinecap="round" />
+      <circle cx={105} cy={30} r={8} fill={p.accent} stroke={p.outline} strokeWidth="3" />
+      {/* skirt */}
+      <path d="M66 150 h78 l-12 26 h-54 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M72 154 h20 l-4 18 h-12 z" fill={p.base} opacity="0.8" />
+    </g>
   );
 }
 
-function Commander({ c, d }: { c: string; d: string }) {
+function Raider({ p }: { p: SpritePalette }) {
   return (
-    <>
-      <path d="M44 66 L142 66 L156 132 L32 132 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M94 66 L142 66 L156 132 L94 132 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M64 84 L124 84 L114 114 L74 114 Z" fill={INK} />
-      <path d="M76 90 L112 90 L104 108 L84 108 Z" fill="var(--gp-gold)" />
-      <path d="M6 34 L50 56 L44 114 L0 94 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M138 56 L182 34 L188 94 L144 114 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M12 44 L40 58 L38 78 L10 66 Z" fill={INK} />
-      <path d="M148 58 L176 44 L178 66 L150 78 Z" fill={INK} />
-      <path d="M66 14 L120 14 L132 66 L54 66 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M74 28 L112 28 L112 48 L74 48 Z" fill="var(--gp-danger)" stroke={INK} strokeWidth="3" />
-      <path d="M80 34 L92 34 L92 42 L80 42 Z" fill="var(--gp-white)" />
-      <path d="M50 0 L70 14 L38 20 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M136 0 L148 20 L116 14 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M50 134 L138 134 L126 164 L62 164 Z" fill={d} stroke={INK} strokeWidth="3" />
-    </>
+    <g>
+      {/* arms */}
+      <Block x={8} y={80} w={34} h={78} r={14} p={p} />
+      <Block x={168} y={80} w={34} h={78} r={14} p={p} />
+
+      {/* torso */}
+      <path d="M46 76 h118 a18 18 0 0 1 18 18 v64 a18 18 0 0 1 -18 18 h-118 a18 18 0 0 1 -18 -18 v-64 a18 18 0 0 1 18 -18 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 76 h59 a18 18 0 0 1 18 18 v64 a18 18 0 0 1 -18 18 h-59 z" fill={p.dark} />
+      <path d="M46 76 h30 v40 h-48 v-22 a18 18 0 0 1 18 -18 z" fill={p.light} opacity="0.95" />
+      <path d="M180 100 v52" stroke={p.spec} strokeWidth="4" strokeLinecap="round" opacity="0.6" />
+
+      {/* chest vent */}
+      <rect x={72} y={100} width={66} height={40} rx={10} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <rect x={80} y={108} width={50} height={8} rx={4} fill={p.glow} />
+      <rect x={80} y={122} width={50} height={8} rx={4} fill={p.glow} opacity="0.6" />
+
+      {/* head + horns */}
+      <path d="M66 30 h78 a16 16 0 0 1 16 16 v26 a16 16 0 0 1 -16 16 h-78 a16 16 0 0 1 -16 -16 v-26 a16 16 0 0 1 16 -16 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 30 h39 a16 16 0 0 1 16 16 v26 a16 16 0 0 1 -16 16 h-39 z" fill={p.dark} />
+      <path d="M66 30 h20 v18 h-36 v-2 a16 16 0 0 1 16 -16 z" fill={p.light} opacity="0.95" />
+      <rect x={62} y={48} width={86} height={22} rx={9} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <Optic cx={86} cy={59} r={7} p={p} />
+      <Optic cx={124} cy={59} r={7} p={p} />
+      <path d="M56 30 l-14 -26 l30 12 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M154 30 l14 -26 l-30 12 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+
+      {/* legs */}
+      <path d="M60 176 h90 l-14 32 h-62 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M66 180 h24 l-6 24 h-14 z" fill={p.base} opacity="0.8" />
+    </g>
   );
 }
 
-function VoidKing({ c, d }: { c: string; d: string }) {
+function Hunter({ p }: { p: SpritePalette }) {
   return (
-    <>
-      <path d="M40 70 L148 70 L164 138 L26 138 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M94 70 L148 70 L164 138 L94 138 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M60 88 L128 88 L118 120 L72 120 Z" fill={INK} />
-      <path d="M74 94 L114 94 L106 114 L82 114 Z" fill="var(--gp-danger)" />
-      <path d="M88 98 L100 98 L100 110 L88 110 Z" fill="var(--gp-white)" />
-      <path d="M0 28 L46 56 L40 120 L-8 96 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M142 56 L188 28 L196 96 L148 120 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M8 40 L38 58 L36 80 L6 62 Z" fill={INK} />
-      <path d="M150 58 L180 40 L182 62 L152 80 Z" fill={INK} />
-      <path d="M62 10 L126 10 L140 70 L48 70 Z" fill={c} stroke={INK} strokeWidth="3" />
-      <path d="M70 26 L118 26 L118 50 L70 50 Z" fill={INK} stroke={INK} strokeWidth="3" />
-      <path d="M76 32 L90 32 L90 44 L76 44 Z" fill="var(--gp-danger)" />
-      <path d="M98 32 L112 32 L112 44 L98 44 Z" fill="var(--gp-danger)" />
+    <g>
+      {/* sensor wings */}
+      <path d="M40 70 l-38 -22 l6 76 l34 -18 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M170 70 l38 -22 l-6 76 l-34 -18 z" fill={p.base} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M174 70 l26 -15 l-3 22 z" fill={p.light} opacity="0.9" />
+      <circle cx={22} cy={82} r={6} fill={p.glow} />
+      <circle cx={188} cy={82} r={6} fill={p.glow} />
+
+      <Block x={12} y={92} w={30} h={70} r={13} p={p} />
+      <Block x={168} y={92} w={30} h={70} r={13} p={p} />
+
+      <path d="M44 74 h122 a18 18 0 0 1 18 18 v70 a18 18 0 0 1 -18 18 h-122 a18 18 0 0 1 -18 -18 v-70 a18 18 0 0 1 18 -18 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 74 h61 a18 18 0 0 1 18 18 v70 a18 18 0 0 1 -18 18 h-61 z" fill={p.dark} />
+      <path d="M44 74 h32 v44 h-50 v-26 a18 18 0 0 1 18 -18 z" fill={p.light} opacity="0.95" />
+      <path d="M182 98 v58" stroke={p.spec} strokeWidth="4" strokeLinecap="round" opacity="0.6" />
+
+      <path d="M76 102 l29 -14 l29 14 v34 l-29 16 l-29 -16 z" fill={p.deep} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M84 108 l21 -10 l21 10 v26 l-21 12 l-21 -12 z" fill={p.glass} opacity="0.9" />
+      <path d="M92 112 l13 -6 l6 3 l-19 9 z" fill={p.glassLight} />
+
+      <path d="M68 26 h74 a16 16 0 0 1 16 16 v28 a16 16 0 0 1 -16 16 h-74 a16 16 0 0 1 -16 -16 v-28 a16 16 0 0 1 16 -16 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 26 h37 a16 16 0 0 1 16 16 v28 a16 16 0 0 1 -16 16 h-37 z" fill={p.dark} />
+      <path d="M68 26 h18 v18 h-34 v-2 a16 16 0 0 1 16 -16 z" fill={p.light} opacity="0.95" />
+      <rect x={62} y={46} width={86} height={24} rx={10} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <Optic cx={105} cy={58} r={9} p={p} />
+      <path d="M60 26 l-10 -22 l24 12 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M150 26 l10 -22 l-24 12 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+
+      <path d="M58 180 h94 l-14 30 h-66 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+    </g>
+  );
+}
+
+function Commander({ p }: { p: SpritePalette }) {
+  return (
+    <g>
+      {/* epaulettes */}
+      <path d="M34 66 a42 30 0 0 1 50 -10 v40 a10 10 0 0 1 -10 10 h-32 a10 10 0 0 1 -10 -10 z"
+            fill={p.plate} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M42 68 a28 20 0 0 1 28 -8 v10 a24 15 0 0 0 -24 6 z" fill={p.plateSpec} opacity="0.9" />
+      <path d="M176 66 a42 30 0 0 0 -50 -10 v40 a10 10 0 0 0 10 10 h32 a10 10 0 0 0 10 -10 z"
+            fill={p.plateDark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+
+      <Block x={10} y={104} w={32} h={72} r={13} p={p} />
+      <Block x={168} y={104} w={32} h={72} r={13} p={p} />
+
+      <path d="M40 80 h130 a20 20 0 0 1 20 20 v74 a20 20 0 0 1 -20 20 h-130 a20 20 0 0 1 -20 -20 v-74 a20 20 0 0 1 20 -20 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 80 h65 a20 20 0 0 1 20 20 v74 a20 20 0 0 1 -20 20 h-65 z" fill={p.dark} />
+      <path d="M40 80 h34 v46 h-54 v-26 a20 20 0 0 1 20 -20 z" fill={p.light} opacity="0.95" />
+      <path d="M188 106 v62" stroke={p.spec} strokeWidth="4" strokeLinecap="round" opacity="0.6" />
+
+      <rect x={68} y={108} width={74} height={48} rx={12} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <rect x={78} y={118} width={54} height={28} rx={8} fill={p.glass} />
+      <rect x={86} y={124} width={18} height={9} rx={3} fill={p.glassLight} />
+
+      <path d="M66 24 h78 a16 16 0 0 1 16 16 v30 a16 16 0 0 1 -16 16 h-78 a16 16 0 0 1 -16 -16 v-30 a16 16 0 0 1 16 -16 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 24 h39 a16 16 0 0 1 16 16 v30 a16 16 0 0 1 -16 16 h-39 z" fill={p.dark} />
+      <path d="M66 24 h20 v20 h-36 v-4 a16 16 0 0 1 16 -16 z" fill={p.light} opacity="0.95" />
+      <rect x={60} y={44} width={90} height={26} rx={11} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <Optic cx={84} cy={57} r={8} p={p} />
+      <Optic cx={126} cy={57} r={8} p={p} />
+      {/* crest */}
+      <path d="M88 24 l17 -22 l17 22 z" fill={p.accent} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+
+      <path d="M56 194 h98 l-14 30 h-70 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+    </g>
+  );
+}
+
+function VoidKing({ p }: { p: SpritePalette }) {
+  return (
+    <g>
+      {/* mantle */}
+      <path d="M22 74 a56 40 0 0 1 64 -14 v56 a12 12 0 0 1 -12 12 h-40 a12 12 0 0 1 -12 -12 z"
+            fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M188 74 a56 40 0 0 0 -64 -14 v56 a12 12 0 0 0 12 12 h40 a12 12 0 0 0 12 -12 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M132 66 a44 30 0 0 1 34 -6 v10 a38 24 0 0 0 -30 5 z" fill={p.light} opacity="0.9" />
+
+      <Block x={4} y={110} w={32} h={76} r={13} p={p} />
+      <Block x={174} y={110} w={32} h={76} r={13} p={p} />
+
+      <path d="M36 84 h138 a22 22 0 0 1 22 22 v78 a22 22 0 0 1 -22 22 h-138 a22 22 0 0 1 -22 -22 v-78 a22 22 0 0 1 22 -22 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 84 h69 a22 22 0 0 1 22 22 v78 a22 22 0 0 1 -22 22 h-69 z" fill={p.dark} />
+      <path d="M36 84 h36 v48 h-58 v-26 a22 22 0 0 1 22 -22 z" fill={p.light} opacity="0.95" />
+      <path d="M194 112 v66" stroke={p.spec} strokeWidth="4" strokeLinecap="round" opacity="0.65" />
+
+      {/* furnace core */}
+      <path d="M62 112 l43 -18 l43 18 v46 l-43 22 l-43 -22 z" fill={p.deep} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M72 118 l33 -14 l33 14 v36 l-33 17 l-33 -17 z" fill={p.glass} />
+      <path d="M84 124 l21 -9 l9 4 l-30 13 z" fill={p.glassLight} opacity="0.9" />
+      <circle cx={105} cy={140} r={9} fill="#FFFFFF" opacity="0.9" />
+
+      <path d="M64 26 h82 a18 18 0 0 1 18 18 v32 a18 18 0 0 1 -18 18 h-82 a18 18 0 0 1 -18 -18 v-32 a18 18 0 0 1 18 -18 z"
+            fill={p.base} stroke={p.outline} strokeWidth="3" />
+      <path d="M105 26 h41 a18 18 0 0 1 18 18 v32 a18 18 0 0 1 -18 18 h-41 z" fill={p.dark} />
+      <path d="M64 26 h22 v20 h-40 v-2 a18 18 0 0 1 18 -18 z" fill={p.light} opacity="0.95" />
+      <rect x={58} y={46} width={94} height={28} rx={12} fill={p.deep} stroke={p.outline} strokeWidth="3" />
+      <Optic cx={82} cy={60} r={9} p={p} />
+      <Optic cx={128} cy={60} r={9} p={p} />
+
       {/* crown */}
-      <path d="M48 10 L58 -18 L70 10 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M82 10 L94 -26 L106 10 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M118 10 L130 -18 L140 10 Z" fill={d} stroke={INK} strokeWidth="3" />
-      <path d="M44 140 L146 140 L132 172 L58 172 Z" fill={d} stroke={INK} strokeWidth="3" />
-    </>
+      <path d="M56 26 l6 -30 l14 30 z" fill={p.accent} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M92 26 l13 -40 l13 40 z" fill={p.accent} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M134 26 l14 -30 l6 30 z" fill={p.accent} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+
+      <path d="M52 206 h106 l-16 32 h-74 z" fill={p.dark} stroke={p.outline} strokeWidth="3" strokeLinejoin="round" />
+    </g>
   );
 }
 
-const SHAPES: Record<string, (p: { c: string; d: string }) => React.ReactElement> = {
+const SHAPES: Record<string, (props: { p: SpritePalette }) => React.ReactElement> = {
   "training-drone": Drone,
   "void-raider": Raider,
   "nebula-hunter": Hunter,
@@ -121,17 +237,21 @@ const SHAPES: Record<string, (p: { c: string; d: string }) => React.ReactElement
   "void-king": VoidKing,
 };
 
-export default function BossSprite({ bossId, color, colorDark, className }: Props) {
+export default function BossSprite({ bossId, className }: Props) {
   const Shape = SHAPES[bossId] ?? Drone;
+  const palette = BOSS_PALETTES[bossId] ?? BOSS_PALETTES["training-drone"];
+
   return (
     <svg
-      viewBox="-10 -30 206 206"
+      viewBox="-2 -42 214 292"
       className={className}
+      preserveAspectRatio="xMidYMax meet"
       style={{ overflow: "visible" }}
       role="img"
       aria-label={`${bossId} boss`}
     >
-      <Shape c={color} d={colorDark} />
+      <ellipse cx={105} cy={240} rx={72} ry={10} fill="#05050B" opacity="0.55" />
+      <Shape p={palette} />
     </svg>
   );
 }

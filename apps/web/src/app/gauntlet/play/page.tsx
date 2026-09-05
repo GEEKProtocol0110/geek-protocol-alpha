@@ -8,11 +8,12 @@ import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { AudioControls } from "@/components/AudioControls";
 import { playSfx } from "@/lib/sfx";
-import { speak, cancelVoice, onVoiceDuck } from "@/lib/voice";
-import { startMusic, stopMusic, duckMusic } from "@/lib/music";
+import { startMusic, stopMusic } from "@/lib/music";
 import CanvasQuestion from "@/components/CanvasQuestion";
-import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { createBehaviorTracker } from "@/lib/behaviorSignals";
+import QuizBattle from "@/components/battle/QuizBattle";
+import { getFighter, getGauntletBoss } from "@/lib/battle/roster";
+import type { Question as BattleQuestion } from "@/lib/battle/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 const QUESTION_TIME = 20;
@@ -91,11 +92,6 @@ const MODIFIERS: Array<{ id: Modifier; label: string; text: string; fee: string 
   { id: "hot_streak", label: "Hot Streak", text: "Earn a bonus multiplier if your opening answers stay perfect.", fee: "1x fee" },
 ];
 
-const COMBO_LINES = {
-  GIGA: ["Combo online.", "Heat rising.", "That chain is getting expensive.", "Sudden death energy."],
-  ACE: ["Pattern confirmed.", "Accuracy trend improving.", "Bonus phase remains stable.", "Risk profile upgraded."],
-};
-
 function money(n: number) {
   return Math.round(n).toLocaleString();
 }
@@ -128,23 +124,18 @@ function PlayContent() {
   const [modifier, setModifier] = useState<Modifier>("standard");
   const [payload, setPayload] = useState<RoundPayload | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
-  const [chosen, setChosen] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
   const [timings, setTimings] = useState<number[]>([]);
   const [results, setResults] = useState<LocalResult[]>([]);
-  const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  // Revealed by the server only after an answer is committed — the round
-  // payload no longer contains the answer key.
-  const [revealedCorrect, setRevealedCorrect] = useState<number | null>(null);
-  const [revealedFact, setRevealedFact] = useState<string | null>(null);
   const [hintUsed, setHintUsed] = useState(false);
   const [hint, setHint] = useState("");
-  const [reaction, setReaction] = useState("");
   const [serverResult, setServerResult] = useState<ServerRoundResult | null>(null);
   const [error, setError] = useState("");
-  const startedAt = useRef(Date.now());
+  // The battle owns the on-screen index and combo; these mirrors keep scoring
+  // synchronous and independent of render timing.
+  const questionIndexRef = useRef(0);
+  const comboRef = useRef(0);
   const behavior = useRef(createBehaviorTracker());
 
   // Aggregate interaction telemetry for the duration of the run.
@@ -156,18 +147,37 @@ function PlayContent() {
 
   // Duck the music while the AI speaks and stop everything on the way out.
   useEffect(() => {
-    onVoiceDuck(duckMusic);
     return () => {
-      onVoiceDuck(null);
       stopMusic();
-      cancelVoice();
     };
   }, []);
 
   const cfg = payload?.roundConfig ?? ROUND_CONFIG[round - 1];
   const character = payload?.character ?? (user?.favoriteCharacter === "ACE" ? "ACE" : "GIGA");
-  const questions = payload?.questions ?? [];
+  const questions = useMemo(() => payload?.questions ?? [], [payload]);
   const current = questions[questionIndex];
+
+  // A.C.E. players ride the technical glass cannon, GIGA players the all-rounder.
+  const fighter = getFighter(character === "ACE" ? "vex" : "giga");
+  const gauntletBoss = useMemo(() => getGauntletBoss(round), [round]);
+
+  /**
+   * Adapt round questions to the battle's shape. `correctIndex` stays -1 — the
+   * key genuinely is not known here, and the fight resolves from the server's
+   * verdict instead.
+   */
+  const battleQuestions: BattleQuestion[] = useMemo(
+    () =>
+      questions.map((q, i) => ({
+        id: String(q.id ?? i),
+        prompt: q.question,
+        options: q.options,
+        correctIndex: -1,
+        explanation: "",
+        category: q.topic,
+      })),
+    [questions]
+  );
   const totalLocalGeek = useMemo(() => {
     return results.reduce((sum, r) => sum + (r.isCorrect ? Math.round(cfg.rewardPerCorrect * r.multiplier) : 0), 0);
   }, [cfg.rewardPerCorrect, results]);
@@ -185,24 +195,6 @@ function PlayContent() {
     }
   }, [router, runId]);
 
-  useEffect(() => {
-    if (phase !== "question") return;
-    setTimeLeft(QUESTION_TIME);
-    startedAt.current = Date.now();
-    const id = window.setInterval(() => {
-      setTimeLeft((s) => {
-        if (s <= 1) {
-          window.clearInterval(id);
-          choose(-1);
-          return 0;
-        }
-        if (s <= 6) playSfx("tick");
-        return s - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, questionIndex]);
 
   const beginRound = useCallback(async () => {
     if (!user) return;
@@ -212,11 +204,11 @@ function PlayContent() {
     setPhase("loading");
     setError("");
     setQuestionIndex(0);
-    setChosen(null);
     setAnswers([]);
     setTimings([]);
     setResults([]);
-    setCombo(0);
+    comboRef.current = 0;
+    questionIndexRef.current = 0;
     setMaxCombo(0);
     setHintUsed(false);
     setHint("");
@@ -257,11 +249,9 @@ function PlayContent() {
    * The round payload no longer carries the answer key, so this round trip is
    * what produces feedback — and the server records the choice write-once.
    */
-  async function choose(idx: number) {
-    if (phase !== "question" || chosen !== null || !current) return;
-    if (idx !== -1) playSfx("click");
-    const timeTaken = idx === -1 ? QUESTION_TIME : (Date.now() - startedAt.current) / 1000;
-    setChosen(idx);
+  async function commitToServer(idx: number, timeTaken: number) {
+    const q = questions[questionIndexRef.current];
+    if (!q) return { correct: false, correctIndex: null };
 
     let correctIndex = -1;
     let fact: string | null = null;
@@ -272,7 +262,7 @@ function PlayContent() {
         credentials: "include",
         body: JSON.stringify({
           token: payload?.token,
-          questionIndex,
+          questionIndex: questionIndexRef.current,
           answer: idx,
           timeTaken,
         }),
@@ -285,31 +275,30 @@ function PlayContent() {
     } catch {
       // Score is recomputed server-side at submit regardless of what shows here.
     }
-    setRevealedCorrect(correctIndex);
-    setRevealedFact(fact);
-
     const isCorrect = idx === correctIndex;
-    const nextCombo = isCorrect ? combo + 1 : 0;
-    const mult = multiplierFor(isCorrect, nextCombo, current.topicAccuracy, timeTaken);
-    const lineBank = COMBO_LINES[character];
-    if (isCorrect) {
-      playSfx("correct");
-      const milestone = [3, 5, 7, 10].includes(nextCombo);
-      if (milestone) playSfx("combo", { comboLevel: nextCombo });
-      speak(milestone ? "streak" : "correct", character);
-    } else {
-      playSfx("wrong");
-      speak(idx === -1 ? "timeout" : "wrong", character);
-    }
-    setChosen(idx);
+    // The battle shows the fight; these totals are what the round submit and
+    // the results screen are scored from, so they are tracked independently.
+    comboRef.current = isCorrect ? comboRef.current + 1 : 0;
+    const mult = multiplierFor(isCorrect, comboRef.current, q.topicAccuracy, timeTaken);
     setAnswers((a) => [...a, idx]);
     setTimings((t) => [...t, Math.round(timeTaken * 1000)]);
     setResults((r) => [...r, { chosen: idx, correct: correctIndex, isCorrect, timeTaken, multiplier: mult }]);
-    setCombo(nextCombo);
-    setMaxCombo((m) => Math.max(m, nextCombo));
-    setReaction(isCorrect ? lineBank[Math.min(lineBank.length - 1, Math.max(0, nextCombo - 2))] : "Combo broken. Rebuild clean.");
-    setPhase("feedback");
+    setMaxCombo((m) => Math.max(m, comboRef.current));
+    questionIndexRef.current += 1;
+    setQuestionIndex(questionIndexRef.current);
+    return { correct: isCorrect, correctIndex: correctIndex < 0 ? null : correctIndex, explanation: fact };
   }
+
+  /** Combo milestone cue. Impact audio belongs to the battle layer. */
+  const handleFeedback = useCallback(
+    (correct: boolean, comboNow: number) => {
+      if (correct) {
+        const next = comboNow + 1;
+        if ([3, 5, 7, 10].includes(next)) playSfx("combo", { comboLevel: next });
+      }
+    },
+    []
+  );
 
   function useHint() {
     if (!current || hintUsed || phase !== "question") return;
@@ -348,19 +337,6 @@ function PlayContent() {
       setError(e instanceof Error ? e.message : "Failed to submit round");
       setPhase("error");
     }
-  }
-
-  function nextQuestion() {
-    if (questionIndex >= questions.length - 1) {
-      submitRound();
-      return;
-    }
-    setQuestionIndex((i) => i + 1);
-    setChosen(null);
-    setRevealedCorrect(null);
-    setRevealedFact(null);
-    setHint("");
-    setPhase("question");
   }
 
   async function cashOut() {
@@ -456,215 +432,74 @@ function PlayContent() {
     return <Loading label={phase === "loading" ? "Locking round state" : "Saving round results"} />;
   }
 
-  if ((phase === "question" || phase === "feedback") && current) {
-    const total = questions.length;
-    const last = results[results.length - 1];
-    const answered = phase === "feedback";
-    const gotItRight = answered && last?.isCorrect;
-    const lowTime = timeLeft <= 5 && !answered;
-    const correctCount = results.filter((r) => r.isCorrect).length;
-
-    const CHIPS = [
-      { label: "TIME",  value: answered ? "0:00" : `0:${String(timeLeft).padStart(2, "0")}`,
-        fill: lowTime ? "var(--gp-danger)" : "var(--gp-cyan)", icon: "🕐" },
-      { label: "ROUND", value: `${round}/10`,
-        fill: "var(--gp-violet)", icon: "🎯" },
-      { label: "COMBO", value: `x${combo}`,
-        fill: "var(--gp-pink)", icon: "⚡" },
-      { label: "MULTI", value: `x${(user.streakBonusMultiplier ?? 1).toFixed(2)}`,
-        fill: "var(--gp-gold)", icon: "🔥" },
-    ];
-
+  if (phase === "question" && questions.length > 0) {
     return (
       <Shell>
-        <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
-
-          {/* ── HUD: stat chips + live GEEK ─────────────────────────────── */}
-          <div className="flex flex-wrap items-start gap-3 md:gap-4 mb-5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 flex-1 min-w-0">
-              {CHIPS.map((c) => (
-                <div key={c.label} className="q-chip flex items-center gap-2 px-3 py-2" style={{ background: c.fill }}>
-                  <span className="q-chip-icon shrink-0 w-8 h-8 grid place-items-center text-base" aria-hidden="true">{c.icon}</span>
-                  <span className="min-w-0">
-                    <span className="block text-[10px] font-extrabold tracking-widest leading-none">{c.label}</span>
-                    <span className="block text-xl md:text-2xl font-extrabold leading-tight tabular-nums">{c.value}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-col items-end gap-1">
-              <div className="q-chip flex items-center gap-2 px-3 py-2"
-                   style={{ background: "var(--gp-violet)", color: "#fff" }}>
-                <span className="shrink-0 w-8 h-8 grid place-items-center rounded-full border-[2.5px] border-[var(--ink)] text-sm"
-                      style={{ background: "var(--gp-gold)", color: "var(--ink)" }} aria-hidden="true">$</span>
-                <span className="text-xl md:text-2xl font-extrabold tabular-nums">{money(totalLocalGeek)}</span>
-              </div>
-              <AudioControls className="mt-0.5" />
-              {answered && last?.isCorrect && (
-                <div className="q-float flex items-center gap-1.5 pr-1" aria-live="polite">
-                  <span className="w-5 h-5 grid place-items-center rounded-full border-2 border-[var(--ink)] text-[10px] font-extrabold"
-                        style={{ background: "var(--gp-gold)", color: "var(--ink)" }} aria-hidden="true">$</span>
-                  <span className="font-extrabold text-[var(--gp-gold)]">
-                    +{money(cfg.rewardPerCorrect * last.multiplier)}
-                  </span>
-                </div>
-              )}
-            </div>
+        <div className="mx-auto max-w-4xl px-2 pb-2 sm:px-4">
+          <div className="flex items-center justify-between py-2">
+            <span className="gp-pixel truncate text-[8px] text-[var(--gp-cyan)] sm:text-[9px]">
+              GEEK GAUNTLET · ROUND {round}/10 · {cfg.label}
+            </span>
+            <AudioControls />
           </div>
 
-          {/* ── Segmented progress rail ────────────────────────────────── */}
-          <div className="mb-1">
-            <div className="q-rail flex h-7 overflow-hidden" role="progressbar"
-                 aria-valuemin={1} aria-valuemax={total} aria-valuenow={questionIndex + 1}
-                 aria-label={`Question ${questionIndex + 1} of ${total}`}>
-              {Array.from({ length: total }).map((_, i) => (
-                <div key={i} className={`q-seg flex-1 ${i < questionIndex ? "q-seg-done" : i === questionIndex ? "q-seg-now" : ""}`} />
-              ))}
-            </div>
-            <div className="flex mt-1" aria-hidden="true">
-              {Array.from({ length: total }).map((_, i) => (
-                <div key={i} className={`flex-1 text-center text-xs font-extrabold ${i <= questionIndex ? "text-[var(--gp-cyan)]" : "text-[var(--text-3)]"}`}>
-                  {i + 1}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Question card ──────────────────────────────────────────── */}
-          <div className="relative mt-4 rounded-[20px] border-[3px] border-[var(--ink)] bg-[#0B0B14] p-5 md:p-7"
-               style={{ boxShadow: "6px 6px 0 0 var(--ink)" }}>
-
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="px-3 py-1 rounded-lg border-[2.5px] border-[var(--ink)] text-[11px] font-extrabold tracking-widest uppercase"
-                    style={{ background: "var(--gp-pink)", color: "var(--ink)" }}>
-                {current.difficulty}
-              </span>
-              <span className="px-3 py-1 rounded-lg border-[2.5px] border-[var(--ink)] text-[11px] font-extrabold tracking-widest uppercase"
-                    style={{ background: "var(--gp-cyan)", color: "var(--ink)" }}>
-                {current.topic}
-              </span>
-              <span className="text-[10px] tracking-widest text-[var(--text-3)] font-bold uppercase ml-auto">
-                {current.pastAccuracy == null ? "First serve" : `Past: ${current.pastAccuracy}%`}
-              </span>
-            </div>
-
-            {/* Canvas-rendered rather than scrapeable DOM text; the accessible
-                name still carries the question for screen readers. */}
-            <CanvasQuestion
-              text={current.question}
-              seed={`${round}-${questionIndex}`}
-              className="mb-6"
-              onRendered={(ok) => behavior.current.markCanvasRendered(ok)}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              {current.options.map((option, index) => {
-                const isChosen = chosen === index;
-                const isRight = index === revealedCorrect;
-                const showCorrect = answered && isRight;
-                const showWrong = answered && isChosen && !isRight;
-
-                return (
-                  <button
-                    key={option}
-                    onClick={() => choose(index)}
-                    disabled={answered || chosen !== null}
-                    aria-label={`${String.fromCharCode(65 + index)}. ${option}`}
-                    className={`q-option relative flex items-center gap-3 px-3.5 py-3.5 text-left ${
-                      showCorrect ? "q-option-correct" : showWrong ? "q-option-wrong" : "text-[var(--text-1)]"
-                    }`}
+          <QuizBattle
+            fighter={fighter}
+            questions={battleQuestions}
+            boss={gauntletBoss}
+            onCommit={commitToServer}
+            onComplete={() => void submitRound()}
+            onFeedback={handleFeedback}
+            /* Prompts stay canvas-rendered so the question text is not
+               scrapeable DOM, and the behaviour tracker keeps its signal. */
+            renderPrompt={(q, i) => (
+              <div className="mb-3">
+                <div className="bf-quiz-chips mb-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className="gp-pixel border-2 px-2 py-1 text-[9px]"
+                    style={{ borderColor: "var(--ink)", background: "var(--gp-pink)", color: "var(--ink)" }}
                   >
-                    <span className="q-letter shrink-0 w-9 h-9 grid place-items-center font-extrabold text-sm">
-                      {String.fromCharCode(65 + index)}
-                    </span>
-                    <span className="flex-1 font-bold text-[15px] leading-snug">{option}</span>
-                    {showCorrect && (
-                      <span className="shrink-0 w-7 h-7 grid place-items-center rounded-full bg-white border-2 border-[var(--ink)] text-[var(--gp-success-dark)] font-extrabold text-sm">✓</span>
-                    )}
-                    {showWrong && (
-                      <span className="shrink-0 w-7 h-7 grid place-items-center rounded-full bg-white border-2 border-[var(--ink)] text-[var(--gp-danger-dark)] font-extrabold text-sm">✕</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {gotItRight && <ConfettiBurst className="rounded-[20px]" />}
-          </div>
-
-          {/* ── Hint ───────────────────────────────────────────────────── */}
-          {phase === "question" && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button
-                onClick={useHint}
-                disabled={hintUsed}
-                className="q-option px-5 py-3 font-extrabold disabled:opacity-40"
-                style={{ background: "var(--gp-violet)", color: "#fff", boxShadow: "4px 4px 0 0 var(--gp-violet-dark)" }}
-              >
-                {hintUsed ? "Hint used" : "Use A.C.E. Hint Token"}
-              </button>
-              {hint && (
-                <span className="text-sm font-semibold text-[var(--gp-cyan)]">{hint}</span>
-              )}
-            </div>
-          )}
-
-          {/* ── Mascot + verdict + next ────────────────────────────────── */}
-          {answered && (
-            <div className="mt-3 flex flex-col md:flex-row md:items-end gap-4">
-              <div className="flex items-end gap-3 flex-1 min-w-0">
-                <Image
-                  src="/mascot-quiz.png"
-                  alt=""
-                  width={236}
-                  height={306}
-                  priority
-                  aria-hidden="true"
-                  className="q-bob w-[130px] md:w-[172px] h-auto shrink-0 select-none -mb-1"
-                />
-                <div className="relative mb-4 flex-1 min-w-0 rounded-[18px] border-[3px] border-[var(--ink)] bg-white px-4 py-3 text-[var(--ink)]"
-                     style={{ boxShadow: "5px 5px 0 0 var(--ink)" }}>
-                  <span aria-hidden="true" className="absolute left-[-14px] bottom-6 w-0 h-0"
-                        style={{ borderTop: "11px solid transparent", borderBottom: "11px solid transparent", borderRight: "14px solid var(--ink)" }} />
-                  <span aria-hidden="true" className="absolute left-[-9px] bottom-[26px] w-0 h-0"
-                        style={{ borderTop: "8px solid transparent", borderBottom: "8px solid transparent", borderRight: "10px solid #fff" }} />
-                  <div className="font-extrabold text-lg leading-tight">
-                    {gotItRight ? "Nice one!" : "Not this time."}
-                  </div>
-                  <div className="text-sm font-semibold text-[#3a3a4a]">{reaction}</div>
-                  {last?.isCorrect && (
-                    <div className="mt-2 pt-2 border-t-2 border-[#e6e6ee] font-extrabold text-[var(--gp-gold-dark)]">
-                      +{money(cfg.rewardPerCorrect * last.multiplier)} GEEK · ×{last.multiplier.toFixed(2)}
-                    </div>
-                  )}
-                  {revealedFact && (
-                    <div className="mt-2 pt-2 border-t-2 border-[#e6e6ee] text-xs font-medium text-[#3a3a4a]">
-                      💡 {revealedFact}
-                    </div>
-                  )}
+                    {questions[i]?.difficulty ?? cfg.difficulty}
+                  </span>
+                  <span
+                    className="gp-pixel border-2 px-2 py-1 text-[9px]"
+                    style={{ borderColor: "var(--ink)", background: "var(--gp-cyan)", color: "var(--ink)" }}
+                  >
+                    {questions[i]?.topic}
+                  </span>
                 </div>
+                <CanvasQuestion
+                  text={q.prompt}
+                  seed={`${round}-${i}-${questions[i]?.id ?? ""}`}
+                  onRendered={(ok) => behavior.current.markCanvasRendered(ok)}
+                />
               </div>
-
-              <button
-                onClick={nextQuestion}
-                className="q-option w-full md:w-auto md:min-w-[280px] justify-center px-8 py-5 text-xl md:text-2xl font-extrabold"
-                style={{ background: "var(--gp-cyan)", color: "var(--ink)", boxShadow: "6px 6px 0 0 var(--gp-cyan-dark)" }}
-              >
-                {questionIndex >= total - 1 ? "Complete Round" : "Next Question →"}
-              </button>
-            </div>
-          )}
-
-          <div className="mt-4 text-xs font-semibold text-[var(--text-3)]">
-            Round {round} · {cfg.label}
-            {results.length > 0 && ` · ${correctCount} of ${results.length} correct so far`}
-          </div>
+            )}
+            footerSlot={
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={useHint}
+                  disabled={hintUsed}
+                  className="gp-pixel border-2 px-3 py-1.5 text-[8px] transition-transform enabled:hover:-translate-y-[1px] disabled:opacity-40 sm:text-[9px]"
+                  style={{
+                    borderColor: "var(--ink)",
+                    background: hintUsed ? "var(--surface-2)" : "var(--gp-gold)",
+                    color: hintUsed ? "var(--text-3)" : "var(--ink)",
+                  }}
+                >
+                  {hintUsed ? "HINT SPENT" : "A.C.E. HINT TOKEN"}
+                </button>
+                <span className="gp-pixel truncate text-[8px] text-[var(--text-3)]">
+                  {hint || `${results.filter((r) => r.isCorrect).length}/${results.length} CORRECT · ${money(totalLocalGeek)} GEEK`}
+                </span>
+              </div>
+            }
+          />
         </div>
       </Shell>
     );
   }
-
 
   if (phase === "roundComplete" && serverResult) {
     const allDone = round >= 10;
@@ -761,6 +596,8 @@ function PlayContent() {
   }
 
 
+  // Reaching here means a phase had no matching branch — surface it rather
+  // than spinning forever.
   return <Loading label="Assembling gauntlet" />;
 }
 

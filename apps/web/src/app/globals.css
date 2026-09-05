@@ -1054,3 +1054,290 @@ button:focus-visible {
   .bf-dmg, .bf-banner { animation-duration: 1ms !important; }
   .bf-card-in, .bf-row-in { animation: none !important; opacity: 1 !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPACE FIGHTER — responsive stage
+   The battle must never require scrolling: the HUD, both fighters and all four
+   answers have to be reachable at once, or the fight stops reading as a fight.
+   The stage claims the space from its own top edge to the bottom of the
+   viewport (measured, so it works under the navbar and alpha banner too), then
+   distributes it: HUD and question panel take what they need, the arena takes
+   whatever is left.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bf-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bf-stage-hud {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+/* Allowed to shrink. Without this the panel kept its full height, overflowed
+   the stage and was silently clipped — the last answers simply vanished on a
+   320px phone instead of scrolling. */
+.bf-stage-panel {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* The arena is the flexible one — it gives up height before anything else. */
+.bf-stage-arena {
+  flex: 1 1 auto;
+  min-height: 72px;
+}
+
+/* Last-resort escape valve: a very long question on a very short screen
+   scrolls inside its own panel rather than pushing answers off the page. */
+.bf-stage-panel {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 640px) {
+  .bf-stage { gap: 0.75rem; }
+  .bf-stage-arena { min-height: 120px; }
+}
+
+/* Very narrow phones: the numeric HP readouts duplicate the bars directly
+   above them, and that row is worth more as answer space. */
+@media (max-width: 380px) {
+  .bf-hud-detail { display: none; }
+
+  /* The quiz carries more above the answers than the standalone battle does —
+     a canvas-rendered prompt plus difficulty/topic chips. On a 320px phone
+     that is the difference between seeing four answers and seeing three. */
+  .bf-stage-hint { display: none; }
+  .bf-quiz-chips { margin-bottom: 0.3rem !important; }
+  .bf-quiz-chips > span { padding: 1px 5px !important; font-size: 7px !important; }
+  .bf-stage-panel .bf-panel-box { padding: 0.5rem !important; }
+  .bf-stage-panel .bf-panel-option { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
+}
+
+/* Short screens, any width. Tailwind's `sm:` is width-only, so a phone held
+   sideways (667px wide, 375px tall) was getting the full desktop type scale
+   and pushing ENGAGE below the fold. These rules key off height instead. */
+@media (max-height: 560px) {
+  .bf-intro-sprite   { height: 4.5rem !important; }
+  .bf-intro-boss     { height: 5.5rem !important; }
+  .bf-intro-title    { font-size: 1.75rem !important; margin-top: 0.5rem !important; }
+  .bf-intro-vs       { font-size: 1.5rem !important; padding-bottom: 0.75rem !important; }
+  .bf-intro-taunt    { font-size: 0.8rem !important; margin-top: 0.5rem !important; }
+  .bf-intro-rules    { margin-top: 0.75rem !important; }
+  .bf-intro-cta      { margin-top: 1rem !important; padding: 0.6rem 2rem !important; font-size: 1rem !important; }
+  .bf-intro-row      { margin-top: 0.5rem !important; }
+}
+
+/* Short landscape — phones turned sideways. Stacking cannot work here, so the
+   arena moves beside the question instead of above it. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .bf-stage-main {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .bf-stage-arena { flex: 1 1 30%; min-height: 0; }
+  .bf-stage-panel { flex: 1 1 70%; min-height: 0; }
+
+  /* Every pixel the HUD gives up is a pixel the answers get. The bars stay —
+     they are the read-at-a-glance state; the numeric duplicates go. */
+  .bf-hud-detail { display: none; }
+
+  .bf-stage-panel .bf-panel-box { padding: 0.5rem; }
+
+  /* Reclaimed from chrome rather than from content: the difficulty/topic
+     chips and the combo row shrink so all four answers still fit. */
+  .bf-quiz-chips { margin-bottom: 0.25rem !important; }
+  .bf-quiz-chips > span { padding: 1px 5px !important; font-size: 7px !important; }
+  .bf-hud-meta { margin-top: 0.35rem !important; }
+  .bf-stage-hint { display: none; }
+  .bf-stage-panel .bf-panel-prompt { font-size: 0.85rem; margin-bottom: 0.4rem; }
+  .bf-stage-panel .bf-panel-option { padding-top: 0.35rem; padding-bottom: 0.35rem; min-height: 34px; }
+  .bf-stage-panel .bf-panel-timer { margin-bottom: 0.35rem; }
+}
+
+/* Portrait / tall screens: main is a plain passthrough column. */
+@media not all and (orientation: landscape) and (max-height: 560px) {
+  .bf-stage-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 640px) {
+  .bf-stage-main { gap: 0.75rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPACE FIGHTER — sprite stage
+   The artwork already depicts the moment of impact, so the motion here is a
+   dash and a settle rather than a full swing: the frame carries the pose, the
+   animation carries the weight.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Idle breathing, so a static frame does not read as a stalled image. */
+.bf-sprite-idle { animation: bf-sprite-idle-kf 3.4s ease-in-out infinite; }
+@keyframes bf-sprite-idle-kf {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-5px) scale(1.008); }
+}
+
+/* Attacker drives toward the opponent, then recovers. */
+.bf-strike-r { animation: bf-strike-r-kf 700ms cubic-bezier(0.16, 0.9, 0.28, 1) both; }
+@keyframes bf-strike-r-kf {
+  0%   { transform: translateX(0) scale(1); }
+  12%  { transform: translateX(-16px) scale(0.98); }
+  30%  { transform: translateX(56px) scale(1.05); }
+  55%  { transform: translateX(44px) scale(1.02); }
+  100% { transform: translateX(0) scale(1); }
+}
+.bf-strike-l { animation: bf-strike-l-kf 700ms cubic-bezier(0.16, 0.9, 0.28, 1) both; }
+@keyframes bf-strike-l-kf {
+  0%   { transform: translateX(0) scale(1); }
+  12%  { transform: translateX(16px) scale(0.98); }
+  30%  { transform: translateX(-56px) scale(1.05); }
+  55%  { transform: translateX(-44px) scale(1.02); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+/* Defender is driven away from the blow and shudders back into stance. */
+.bf-knock-l { animation: bf-knock-l-kf 700ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes bf-knock-l-kf {
+  0%   { transform: translateX(0) rotate(0deg); }
+  14%  { transform: translateX(-30px) rotate(-4deg); }
+  32%  { transform: translateX(-16px) rotate(2deg); }
+  50%  { transform: translateX(-22px) rotate(-2deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+.bf-knock-r { animation: bf-knock-r-kf 700ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes bf-knock-r-kf {
+  0%   { transform: translateX(0) rotate(0deg); }
+  14%  { transform: translateX(30px) rotate(4deg); }
+  32%  { transform: translateX(16px) rotate(-2deg); }
+  50%  { transform: translateX(22px) rotate(2deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+/* Poses that leave the ground get lift for the duration of the frame. */
+.bf-air-r { animation: bf-air-r-kf 700ms cubic-bezier(0.2, 0.85, 0.3, 1) both; }
+@keyframes bf-air-r-kf {
+  0%   { transform: translate(0, 0); }
+  30%  { transform: translate(52px, -26px); }
+  60%  { transform: translate(40px, -16px); }
+  100% { transform: translate(0, 0); }
+}
+.bf-air-l { animation: bf-air-l-kf 700ms cubic-bezier(0.2, 0.85, 0.3, 1) both; }
+@keyframes bf-air-l-kf {
+  0%   { transform: translate(0, 0); }
+  30%  { transform: translate(-46px, -22px); }
+  60%  { transform: translate(-30px, -12px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* A defeated fighter stays down. */
+.bf-downed { animation: bf-downed-kf 600ms ease-out both; }
+@keyframes bf-downed-kf {
+  0%   { transform: translateY(-10px); opacity: 0.9; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Hit flash — a flat white wash over the struck sprite, one frame long. */
+.bf-hitflash { animation: bf-hitflash-kf 260ms steps(1, end) both; }
+@keyframes bf-hitflash-kf {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.6; }
+  30%  { opacity: 0; }
+  46%  { opacity: 0.28; }
+  70%  { opacity: 0; }
+}
+
+/* Backdrop parallax — different speeds read as different distances. */
+.bf-bg-far { animation: bf-bg-far-kf 120s linear infinite alternate; }
+@keyframes bf-bg-far-kf {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-18px); }
+}
+.bf-bg-mid { animation: bf-bg-mid-kf 70s linear infinite alternate; }
+@keyframes bf-bg-mid-kf {
+  from { transform: translateX(0); }
+  to   { transform: translateX(26px); }
+}
+
+/* Debris tumbling across the front of frame. */
+.bf-debris { animation-name: bf-debris-kf; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes bf-debris-kf {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.55; }
+  90%  { opacity: 0.55; }
+  100% { transform: translate(-140px, 40px) rotate(220deg); opacity: 0; }
+}
+
+/* Speed streaks behind a charging attacker. */
+.bf-streak { animation: bf-streak-kf 520ms ease-out both; }
+@keyframes bf-streak-kf {
+  0%   { opacity: 0; transform: scaleX(0.2); }
+  25%  { opacity: 0.9; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-sprite-idle, .bf-strike-r, .bf-strike-l, .bf-knock-l, .bf-knock-r,
+  .bf-air-r, .bf-air-l, .bf-bg-far, .bf-bg-mid, .bf-debris, .bf-streak,
+  .bf-hitflash, .bf-downed {
+    animation: none !important;
+  }
+  .bf-debris { opacity: 0.4 !important; }
+}
+
+/* Question clock — driven entirely by the compositor. Duration is set inline
+   from the question length; colour shifts as it runs out so urgency is felt
+   peripherally without any JavaScript per frame. */
+.bf-timer-drain {
+  transform-origin: left center;
+  animation-name: bf-timer-drain-kf, bf-timer-hue-kf;
+  animation-timing-function: linear, steps(1, end);
+  animation-fill-mode: forwards, forwards;
+  background: var(--gp-cyan);
+}
+@keyframes bf-timer-drain-kf {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+@keyframes bf-timer-hue-kf {
+  0%   { background: var(--gp-cyan); }
+  50%  { background: var(--gp-cyan); }
+  75%  { background: var(--gp-gold); }
+  100% { background: var(--gp-danger); }
+}
+
+/* Each question slides in rather than snapping, so the hand-off reads as one
+   continuous fight instead of a page swap. */
+.bf-q-enter { animation: bf-q-enter-kf 260ms cubic-bezier(0.22, 0.9, 0.3, 1) both; }
+@keyframes bf-q-enter-kf {
+  0%   { opacity: 0; transform: translateX(46px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* The outgoing question leaves before the next arrives, so the hand-off reads
+   as motion rather than a frozen beat someone might mistake for a hang. */
+.bf-q-exit { animation: bf-q-exit-kf 240ms cubic-bezier(0.4, 0, 1, 1) both; }
+@keyframes bf-q-exit-kf {
+  0%   { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(-46px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-timer-drain { animation-name: bf-timer-drain-kf; }
+  .bf-q-enter, .bf-q-exit { animation: none !important; }
+}

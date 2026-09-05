@@ -51,8 +51,15 @@ export default async function GauntletRoundsTable() {
   const { rounds, questionSeconds, questionsPerRound, maxRewardPerRunGeek } = config.gauntlet;
 
   return (
-    <div className="flat-card overflow-x-auto p-2">
-      <table className="w-full border-collapse text-sm">
+    // `min-w-0` on both: without it a grid/flex ancestor lets this box grow to
+    // its content width instead of constraining it, so `overflow-x-auto` never
+    // engages and the table pushes the layout wide rather than scrolling.
+    <div className="flat-card w-full min-w-0 p-2">
+      <p className="px-3 pb-1 text-[10px] text-[var(--text-3)] sm:hidden" aria-hidden="true">
+        Swipe the table sideways to see every column →
+      </p>
+      <div className="w-full min-w-0 overflow-x-auto">
+      <table className="w-full border-collapse text-xs sm:text-sm">
         <caption className="px-3 pb-2 pt-1 text-left text-xs text-[var(--text-3)]">
           Live values from the protocol economy configuration · {questionsPerRound} questions per
           round · {questionSeconds} seconds per question · maximum {geek(maxRewardPerRunGeek)} per run
@@ -63,7 +70,7 @@ export default async function GauntletRoundsTable() {
               <th
                 key={h}
                 scope="col"
-                className="text-left px-3 py-2 text-[var(--text-3)] text-[10px] tracking-widest uppercase font-bold"
+                className="whitespace-nowrap px-2 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[var(--text-3)] sm:px-3 sm:text-[10px]"
               >
                 {h}
               </th>
@@ -73,18 +80,18 @@ export default async function GauntletRoundsTable() {
         <tbody>
           {rounds.map((r: GauntletRound) => (
             <tr key={r.round} className="hover:bg-[var(--flat-cream)] transition">
-              <td className="px-3 py-2 border-b border-[var(--border-soft)] text-[var(--brand-primary)] font-bold">
+              <td className="whitespace-nowrap border-b border-[var(--border-soft)] px-2 py-2 font-bold text-[var(--brand-primary)] sm:px-3">
                 {String(r.round).padStart(2, "0")}
               </td>
-              <td className="px-3 py-2 border-b border-[var(--border-soft)]">
+              <td className="whitespace-nowrap border-b border-[var(--border-soft)] px-2 py-2 sm:px-3">
                 {r.fee === 0 ? "Free" : geek(r.fee)}
               </td>
-              <td className="px-3 py-2 border-b border-[var(--border-soft)]">{geek(r.rewardPerCorrect)}</td>
-              <td className="px-3 py-2 border-b border-[var(--border-soft)]">{geek(r.maxRoundReward)}</td>
-              <td className="px-3 py-2 border-b border-[var(--border-soft)]">{r.breakEvenCorrect}</td>
-              <td className="px-3 py-2 border-b border-[var(--border-soft)]">
+              <td className="whitespace-nowrap border-b border-[var(--border-soft)] px-2 py-2 sm:px-3">{geek(r.rewardPerCorrect)}</td>
+              <td className="whitespace-nowrap border-b border-[var(--border-soft)] px-2 py-2 sm:px-3">{geek(r.maxRoundReward)}</td>
+              <td className="whitespace-nowrap border-b border-[var(--border-soft)] px-2 py-2 sm:px-3">{r.breakEvenCorrect}</td>
+              <td className="whitespace-nowrap border-b border-[var(--border-soft)] px-2 py-2 sm:px-3">
                 <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                  className="whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-semibold sm:text-[10px]"
                   style={{
                     color: DIFFICULTY_TONE[r.difficulty] ?? "var(--brand-primary)",
                     background: "var(--surface-2)",
@@ -97,6 +104,7 @@ export default async function GauntletRoundsTable() {
           ))}
         </tbody>
       </table>
+      </div>
       <p className="px-3 py-3 text-xs text-[var(--text-3)]">
         Entry fees are charged from your available Alpha GEEK balance and are settled when the round
         ends: 70% returns to the reward pool, 30% is booked to pending burn. Rewards are subject to

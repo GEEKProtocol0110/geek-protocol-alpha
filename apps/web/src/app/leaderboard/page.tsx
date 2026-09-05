@@ -6,7 +6,9 @@ import { Footer } from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
-const POLL_MS = 15_000;
+const POLL_MS = 30_000;
+/** After a rate-limit the poll backs off rather than hammering the API. */
+const BACKOFF_MS = 90_000;
 
 type SortKey = "xp" | "points" | "currentStreak";
 
@@ -67,23 +69,34 @@ export default function LeaderboardPage() {
   const [pulse, setPulse]         = useState(false);
   const timerRef                  = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const backoffUntil = useRef(0);
+
   const fetchLeaderboard = useCallback(async (s: SortKey, silent = false) => {
+    if (silent && Date.now() < backoffUntil.current) return;
     if (!silent) setLoading(true);
-    setError("");
     try {
       const res = await fetch(`${API}/api/leaderboard/top?limit=50&sort=${s}`, {
         credentials: "include",
       });
+      if (res.status === 429) {
+        // Rate limited. Stop polling for a while instead of retrying into the
+        // same wall — the board polls forever, so it can exhaust the budget on
+        // its own and then report itself broken.
+        backoffUntil.current = Date.now() + BACKOFF_MS;
+        throw new Error("rate limited");
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setEntries(json.data ?? []);
+      setError("");
       setUpdatedAt(new Date());
       if (silent) {
         setPulse(true);
         setTimeout(() => setPulse(false), 600);
       }
     } catch {
-      setError("Could not load leaderboard. Retrying…");
+      // A failed refresh must not throw away a board that is already on screen.
+      setError("Live updates paused — showing the last ranking.");
     } finally {
       setLoading(false);
     }
@@ -94,10 +107,18 @@ export default function LeaderboardPage() {
     fetchLeaderboard(sort);
   }, [sort, fetchLeaderboard]);
 
-  // Real-time polling
+  // Real-time polling, paused while the tab is in the background so an idle
+  // tab does not spend the whole rate-limit budget.
   useEffect(() => {
-    timerRef.current = setInterval(() => fetchLeaderboard(sort, true), POLL_MS);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    const tick = () => {
+      if (document.visibilityState === "visible") fetchLeaderboard(sort, true);
+    };
+    timerRef.current = setInterval(tick, POLL_MS);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [sort, fetchLeaderboard]);
 
   const myRank = me ? entries.findIndex((e) => e.id === me.id) + 1 : 0;
@@ -181,10 +202,24 @@ export default function LeaderboardPage() {
             </div>
           ) : entries.length === 0 ? (
             <div className="text-center text-[var(--text-3)] text-sm py-20 px-6">
-              <p className="font-semibold text-[var(--text-2)]">No ranked players yet.</p>
-              <p className="mt-2">
-                Complete the Daily Quiz or the Gauntlet to become the first.
-              </p>
+              {/* An unreachable board and an empty board are different things;
+                  showing "no players yet" for a failed request read as if the
+                  game had no one in it. */}
+              {error ? (
+                <>
+                  <p className="font-semibold text-[var(--text-2)]">
+                    Couldn&apos;t reach the rankings.
+                  </p>
+                  <p className="mt-2">Retrying shortly — your rank is safe.</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-[var(--text-2)]">No ranked players yet.</p>
+                  <p className="mt-2">
+                    Complete the Daily Quiz or the Gauntlet to become the first.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div>

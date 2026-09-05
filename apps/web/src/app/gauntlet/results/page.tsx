@@ -46,47 +46,59 @@ function ResultsContent() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const firedForRunId = useRef<number | null>(null);
+  /**
+   * The request is kept in a ref, not gated by a "already fired" flag.
+   *
+   * Cash-out must POST exactly once — calling it twice 404s, because the run is
+   * already closed. The previous guard returned early on the second effect run,
+   * but React Strict Mode had already cancelled the first run's result, so
+   * nothing ever resolved and the page span forever. Holding the in-flight
+   * promise means the POST still happens once while every effect run can read
+   * its result.
+   */
+  const request = useRef<{ key: string; promise: Promise<Summary> } | null>(null);
 
   useEffect(() => {
     if (!user || !runId) return;
-    // Guard against double-firing (React Strict Mode re-runs effects in dev,
-    // and cashout is not safe to call twice - the second call 404s because
-    // the run is already marked completed after the first).
-    if (shouldCashout) {
-      if (firedForRunId.current === runId) return;
-      firedForRunId.current = runId;
-    }
     const currentUser = user;
+    const key = `${runId}:${shouldCashout ? "cashout" : "summary"}`;
     let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError("");
-      try {
-        const url = shouldCashout
-          ? `${API}/api/gauntlet/run/${runId}/cashout`
-          : `${API}/api/gauntlet/run/${runId}/summary`;
-        const res = await fetch(url, {
-          method: shouldCashout ? "POST" : "GET",
-          headers: shouldCashout ? { "Content-Type": "application/json" } : undefined,
-          credentials: "include",
-          body: shouldCashout ? JSON.stringify({ userId: currentUser.id }) : undefined,
-        });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error ?? "Failed to load Gauntlet summary");
-        if (!cancelled) {
-          setSummary(json.data);
-          const acc = json.data.totalQuestions ? json.data.totalCorrect / json.data.totalQuestions : 0;
-          playSfx("fanfare", { success: acc >= 0.6 });
-          refreshUser().catch(() => {});
-        }
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load Gauntlet summary");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+
+    if (request.current?.key !== key) {
+      const url = shouldCashout
+        ? `${API}/api/gauntlet/run/${runId}/cashout`
+        : `${API}/api/gauntlet/run/${runId}/summary`;
+      request.current = {
+        key,
+        promise: (async () => {
+          const res = await fetch(url, {
+            method: shouldCashout ? "POST" : "GET",
+            headers: shouldCashout ? { "Content-Type": "application/json" } : undefined,
+            credentials: "include",
+            body: shouldCashout ? JSON.stringify({ userId: currentUser.id }) : undefined,
+          });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error ?? "Failed to load Gauntlet summary");
+          return json.data as Summary;
+        })(),
+      };
     }
-    load();
+
+    request.current.promise
+      .then((data) => {
+        if (cancelled) return;
+        setSummary(data);
+        const acc = data.totalQuestions ? data.totalCorrect / data.totalQuestions : 0;
+        playSfx("fanfare", { success: acc >= 0.6 });
+        refreshUser().catch(() => {});
+        setLoading(false);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "Failed to load Gauntlet summary");
+        setLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };

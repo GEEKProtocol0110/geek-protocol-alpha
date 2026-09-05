@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { playSfx } from "@/lib/sfx";
-import { speak } from "@/lib/voice";
 import { stopMusic } from "@/lib/music";
 
 /**
@@ -67,13 +66,6 @@ function ResultsContent() {
     // The quiz music belongs to the quiz; the results screen is quiet.
     stopMusic();
     playSfx("fanfare", { success: accuracy >= 60 });
-    // The sign-off is spoken here rather than at submit — navigating away
-    // mid-sentence cut the line off before the player ever heard it.
-    const t = window.setTimeout(
-      () => speak(accuracy >= 60 ? "finishStrong" : "finishWeak", "GIGA"),
-      700
-    );
-    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

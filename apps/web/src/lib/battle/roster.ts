@@ -33,7 +33,7 @@ export const FIGHTERS: Fighter[] = [
     color: "var(--gp-pink)",
     colorDark: "var(--gp-pink-dark)",
     specialName: "STARFALL RUSH",
-    unlocked: true,
+    unlocked: false,
   },
   {
     id: "titan-x",
@@ -46,7 +46,7 @@ export const FIGHTERS: Fighter[] = [
     color: "var(--gp-violet)",
     colorDark: "var(--gp-violet-dark)",
     specialName: "GRAVITY BREAKER",
-    unlocked: true,
+    unlocked: false,
   },
   {
     id: "vex",
@@ -59,7 +59,7 @@ export const FIGHTERS: Fighter[] = [
     color: "var(--gp-gold)",
     colorDark: "var(--gp-gold-dark)",
     specialName: "PHANTOM SPLIT",
-    unlocked: true,
+    unlocked: false,
   },
 ];
 
@@ -71,53 +71,53 @@ export function getFighter(id: string): Fighter {
 export const BOSSES: Boss[] = [
   {
     id: "training-drone",
-    name: "TRAINING DRONE",
+    name: "HYPE WRAITH",
     level: 1,
     maxHp: 155,
     attack: 13,
     color: "var(--gp-slate)",
     colorDark: "#5C616D",
-    taunt: "Calibration unit online. Show me what you know.",
+    taunt: "Another curious mind. They all buy the story eventually.",
   },
   {
     id: "void-raider",
-    name: "VOID RAIDER",
+    name: "PUMP WRAITH",
     level: 2,
     maxHp: 195,
     attack: 17,
     color: "var(--gp-success)",
     colorDark: "var(--gp-success-dark)",
-    taunt: "You drift into my lane and expect to leave?",
+    taunt: "Number goes up. That is the whole argument. Try to beat it.",
   },
   {
     id: "nebula-hunter",
-    name: "NEBULA HUNTER",
+    name: "MOONSHOT WRAITH",
     level: 3,
     maxHp: 235,
     attack: 21,
     color: "var(--gp-violet)",
     colorDark: "var(--gp-violet-dark)",
-    taunt: "I have tracked smarter prey than you across three systems.",
+    taunt: "Everyone who reached this far was certain too. Certainty is cheap.",
   },
   {
     id: "titan-commander",
-    name: "TITAN COMMANDER",
+    name: "FOMO WRAITH",
     level: 4,
     maxHp: 285,
     attack: 25,
     color: "var(--gp-pink)",
     colorDark: "var(--gp-pink-dark)",
-    taunt: "Command does not negotiate with guesswork.",
+    taunt: "You are already late. Answer fast, before you miss it.",
   },
   {
     id: "void-king",
-    name: "VOID KING",
+    name: "THE GREAT HYPE",
     level: 5,
     maxHp: 340,
     attack: 29,
     color: "var(--gp-danger)",
     colorDark: "var(--gp-danger-dark)",
-    taunt: "Every mind that reached this far still broke. Yours will too.",
+    taunt: "I am every promise you were ever sold. Ten answers. Prove me hollow.",
   },
 ];
 
@@ -136,33 +136,52 @@ export function getBoss(level: number): Boss {
 const DAILY_ROTATION: Array<Pick<Boss, "id" | "name" | "color" | "colorDark" | "taunt">> = [
   {
     id: "void-raider",
-    name: "VOID RAIDER",
+    name: "PUMP WRAITH",
     color: "var(--gp-success)",
     colorDark: "var(--gp-success-dark)",
     taunt: "Another mind wanders into the lane. Convenient.",
   },
   {
     id: "nebula-hunter",
-    name: "NEBULA HUNTER",
+    name: "MOONSHOT WRAITH",
     color: "var(--gp-violet)",
     colorDark: "var(--gp-violet-dark)",
-    taunt: "I have tracked smarter prey than you across three systems.",
+    taunt: "Everyone who reached this far was certain too. Certainty is cheap.",
   },
   {
     id: "titan-commander",
-    name: "TITAN COMMANDER",
+    name: "FOMO WRAITH",
     color: "var(--gp-pink)",
     colorDark: "var(--gp-pink-dark)",
-    taunt: "Command does not negotiate with guesswork.",
+    taunt: "You are already late. Answer fast, before you miss it.",
   },
   {
     id: "void-king",
-    name: "VOID KING",
+    name: "THE GREAT HYPE",
     color: "var(--gp-danger)",
     colorDark: "var(--gp-danger-dark)",
     taunt: "Ten questions. That is all that stands between you and nothing.",
   },
 ];
+
+/**
+ * The Gauntlet ladder.
+ *
+ * Ten rounds against five escalating Wraith forms — two rounds per form — with
+ * health and damage interpolated across the run so round 10 is a genuine wall
+ * and round 1 is still winnable by someone learning the format.
+ */
+export function getGauntletBoss(round: number): Boss {
+  const r = Math.min(10, Math.max(1, Math.round(round)));
+  const form = BOSSES[Math.min(BOSSES.length - 1, Math.ceil(r / 2) - 1)];
+  const t = (r - 1) / 9;
+  return {
+    ...form,
+    level: r,
+    maxHp: Math.round(150 + t * 210),
+    attack: Math.round(13 + t * 17),
+  };
+}
 
 export function getDailyBoss(date: Date = new Date()): Boss {
   const dayIndex = Math.floor(Date.UTC(

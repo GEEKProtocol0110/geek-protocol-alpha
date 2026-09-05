@@ -8,12 +8,19 @@
  * The panel never moves position between questions.
  */
 
+import { memo } from "react";
 import { QUESTION_MS } from "@/lib/battle/combat";
+import TimerBar from "./TimerBar";
 import type { Question } from "@/lib/battle/types";
 
 interface Props {
   question: Question;
-  remainingMs: number;
+  /** Restarts the clock and replays the entry animation. */
+  questionKey: number;
+  /** True for the final beat before the next question, to play the exit. */
+  leaving?: boolean;
+  /** Cuts the post-answer hold short. */
+  onSkip?: () => void;
   /** null while the player is still deciding. */
   pickedIndex: number | null;
   revealed: boolean;
@@ -39,9 +46,11 @@ interface Props {
 
 const KEYS = ["A", "B", "C", "D"];
 
-export default function QuestionPanel({
+function QuestionPanel({
   question,
-  remainingMs,
+  questionKey,
+  leaving = false,
+  onSkip,
   pickedIndex,
   revealed,
   correctIndex,
@@ -50,55 +59,32 @@ export default function QuestionPanel({
   promptSlot,
   onPick,
 }: Props) {
-  const ratio = Math.max(0, Math.min(1, remainingMs / QUESTION_MS));
-  const seconds = (remainingMs / 1000).toFixed(1);
-  // The timer turns hostile as it runs down, so urgency is felt peripherally.
-  const timerColor =
-    ratio > 0.5 ? "var(--gp-cyan)" : ratio > 0.25 ? "var(--gp-gold)" : "var(--gp-danger)";
-
   return (
     <div
-      className="w-full border-2 p-3 sm:p-5"
+      className="bf-panel-box w-full border-2 p-2.5 sm:p-5"
       style={{
         borderColor: "var(--ink)",
         background: "var(--surface-1)",
         boxShadow: "var(--shadow-hard)",
       }}
     >
-      {/* ── Timer ── */}
-      <div className="mb-3 flex items-center gap-3">
-        <div
-          className="h-3 flex-1 overflow-hidden border-2"
-          style={{ borderColor: "var(--ink)", background: "var(--surface-3)" }}
-        >
-          <div
-            className="bf-timer-fill h-full"
-            style={{
-              background: timerColor,
-              transform: `scaleX(${ratio})`,
-              transition: "transform 100ms linear",
-            }}
-          />
-        </div>
-        <span className="gp-pixel w-12 text-right text-[10px]" style={{ color: timerColor }}>
-          {seconds}s
-        </span>
-      </div>
+      <TimerBar durationMs={QUESTION_MS} runKey={questionKey} paused={revealed || pending} />
 
+      <div key={questionKey} className={leaving ? "bf-q-exit" : "bf-q-enter"}>
       {!promptSlot && (
         <div className="gp-pixel mb-2 text-[9px] text-[var(--text-3)]">{question.category}</div>
       )}
 
       {promptSlot ?? (
         <h2
-          className="mb-4 text-lg font-bold leading-snug text-[var(--text-1)] sm:text-2xl"
+          className="bf-panel-prompt mb-3 text-base font-bold leading-snug text-[var(--text-1)] sm:mb-4 sm:text-2xl"
           style={{ fontFamily: "var(--font-display), sans-serif" }}
         >
           {question.prompt}
         </h2>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-2">
         {question.options.map((option, i) => {
           const isCorrect = correctIndex !== null && i === correctIndex;
           const isPicked = i === pickedIndex;
@@ -133,7 +119,7 @@ export default function QuestionPanel({
               type="button"
               disabled={revealed || pending}
               onClick={() => onPick(i)}
-              className="flex items-center gap-3 border-2 px-3 py-3 text-left transition-transform disabled:cursor-default sm:py-4 enabled:hover:-translate-y-[2px] enabled:active:translate-y-[1px]"
+              className="bf-panel-option flex min-h-[44px] items-center gap-2 border-2 px-2.5 py-2.5 text-left transition-transform disabled:cursor-default sm:gap-3 sm:px-3 sm:py-4 enabled:hover:-translate-y-[2px] enabled:active:translate-y-[1px]"
               style={{
                 background,
                 color,
@@ -142,7 +128,7 @@ export default function QuestionPanel({
               }}
             >
               <span
-                className="gp-arcade flex h-7 w-7 shrink-0 items-center justify-center border-2 text-xs"
+                className="gp-arcade flex h-6 w-6 shrink-0 items-center justify-center border-2 text-[10px] sm:h-7 sm:w-7 sm:text-xs"
                 style={{
                   borderColor: "var(--ink)",
                   background: revealed && (isCorrect || isPicked) ? "var(--ink)" : "var(--surface-3)",
@@ -151,11 +137,28 @@ export default function QuestionPanel({
               >
                 {KEYS[i]}
               </span>
-              <span className="text-sm font-semibold leading-tight sm:text-base">{option}</span>
+              <span className="text-[13px] font-semibold leading-tight sm:text-base">{option}</span>
             </button>
           );
         })}
       </div>
+
+      {revealed && onSkip && (
+        <button
+          type="button"
+          onClick={onSkip}
+          className="mt-2 flex w-full items-center justify-center gap-2 border-2 px-3 py-2 text-left transition-transform hover:-translate-y-[1px] active:translate-y-[1px]"
+          style={{
+            borderColor: "var(--ink)",
+            background: "var(--surface-2)",
+            color: "var(--text-2)",
+            boxShadow: "var(--shadow-hard-sm)",
+          }}
+        >
+          <span className="gp-pixel text-[8px] sm:text-[9px]">NEXT QUESTION</span>
+          <span className="gp-arcade text-xs" style={{ color: "var(--gp-cyan)" }}>→</span>
+        </button>
+      )}
 
       {/* A miss has to teach something, or the loop is just punishment. */}
       {revealed && correctIndex !== null && pickedIndex !== correctIndex && (
@@ -174,6 +177,9 @@ export default function QuestionPanel({
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }
+
+export default memo(QuestionPanel);

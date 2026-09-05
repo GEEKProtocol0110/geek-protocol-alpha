@@ -6,8 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { AudioControls } from "@/components/AudioControls";
 import { playSfx } from "@/lib/sfx";
-import { speak, cancelVoice, onVoiceDuck } from "@/lib/voice";
-import { startMusic, stopMusic, duckMusic } from "@/lib/music";
+import { startMusic, stopMusic } from "@/lib/music";
 import CanvasQuestion from "@/components/CanvasQuestion";
 import { createBehaviorTracker } from "@/lib/behaviorSignals";
 import QuizBattle from "@/components/battle/QuizBattle";
@@ -95,14 +94,11 @@ export default function DailyQuizPage() {
     return () => tracker.stop();
   }, []);
 
-  // Duck the music whenever the AI speaks, and make sure nothing keeps playing
-  // after the player navigates away.
+
+  // Stop the soundtrack when the player navigates away.
   useEffect(() => {
-    onVoiceDuck(duckMusic);
     return () => {
-      onVoiceDuck(null);
       stopMusic();
-      cancelVoice();
     };
   }, []);
 
@@ -183,21 +179,16 @@ export default function DailyQuizPage() {
     [quiz, user]
   );
 
-  /** Sound and voice, kept exactly as the plain quiz had them. */
+  /** Combo milestone cue. Impact audio belongs to the battle layer. */
   const handleFeedback = useCallback(
-    (correct: boolean, combo: number, timedOut: boolean) => {
+    (correct: boolean, combo: number) => {
       if (correct) {
-        playSfx("correct");
         const next = combo + 1;
         const milestone = next >= 3 && [3, 5, 7, 10].includes(next);
         if (milestone) playSfx("combo", { comboLevel: next });
-        speak(milestone ? "streak" : "correct", character);
-      } else {
-        playSfx("wrong");
-        speak(timedOut ? "timeout" : "wrong", character);
       }
     },
-    [character]
+    []
   );
 
 
@@ -333,7 +324,6 @@ export default function DailyQuizPage() {
             // This click is the user gesture browsers require before audio may
             // start — the music cannot be kicked off any earlier than here.
             startMusic();
-            speak("quizStart", character);
             qIndexRef.current = 0;
             comboRef.current = 0;
             setResults([]); setTotalScore(0); setMaxCombo(0); setTimings([]);
@@ -349,11 +339,11 @@ export default function DailyQuizPage() {
 
   if (phase === "question" && quiz) {
     return (
-      <div className="min-h-screen text-[var(--text-1)]">
+      <div className="text-[var(--text-1)]">
         <Navbar />
-        <div className="mx-auto max-w-4xl px-3 py-3 sm:px-4 sm:py-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="gp-pixel text-[9px] text-[var(--gp-cyan)]">
+        <div className="mx-auto max-w-4xl px-2 pb-2 sm:px-4">
+          <div className="flex items-center justify-between py-2">
+            <span className="gp-pixel truncate text-[8px] text-[var(--gp-cyan)] sm:text-[9px]">
               DAILY QUIZ · {quiz.theme}
             </span>
             <AudioControls />
@@ -369,7 +359,7 @@ export default function DailyQuizPage() {
                scrapeable DOM, and the behaviour tracker keeps its signal. */
             renderPrompt={(q, i) => (
               <div className="mb-4">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
+                <div className="bf-quiz-chips mb-3 flex flex-wrap items-center gap-2">
                   <span
                     className="gp-pixel border-2 px-2 py-1 text-[9px]"
                     style={{

@@ -9,8 +9,10 @@
  */
 
 import { useState } from "react";
+import Image from "next/image";
 import { Starfield } from "@/components/Starfield";
 import FighterSprite from "./FighterSprite";
+import { PORTRAITS } from "@/lib/battle/sprites";
 import { FIGHTERS } from "@/lib/battle/roster";
 import { playerMaxHp } from "@/lib/battle/combat";
 import type { Fighter, Rarity } from "@/lib/battle/types";
@@ -81,20 +83,33 @@ export default function CharacterSelect({ onSelect }: { onSelect: (f: Fighter) =
                   }}
                   aria-pressed={selected}
                 >
-                  <FighterSprite
-                    id={f.id}
-                    color={f.color}
-                    colorDark={f.colorDark}
-                    className="mx-auto h-20 w-auto sm:h-24"
-                  />
+                  {f.unlocked ? (
+                    <Image
+                      src={PORTRAITS.giga}
+                      alt={f.name}
+                      width={120}
+                      height={160}
+                      unoptimized
+                      className="mx-auto h-24 w-auto sm:h-28"
+                    />
+                  ) : (
+                    <div className="opacity-30 grayscale">
+                      <FighterSprite
+                        id={f.id}
+                        color={f.color}
+                        colorDark={f.colorDark}
+                        className="mx-auto h-20 w-auto sm:h-24"
+                      />
+                    </div>
+                  )}
                   <div className="gp-arcade mt-2 text-xs sm:text-sm" style={{ color: f.color }}>
                     {f.name}
                   </div>
                   <div
                     className="gp-pixel mt-1 text-[8px]"
-                    style={{ color: RARITY_COLOR[f.rarity] }}
+                    style={{ color: f.unlocked ? RARITY_COLOR[f.rarity] : "var(--text-3)" }}
                   >
-                    {f.rarity.toUpperCase()}
+                    {f.unlocked ? f.rarity.toUpperCase() : "LOCKED"}
                   </div>
                 </button>
               );
@@ -111,13 +126,26 @@ export default function CharacterSelect({ onSelect }: { onSelect: (f: Fighter) =
             }}
           >
             <div className="flex items-start gap-4">
-              <div className="bf-idle shrink-0">
-                <FighterSprite
-                  id={active.id}
-                  color={active.color}
-                  colorDark={active.colorDark}
-                  className="h-32 w-auto sm:h-40"
-                />
+              <div className="bf-sprite-idle shrink-0">
+                {active.unlocked ? (
+                  <Image
+                    src={PORTRAITS.giga}
+                    alt={active.name}
+                    width={200}
+                    height={280}
+                    unoptimized
+                    className="h-36 w-auto sm:h-48"
+                  />
+                ) : (
+                  <div className="opacity-40 grayscale">
+                    <FighterSprite
+                      id={active.id}
+                      color={active.color}
+                      colorDark={active.colorDark}
+                      className="h-32 w-auto sm:h-40"
+                    />
+                  </div>
+                )}
               </div>
               <div className="min-w-0">
                 <h2 className="gp-arcade text-2xl sm:text-3xl" style={{ color: active.color }}>
@@ -166,16 +194,17 @@ export default function CharacterSelect({ onSelect }: { onSelect: (f: Fighter) =
 
             <button
               type="button"
-              onClick={() => onSelect(active)}
-              className="gp-arcade mt-5 w-full border-2 px-6 py-4 text-lg transition-transform hover:-translate-y-[2px] active:translate-y-[1px]"
+              onClick={() => active.unlocked && onSelect(active)}
+              disabled={!active.unlocked}
+              className="gp-arcade mt-5 w-full border-2 px-6 py-4 text-lg transition-transform enabled:hover:-translate-y-[2px] enabled:active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
               style={{
                 borderColor: "var(--ink)",
-                background: active.color,
-                color: "var(--ink)",
-                boxShadow: `6px 6px 0 0 ${active.colorDark}`,
+                background: active.unlocked ? active.color : "var(--surface-3)",
+                color: active.unlocked ? "var(--ink)" : "var(--text-3)",
+                boxShadow: active.unlocked ? `6px 6px 0 0 ${active.colorDark}` : "var(--shadow-hard-sm)",
               }}
             >
-              SELECT FIGHTER
+              {active.unlocked ? "SELECT FIGHTER" : "ART IN PRODUCTION"}
             </button>
           </div>
         </div>

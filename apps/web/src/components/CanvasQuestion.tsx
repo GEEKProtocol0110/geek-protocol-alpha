@@ -29,15 +29,32 @@ interface Props {
   onRendered?: (ok: boolean) => void;
 }
 
-const FONT_STACK = '700 20px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
-const LINE_HEIGHT = 32;
-const PAD = 16;
+const FONT_FAMILY = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+
+/**
+ * Type scale by available width.
+ *
+ * This used to be a flat 20px/32px at every size, which on a 390px phone turned
+ * a long question into six lines and 224px of canvas — enough to push the
+ * answer buttons off the screen. The prompt now scales with the space it has.
+ */
+function metricsFor(width: number, viewportHeight = Number.POSITIVE_INFINITY) {
+  // A short viewport is as constraining as a narrow one: on a phone held
+  // sideways there is plenty of width and almost no height.
+  if (width < 400 || viewportHeight < 560) return { fontPx: 15, lineHeight: 21, pad: 10 };
+  if (width < 640) return { fontPx: 17, lineHeight: 25, pad: 12 };
+  return { fontPx: 20, lineHeight: 32, pad: 16 };
+}
+
+const DEFAULT_METRICS = metricsFor(640, 900);
 
 export default function CanvasQuestion({ text, seed = 0, className = "", onRendered }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [failed, setFailed] = useState(false);
-  const [height, setHeight] = useState(LINE_HEIGHT * 2 + PAD * 2);
+  const [height, setHeight] = useState(
+    DEFAULT_METRICS.lineHeight * 2 + DEFAULT_METRICS.pad * 2
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -53,6 +70,8 @@ export default function CanvasQuestion({ text, seed = 0, className = "", onRende
 
     const draw = () => {
       const cssWidth = wrap.clientWidth || 600;
+      const { fontPx, lineHeight: LINE_HEIGHT, pad: PAD } = metricsFor(cssWidth, window.innerHeight);
+      const FONT_STACK = `700 ${fontPx}px ${FONT_FAMILY}`;
       const dpr = window.devicePixelRatio || 1;
 
       // Resolve theme colours from the design tokens so the canvas matches the

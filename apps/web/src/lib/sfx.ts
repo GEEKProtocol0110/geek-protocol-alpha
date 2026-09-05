@@ -11,7 +11,16 @@ export type SfxName =
   | "start"
   | "complete"
   | "fanfare"
-  | "cash";
+  | "cash"
+  // Battle layer — one cue per kind of exchange, so the ear can tell a
+  // glancing hit from a critical without looking at the damage number.
+  | "hitLight"
+  | "hitHeavy"
+  | "crit"
+  | "special"
+  | "counter"
+  | "ko"
+  | "victory";
 
 const STORAGE_KEY = "gp_sfx_muted";
 
@@ -71,6 +80,26 @@ function sweep(
   osc.connect(gain).connect(c.destination);
   osc.start(start);
   osc.stop(start + duration + 0.03);
+}
+
+/** Filtered noise burst — the body of an impact. */
+function noise(c: AudioContext, start: number, duration: number, peakGain: number, freq: number, q = 1) {
+  const frames = Math.max(1, Math.floor(c.sampleRate * duration));
+  const buf = c.createBuffer(1, frames, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  const filter = c.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.setValueAtTime(freq, start);
+  filter.Q.value = q;
+  const gain = c.createGain();
+  gain.gain.setValueAtTime(peakGain, start);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  src.connect(filter).connect(gain).connect(c.destination);
+  src.start(start);
+  src.stop(start + duration + 0.02);
 }
 
 export function isSfxMuted() {
@@ -139,6 +168,48 @@ export function playSfx(name: SfxName, opts: { comboLevel?: number; success?: bo
       break;
     }
 
+    // ── Battle cues ──────────────────────────────────────────────────────
+    case "hitLight":
+      noise(c, t0, 0.09, 0.16, 1500, 0.8);
+      tone(c, 320, t0, 0.08, "square", 0.05);
+      break;
+    case "hitHeavy":
+      noise(c, t0, 0.16, 0.26, 850, 0.7);
+      sweep(c, 260, 90, t0, 0.18, "square", 0.09);
+      tone(c, 110, t0 + 0.01, 0.16, "sine", 0.12);
+      break;
+    case "crit":
+      noise(c, t0, 0.2, 0.3, 2200, 1.2);
+      sweep(c, 900, 180, t0, 0.22, "sawtooth", 0.1);
+      tone(c, 1320, t0 + 0.03, 0.14, "square", 0.07);
+      tone(c, 90, t0, 0.24, "sine", 0.14);
+      break;
+    case "special": {
+      // A charging swell into a heavy release.
+      sweep(c, 220, 1400, t0, 0.26, "sawtooth", 0.08);
+      noise(c, t0 + 0.24, 0.3, 0.34, 1100, 0.6);
+      sweep(c, 1200, 120, t0 + 0.24, 0.34, "square", 0.11);
+      tone(c, 70, t0 + 0.24, 0.4, "sine", 0.16);
+      [0, 0.07, 0.14].forEach((d, i) => tone(c, 660 + i * 220, t0 + 0.26 + d, 0.12, "triangle", 0.06));
+      break;
+    }
+    case "counter":
+      // The Wraith landing one — lower, dirtier, no sparkle.
+      noise(c, t0, 0.18, 0.28, 520, 0.5);
+      sweep(c, 200, 60, t0, 0.24, "sawtooth", 0.12);
+      tone(c, 84, t0 + 0.02, 0.22, "sine", 0.13);
+      break;
+    case "ko":
+      sweep(c, 420, 50, t0, 0.6, "sawtooth", 0.14);
+      noise(c, t0, 0.5, 0.3, 320, 0.4);
+      tone(c, 62, t0 + 0.05, 0.7, "sine", 0.16);
+      break;
+    case "victory":
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+        tone(c, f, t0 + i * 0.09, 0.34, "triangle", 0.1)
+      );
+      noise(c, t0, 0.22, 0.18, 2400, 0.9);
+      break;
     case "cash":
       [659.25, 987.77].forEach((f, i) => tone(c, f, t0 + i * 0.08, 0.2, "triangle", 0.09));
       break;

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
@@ -85,6 +86,80 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Geek Gauntlet — the headline mode. A quiz you fight your way through,
+            so it leads the dashboard and the Daily Quiz sits under it. Kept
+            deliberately tight on mobile: the card sells the mode, it does not
+            need to explain it twice. */}
+        <div
+          className="relative mb-6 overflow-hidden rounded-3xl border-2 p-4 sm:p-7"
+          style={{
+            borderColor: "var(--gp-cyan)",
+            background: "var(--surface-1)",
+            boxShadow: "6px 6px 0px 0px var(--gp-cyan-dark)",
+          }}
+        >
+          <div className="gp-dot-grid" aria-hidden />
+
+          <div className="relative flex items-center gap-3 sm:gap-6">
+            <div className="min-w-0 flex-1">
+              <div
+                className="gp-pixel mb-2 inline-block rounded-lg border-2 px-2 py-1 text-[7px] sm:px-2.5 sm:py-1 sm:text-[9px]"
+                style={{ borderColor: "var(--ink)", background: "var(--gp-pink)", color: "var(--ink)" }}
+              >
+                FIGHTING QUIZ · 10 ROUNDS
+              </div>
+              <h2
+                className="gp-arcade text-xl leading-none sm:text-4xl"
+                style={{
+                  color: "var(--gp-white)",
+                  textShadow: "2px 2px 0 var(--gp-cyan-dark), 4px 4px 0 var(--ink)",
+                }}
+              >
+                THE GEEK GAUNTLET
+              </h2>
+              <p className="mt-2 text-xs font-semibold leading-snug text-[var(--text-2)] sm:text-base">
+                Answer to attack. Fast hits harder, wrong gives the Wraith an opening.
+              </p>
+
+              <Link
+                href="/gauntlet/setup"
+                className="gp-arcade mt-3 inline-flex rounded-xl border-2 px-4 py-2.5 text-xs transition-transform hover:-translate-y-[2px] active:translate-y-[1px] sm:mt-5 sm:px-8 sm:py-3.5 sm:text-base"
+                style={{
+                  borderColor: "var(--ink)",
+                  background: "var(--gp-cyan)",
+                  color: "var(--ink)",
+                  boxShadow: "4px 4px 0 0 var(--gp-cyan-dark)",
+                }}
+              >
+                ENTER THE ARENA →
+              </Link>
+            </div>
+
+            {/* The combatants, so the mode sells itself without more copy. */}
+            <div className="flex shrink-0 items-end justify-center gap-1 sm:gap-3">
+              <Image
+                src="/game/giga-portrait.webp"
+                alt="Giga"
+                width={160}
+                height={230}
+                unoptimized
+                className="h-16 w-auto sm:h-36"
+              />
+              <span className="gp-arcade pb-3 text-[10px] sm:text-2xl" style={{ color: "var(--gp-danger)" }}>
+                VS
+              </span>
+              <Image
+                src="/game/wraith-portrait.webp"
+                alt="The Hype Wraith"
+                width={186}
+                height={230}
+                unoptimized
+                className="h-[4.5rem] w-auto sm:h-40"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Daily Quiz — Hero CTA */}
         <div className="relative rounded-3xl border-2 border-[var(--gp-pink)] bg-[var(--surface-1)] p-8 mb-8 overflow-hidden shadow-[6px_6px_0px_0px_var(--gp-pink-dark)]">
           <img
@@ -139,7 +214,6 @@ export default function DashboardPage() {
           {[
             { href: "/leaderboard",  label: "Leaderboard", icon: "🏆", desc: "See global rankings" },
             { href: "/profile",     label: "Profile",     icon: "👤", desc: "Your stats & achievements" },
-            { href: "/gauntlet/setup", label: "Gauntlet", icon: "⚔️",  desc: "Full 10-round competitive run" },
             { href: "/token",        label: "$GEEK Market", icon: "💱", desc: "Buy, sell & trade tokens" },
             { href: "/cce",         label: "CCE",         icon: "✍️", desc: user.level >= 10 ? "Create & review questions" : `Unlocks at Level 10 (you: ${user.level})` },
           ].map((l, i) => (

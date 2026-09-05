@@ -171,7 +171,12 @@ const createShootingStars = (rng: () => number): ShootingInstance[] =>
     };
   });
 
-export function Starfield() {
+/**
+ * @param density Scales every layer's star count. The battle arena runs at a
+ * fraction of the landing page's: 285 elements each carrying two infinite
+ * animations is a lot of compositor work to sustain behind a live fight.
+ */
+export function Starfield({ density = 1 }: { density?: number } = {}) {
   const [shootingSeed, setShootingSeed] = useState(0);
   const [stars, setStars] = useState<StarInstance[]>([]);
   const [shootingStars, setShootingStars] = useState<ShootingInstance[]>([]);
@@ -184,11 +189,12 @@ export function Starfield() {
     const rng = createRng(`${seed}-base`);
     const generated = STAR_LAYERS.flatMap((layer, index) => {
       const offset = STAR_LAYERS.slice(0, index).reduce((sum, l) => sum + l.count, 0);
-      return createStars(rng, layer, offset);
+      const scaled = { ...layer, count: Math.max(1, Math.round(layer.count * density)) };
+      return createStars(rng, scaled, offset);
     });
     setStars(generated);
     setMounted(true);
-  }, [seed]);
+  }, [seed, density]);
 
   useEffect(() => {
     if (!mounted) return;

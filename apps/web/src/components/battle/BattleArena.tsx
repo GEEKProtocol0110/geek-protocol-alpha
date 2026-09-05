@@ -3,17 +3,21 @@
 /**
  * The arena.
  *
- * This component owns the visual consequence of an answer. It renders both
- * combatants, then plays exactly one attack sequence per resolved answer:
- * lunge -> bolt -> impact burst -> recoil -> damage number -> tier banner.
+ * This component owns the visual consequence of an answer. Every resolved
+ * answer swaps both fighters to the frame that depicts that exact exchange —
+ * the striker's blow and the receiver's reaction — then plays the weight
+ * around it: a dash in, a knock-back, a hit flash, a burst at the point of
+ * contact, the damage number and the tier banner.
  *
- * It never decides anything. `lastResult` is handed down already resolved by
- * combat.ts, so the picture can never disagree with the arithmetic.
+ * It never decides anything. `lastResult` arrives already resolved by
+ * combat.ts and the pose pair comes from sprites.ts, so the picture can never
+ * disagree with the arithmetic.
  */
 
-import { Starfield } from "@/components/Starfield";
-import FighterSprite from "./FighterSprite";
-import BossSprite from "./BossSprite";
+import { memo, useEffect, useRef } from "react";
+import Image from "next/image";
+import ArenaBackdrop from "./ArenaBackdrop";
+import { IDLE_PAIR, selectPoses } from "@/lib/battle/sprites";
 import type { AttackResult, Boss, Fighter } from "@/lib/battle/types";
 
 interface Props {
@@ -22,15 +26,31 @@ interface Props {
   result: AttackResult | null;
   playerDown: boolean;
   bossDown: boolean;
-  /**
-   * Caps the arena against the viewport instead of a fixed height. The daily
-   * quiz stacks a navbar and the alpha banner above it, and a fixed 300px
-   * arena pushed the answer buttons off screen on a laptop.
-   */
-  compact?: boolean;
+  playerMaxHp?: number;
+  /** Fills the height its parent slot allocates rather than setting its own. */
+  fill?: boolean;
 }
 
-/** Damage numbers scale with severity, so a big hit looks like one. */
+/**
+ * Restart a CSS animation without remounting the element's children.
+ *
+ * The wrappers used to be keyed on each exchange, which remounted the sprite
+ * `<img>` and forced the browser to decode the frame again — a visible hitch on
+ * every hit. Toggling `animation` and forcing one reflow replays the motion
+ * while the image element (and its decoded bitmap) survives.
+ */
+function useReplayAnimation<T extends HTMLElement>(beat: string) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.animation = "none";
+    void el.offsetHeight;
+    el.style.animation = "";
+  }, [beat]);
+  return ref;
+}
+
 function damageScale(result: AttackResult): string {
   if (result.special) return "text-6xl sm:text-8xl";
   if (result.crit) return "text-5xl sm:text-7xl";
@@ -45,155 +65,159 @@ function tierColor(result: AttackResult): string {
   return "var(--gp-cyan)";
 }
 
-export default function BattleArena({
+function BattleArena({
   fighter,
   boss,
   result,
   playerDown,
   bossDown,
-  compact = false,
+  playerMaxHp = 110,
+  fill = false,
 }: Props) {
   const attacking = result?.target === "boss";
   const defending = result?.target === "player";
   const heavy = !!result && (result.crit || result.special || result.tier === "critical");
   const accent = result ? tierColor(result) : "var(--gp-cyan)";
 
+  const poses = result
+    ? selectPoses({ result, playerDown, bossDown, playerMaxHp, bossMaxHp: boss.maxHp })
+    : playerDown || bossDown
+      ? selectPoses({ result: null, playerDown, bossDown, playerMaxHp, bossMaxHp: boss.maxHp })
+      : IDLE_PAIR;
+
+  // A key that changes on every exchange, so React remounts the animated
+  // wrappers and the CSS replays instead of sitting on its end state.
+  const beat = result ? `${result.label}-${result.damage}-${result.elapsedMs}` : "idle";
+
+  const playerMotion = playerDown
+    ? "bf-downed"
+    : attacking
+      ? poses.playerAirborne
+        ? "bf-air-r"
+        : "bf-strike-r"
+      : defending
+        ? poses.playerAirborne
+          ? "bf-air-l"
+          : "bf-knock-l"
+        : "bf-sprite-idle";
+
+  const playerRef = useReplayAnimation<HTMLDivElement>(beat);
+  const bossRef = useReplayAnimation<HTMLDivElement>(beat);
+
+  const bossMotion = bossDown
+    ? "bf-downed"
+    : defending
+      ? "bf-strike-l"
+      : attacking
+        ? "bf-knock-r"
+        : "bf-sprite-idle";
+
   return (
     <div
       className={`relative w-full overflow-hidden border-2 ${
-        compact ? "" : "h-[210px] sm:h-[300px]"
+        fill ? "h-full" : "h-[210px] sm:h-[300px]"
       } ${heavy ? "bf-quake" : ""}`}
       style={{
         borderColor: "var(--ink)",
         background: "var(--surface-0)",
         boxShadow: "var(--shadow-hard)",
-        ...(compact ? { height: "clamp(128px, 20vh, 208px)" } : {}),
       }}
     >
-      {/* Deep-space backdrop. Flat dots + drifting stars, nothing that competes
-          with the question panel below it. */}
-      <Starfield />
-      <div className="gp-dot-grid" aria-hidden />
+      <ArenaBackdrop />
 
-      {/* Distant planet — flat disc with a hard terminator, no gradient. */}
-      <div
-        className="pointer-events-none absolute -right-10 top-6 h-24 w-24 rounded-full border-2 sm:h-36 sm:w-36"
-        style={{ background: "var(--surface-2)", borderColor: "var(--ink)", opacity: 0.9 }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -right-10 top-6 h-24 w-12 sm:h-36 sm:w-[72px]"
-        style={{
-          background: "var(--surface-1)",
-          borderRight: "2px solid var(--ink)",
-          borderRadius: "999px 0 0 999px",
-          opacity: 0.9,
-        }}
-        aria-hidden
-      />
-
-      {/* Arena floor line — a flat horizon the fighters stand on. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-8 h-[2px]"
-        style={{ background: "var(--gp-outline)" }}
-        aria-hidden
-      />
-
-      {/* Special / critical colour wash. Flat fill, opacity keyframes only. */}
+      {/* Colour wash on a big hit. Flat fill, opacity keyframes only. */}
       {result && heavy && (
+        <div key={`flash-${beat}`} className="bf-flash pointer-events-none absolute inset-0" style={{ background: accent }} aria-hidden />
+      )}
+
+      {/* ── Giga ── */}
+      <div className="absolute bottom-[5%] left-[-4%] h-[92%] w-[62%] sm:left-[-2%] sm:w-[58%]">
+        <div ref={playerRef} className={`relative h-full w-full ${playerMotion}`}>
+          <Image
+            src={poses.player}
+            alt={fighter.name}
+            fill
+            sizes="(max-width: 640px) 62vw, 640px"
+            className="object-contain object-bottom"
+            priority
+            unoptimized
+          />
+          {/* Hit flash sits inside the sprite box and is masked to its shape by
+              rendering the same frame in flat white on top. */}
+          {defending && !playerDown && (
+            <div key={`pf-${beat}`} className="bf-hitflash pointer-events-none absolute inset-0">
+              <Image
+                src={poses.player}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 62vw, 640px"
+                aria-hidden
+                unoptimized
+                className="object-contain object-bottom"
+                style={{ filter: "brightness(0) invert(1)" }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── The Wraith ── */}
+      <div className="absolute bottom-[5%] right-[-6%] h-[96%] w-[62%] sm:right-[-3%] sm:w-[58%]">
+        <div ref={bossRef} className={`relative h-full w-full ${bossMotion}`}>
+          <Image
+            src={poses.boss}
+            alt={boss.name}
+            fill
+            sizes="(max-width: 640px) 62vw, 640px"
+            className="object-contain object-bottom"
+            priority
+            unoptimized
+          />
+          {attacking && !bossDown && (
+            <div key={`bf-${beat}`} className="bf-hitflash pointer-events-none absolute inset-0">
+              <Image
+                src={poses.boss}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 62vw, 640px"
+                aria-hidden
+                unoptimized
+                className="object-contain object-bottom"
+                style={{ filter: "brightness(0) invert(1)" }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Speed streaks behind the attacker ── */}
+      {result && (
         <div
-          key={`flash-${result.elapsedMs}-${result.damage}`}
-          className="bf-flash pointer-events-none absolute inset-0"
-          style={{ background: accent }}
+          key={`streak-${beat}`}
+          className={`bf-streak pointer-events-none absolute top-[46%] h-[3px] ${
+            attacking ? "left-[16%] w-[26%] origin-left" : "right-[18%] w-[26%] origin-right"
+          }`}
+          style={{ background: accent, opacity: 0.7 }}
           aria-hidden
         />
       )}
 
-      {/* ── Player ── */}
-      <div className="absolute bottom-4 left-[4%] w-[26%] max-w-[150px] sm:left-[8%]">
-        <div
-          className={
-            playerDown ? "bf-ko" : attacking ? "bf-lunge-r" : defending ? "bf-hit" : "bf-idle"
-          }
-        >
-          <FighterSprite
-            id={fighter.id}
-            color={fighter.color}
-            colorDark={fighter.colorDark}
-            className="h-auto w-full"
-          />
-        </div>
-        {/* Flat shadow ellipse anchors the fighter to the floor. */}
-        <div
-          className="mx-auto h-[6px] w-3/4 rounded-full"
-          style={{ background: "var(--ink)", opacity: 0.6 }}
-          aria-hidden
-        />
-      </div>
-
-      {/* ── Boss ── */}
-      <div className="absolute bottom-4 right-[2%] w-[34%] max-w-[210px] sm:right-[6%]">
-        <div
-          className={
-            bossDown ? "bf-ko" : defending ? "bf-lunge-l" : attacking ? "bf-hit" : "bf-idle-slow"
-          }
-        >
-          <BossSprite
-            bossId={boss.id}
-            color={boss.color}
-            colorDark={boss.colorDark}
-            className="h-auto w-full"
-          />
-        </div>
-        <div
-          className="mx-auto h-[6px] w-3/4 rounded-full"
-          style={{ background: "var(--ink)", opacity: 0.6 }}
-          aria-hidden
-        />
-      </div>
-
-      {/* ── Energy bolt ── */}
+      {/* ── Impact burst at the point of contact ── */}
       {result && (
         <div
-          key={`bolt-${result.damage}-${result.tier}`}
-          className={`pointer-events-none absolute top-1/2 h-2 sm:h-3 ${
-            attacking ? "bf-bolt-r left-[26%]" : "bf-bolt-l right-[30%]"
-          }`}
-          style={
-            {
-              width: result.special ? 54 : 30,
-              background: accent,
-              border: "2px solid var(--ink)",
-              "--bf-bolt-dist": "220px",
-            } as React.CSSProperties
-          }
-          aria-hidden
-        />
-      )}
-
-      {/* ── Impact burst on the target ── */}
-      {result && (
-        <div
-          key={`burst-${result.damage}-${result.label}`}
-          className={`bf-burst pointer-events-none absolute top-[38%] ${
-            attacking ? "right-[16%]" : "left-[10%]"
-          }`}
+          key={`burst-${beat}`}
+          className={`bf-burst pointer-events-none absolute top-[34%] ${attacking ? "right-[30%]" : "left-[26%]"}`}
           aria-hidden
         >
-          <div
-            className="h-12 w-12 rotate-45 border-4 sm:h-20 sm:w-20"
-            style={{ borderColor: accent }}
-          />
+          <div className="h-14 w-14 rotate-45 border-4 sm:h-24 sm:w-24" style={{ borderColor: accent }} />
         </div>
       )}
 
       {/* ── Damage number ── */}
       {result && (
         <div
-          key={`dmg-${result.damage}-${result.elapsedMs}`}
-          className={`bf-dmg pointer-events-none absolute top-[22%] ${
-            attacking ? "right-[14%]" : "left-[8%]"
-          }`}
+          key={`dmg-${beat}`}
+          className={`bf-dmg pointer-events-none absolute top-[16%] ${attacking ? "right-[26%]" : "left-[20%]"}`}
           aria-hidden
         >
           <span
@@ -211,10 +235,7 @@ export default function BattleArena({
 
       {/* ── Hit-tier banner ── */}
       {result && (
-        <div
-          key={`banner-${result.label}-${result.damage}`}
-          className="bf-banner pointer-events-none absolute inset-x-0 top-4 flex justify-center"
-        >
+        <div key={`banner-${beat}`} className="bf-banner pointer-events-none absolute inset-x-0 top-2 flex justify-center">
           <span
             className="gp-arcade border-2 px-3 py-1 text-sm sm:px-5 sm:py-2 sm:text-2xl"
             style={{
@@ -232,3 +253,7 @@ export default function BattleArena({
     </div>
   );
 }
+
+// The backdrop alone is ~285 animated nodes; without this the arena reconciled
+// them on every parent render.
+export default memo(BattleArena);

@@ -6,9 +6,23 @@
  * Everything the player needs to read mid-fight without leaving the arena.
  */
 
+import { memo, useEffect, useState } from "react";
 import HpBar from "./HpBar";
 import type { BattleState } from "@/lib/battle/types";
 import { SPECIAL_THRESHOLD } from "@/lib/battle/combat";
+
+/** True on very narrow screens, where the HUD has to shed detail. */
+function useNarrow() {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 420px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return narrow;
+}
 
 interface Props {
   state: BattleState;
@@ -18,9 +32,11 @@ interface Props {
   comboKey: number;
 }
 
-export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props) {
+function BattleHud({ state, playerHit, bossHit, comboKey }: Props) {
   const { fighter, boss } = state;
   const bossPct = Math.max(0, Math.round((state.bossHp / boss.maxHp) * 100));
+  // Twenty 4px blocks do not fit either side of a 320px screen; ten do.
+  const segments = useNarrow() ? 10 : 20;
 
   return (
     <div className="w-full">
@@ -29,12 +45,12 @@ export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span
-              className="gp-arcade truncate text-sm sm:text-lg"
+              className="gp-arcade truncate text-xs sm:text-lg"
               style={{ color: fighter.color }}
             >
               {fighter.name}
             </span>
-            <span className="gp-pixel shrink-0 text-[9px] sm:text-[10px] text-[var(--text-3)]">
+            <span className="gp-pixel hidden shrink-0 text-[9px] text-[var(--text-3)] sm:inline sm:text-[10px]">
               LV.{String(boss.level).padStart(2, "0")}
             </span>
           </div>
@@ -44,17 +60,18 @@ export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props
               max={state.playerMaxHp}
               color={fighter.color}
               shaking={playerHit}
+              segments={segments}
             />
           </div>
-          <div className="gp-pixel mt-1 text-[9px] sm:text-[10px] text-[var(--text-2)]">
-            {Math.max(0, Math.round(state.playerHp))} / {state.playerMaxHp} HP
+          <div className="bf-hud-detail gp-pixel mt-1 truncate whitespace-nowrap text-[8px] text-[var(--text-2)] sm:text-[10px]">
+            {Math.max(0, Math.round(state.playerHp))}/{state.playerMaxHp} HP
           </div>
         </div>
 
         {/* ── Question counter ── */}
         <div className="shrink-0 text-center">
           <div
-            className="gp-arcade border-2 px-2 py-1 text-base leading-none sm:px-4 sm:py-2 sm:text-2xl"
+            className="gp-arcade border-2 px-1.5 py-1 text-sm leading-none sm:px-4 sm:py-2 sm:text-2xl"
             style={{
               borderColor: "var(--ink)",
               background: "var(--surface-2)",
@@ -71,10 +88,10 @@ export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props
         {/* ── Boss plate ── */}
         <div className="min-w-0 flex-1 text-right">
           <div className="flex items-baseline justify-end gap-2">
-            <span className="gp-pixel shrink-0 text-[9px] sm:text-[10px] text-[var(--text-3)]">
+            <span className="gp-pixel hidden shrink-0 text-[9px] text-[var(--text-3)] sm:inline sm:text-[10px]">
               LV.{String(boss.level + 1).padStart(2, "0")}
             </span>
-            <span className="gp-arcade truncate text-sm sm:text-lg" style={{ color: boss.color }}>
+            <span className="gp-arcade truncate text-xs sm:text-lg" style={{ color: boss.color }}>
               {boss.name}
             </span>
           </div>
@@ -85,16 +102,17 @@ export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props
               color={boss.color}
               align="right"
               shaking={bossHit}
+              segments={segments}
             />
           </div>
-          <div className="gp-pixel mt-1 text-[9px] sm:text-[10px] text-[var(--text-2)]">
+          <div className="bf-hud-detail gp-pixel mt-1 truncate whitespace-nowrap text-[8px] text-[var(--text-2)] sm:text-[10px]">
             {bossPct}% · {Math.max(0, Math.round(state.bossHp))} HP
           </div>
         </div>
       </div>
 
       {/* ── Streak / special / score strip ── */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="bf-hud-meta mt-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span
             key={comboKey}
@@ -134,7 +152,7 @@ export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props
           </div>
         </div>
 
-        <div className="gp-pixel flex items-center gap-3 text-[9px] sm:text-[10px]">
+        <div className="bf-hud-detail gp-pixel flex items-center gap-3 text-[9px] sm:text-[10px]">
           <span style={{ color: "var(--gp-cyan)" }}>{state.xp} XP</span>
           <span style={{ color: "var(--gp-violet)" }}>{state.skillPoints} SP</span>
           <span style={{ color: "var(--gp-gold)" }}>{state.coins} ⬢</span>
@@ -143,3 +161,5 @@ export default function BattleHud({ state, playerHit, bossHit, comboKey }: Props
     </div>
   );
 }
+
+export default memo(BattleHud);

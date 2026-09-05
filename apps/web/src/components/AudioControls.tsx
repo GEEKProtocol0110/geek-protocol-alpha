@@ -1,13 +1,12 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { FaVolumeUp, FaVolumeMute, FaMusic, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { FaVolumeUp, FaVolumeMute, FaMusic } from "react-icons/fa";
 import { isSfxMuted, toggleSfxMuted, playSfx, AUDIO_PREFS_EVENT } from "@/lib/sfx";
 import { isMusicMuted, toggleMusicMuted, startMusic, stopMusic, isMusicPlaying } from "@/lib/music";
-import { isVoiceMuted, toggleVoiceMuted, voiceSupported, cancelVoice } from "@/lib/voice";
 
 /**
- * Three independent mutes: effects, music and the AI voice.
+ * Two independent mutes: effects and music.
  *
  * Separate rather than one master control because they annoy different people —
  * plenty of players want the music off but the "correct!" chime on, and a
@@ -20,10 +19,6 @@ export function AudioControls({ className = "" }: { className?: string }) {
   // hydration stable regardless of what the visitor previously chose.
   const sfxOff = useAudioPref(isSfxMuted);
   const musicOff = useAudioPref(isMusicMuted);
-  const voiceOff = useAudioPref(isVoiceMuted);
-  // Read through the same mechanism: `window.speechSynthesis` does not exist
-  // during SSR, so checking it inline while rendering would desync hydration.
-  const canSpeak = useSyncExternalStore(subscribeNoop, voiceSupported, () => false);
 
   const btn =
     "flex items-center justify-center w-9 h-9 rounded-full border-2 border-[var(--ink)] transition";
@@ -38,7 +33,6 @@ export function AudioControls({ className = "" }: { className?: string }) {
           const nowMuted = toggleSfxMuted();
           if (nowMuted) {
             stopMusic();
-            cancelVoice();
           } else {
             playSfx("click");
           }
@@ -67,20 +61,6 @@ export function AudioControls({ className = "" }: { className?: string }) {
         <FaMusic />
       </button>
 
-      {canSpeak && (
-        <button
-          type="button"
-          onClick={() => {
-            toggleVoiceMuted();
-          }}
-          aria-pressed={!voiceOff}
-          aria-label={voiceOff ? "Turn AI voice on" : "Turn AI voice off"}
-          title={voiceOff ? "AI voice off" : "AI voice on"}
-          className={`${btn} ${voiceOff ? off : on}`}
-        >
-          {voiceOff ? <FaMicrophoneSlash /> : <FaMicrophone />}
-        </button>
-      )}
     </div>
   );
 }

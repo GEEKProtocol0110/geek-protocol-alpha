@@ -1,13 +1,19 @@
 /**
  * The Public Alpha status banner (ECONOMY.md §19.5, §19.6).
  *
- * Server component with no client JavaScript, so the disclosure is present in
- * the initial HTML — for search engines, for screen readers, and for anyone
- * whose scripts have not run. A status disclosure that only appears after
- * hydration is not a disclosure.
+ * The text is resolved on the server so the disclosure is present in the
+ * initial HTML — for search engines, for screen readers, and for anyone whose
+ * scripts have not run. A status disclosure that only appears after hydration
+ * is not a disclosure.
+ *
+ * Presentation is handed to a client child that lets a reader collapse the
+ * notice once they have read it. It collapses to a one-line badge rather than
+ * vanishing: §19.5 asks for a persistent status indicator, and the full text
+ * stays one tap away.
  */
 
 import { ALPHA_BANNER, fetchPublicEconomyConfig } from "@/lib/economy";
+import AlphaBannerClient from "./AlphaBannerClient";
 
 export default async function AlphaBanner() {
   const config = await fetchPublicEconomyConfig();
@@ -19,18 +25,7 @@ export default async function AlphaBanner() {
 
   const text = config?.banner ?? ALPHA_BANNER;
 
-  return (
-    <aside
-      role="status"
-      aria-label="Platform status"
-      className="w-full border-b-2 border-[var(--ink)] bg-[var(--surface-2)] px-4 py-3 text-[var(--text-1)]"
-    >
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
-        <span className="flat-badge shrink-0 font-bold uppercase tracking-wide">{text.title}</span>
-        <p className="text-sm leading-snug opacity-90">{text.body}</p>
-      </div>
-    </aside>
-  );
+  return <AlphaBannerClient title={text.title} body={text.body} />;
 }
 
 /**

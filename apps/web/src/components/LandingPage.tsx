@@ -525,8 +525,14 @@ export default function LandingPage({ gauntletTable }: { gauntletTable?: React.R
                 className="w-56 sm:w-64 md:w-80 h-auto"
               />
             </div>
-            <div className="hidden md:flex absolute -bottom-2 -left-6 flat-badge">
-              <FaStar className="text-[var(--brand-accent)]" /> On-chain proof
+            {/* Wrapped rather than putting `hidden` on the badge itself:
+                `.flat-badge` sets `display: inline-flex` from unlayered CSS,
+                which outranks Tailwind's layered `hidden`, so the badge stayed
+                visible on mobile and hung off the left edge. */}
+            <div className="absolute -bottom-2 -left-6 hidden md:block">
+              <div className="flat-badge">
+                <FaStar className="text-[var(--brand-accent)]" /> On-chain proof
+              </div>
             </div>
           </div>
           <ScrollReveal variant="fade-right" className="order-1 md:order-2">
@@ -895,11 +901,16 @@ export default function LandingPage({ gauntletTable }: { gauntletTable?: React.R
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {CATEGORIES.map((category, idx) => (
             <ScrollReveal key={idx} delay={(idx % 4) * 80} variant="rotate">
-              <div className="flat-card group p-6 text-center hover:-translate-y-1 hover:rotate-2 transition duration-300">
-                <div className="text-4xl md:text-5xl mb-3 text-[var(--brand-secondary)] group-hover:scale-110 transition duration-300">
+              {/* p-6 left only 88px of content width in a two-up grid on a
+                  320px screen — narrower than the word "Fundamentals", which
+                  then spilled out of the card instead of wrapping. */}
+              <div className="flat-card group p-3 text-center transition duration-300 hover:-translate-y-1 hover:rotate-2 sm:p-6">
+                <div className="mb-2 text-3xl text-[var(--brand-secondary)] transition duration-300 group-hover:scale-110 sm:mb-3 sm:text-4xl md:text-5xl">
                   <category.icon />
                 </div>
-                <p className="text-[var(--text-1)] font-bold">{category.name}</p>
+                <p className="hyphens-auto break-words text-sm font-bold leading-tight text-[var(--text-1)] sm:text-base">
+                  {category.name}
+                </p>
               </div>
             </ScrollReveal>
           ))}
