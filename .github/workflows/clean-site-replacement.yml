@@ -1,0 +1,99 @@
+name: Clean site replacement
+
+on:
+  push:
+    branches:
+      - codex/clean-site-replacement
+
+permissions:
+  contents: write
+
+jobs:
+  replace:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out replacement branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace repository with the Geek Protocol Site
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          stage_dir="$(mktemp -d)"
+          mkdir -p "$stage_dir/site"
+          cp -a apps/site-prototype/. "$stage_dir/site/"
+          cp LICENSE "$stage_dir/LICENSE"
+
+          git rm -rf .
+          mkdir -p public
+          cp -a "$stage_dir/site/." public/
+          cp "$stage_dir/LICENSE" LICENSE
+
+          printf '.vercel/\n.DS_Store\n*.log\n' > .gitignore
+
+          cat > README.md <<'README'
+          # Geek Protocol
+
+          The official Geek Protocol experience for Kaspa: a static, browser-based trivia game and community hub.
+
+          ## Included
+
+          - Geek Protocol landing page
+          - Ten-round playable Gauntlet
+          - Eight selectable trivia categories
+          - Lobby, mint-readiness, and Kaspa information pages
+          - Complete question banks, artwork, styles, and scripts
+
+          ## Run locally
+
+          Serve the `public` directory with any static HTTP server.
+
+          ## Deployment
+
+          Vercel deploys `public` directly. No install or build command is required.
+
+          ## Current limitations
+
+          Alpha balances, XP, lobby state, and progress are stored locally in the browser. Wallet connection, minting, and on-chain rewards are not enabled in this static release.
+          README
+
+          cat > vercel.json <<'VERCEL'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "framework": null,
+            "installCommand": "",
+            "buildCommand": null,
+            "outputDirectory": "public",
+            "cleanUrls": true,
+            "trailingSlash": true,
+            "headers": [
+              {
+                "source": "/(.*)",
+                "headers": [
+                  {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                  },
+                  {
+                    "key": "Referrer-Policy",
+                    "value": "strict-origin-when-cross-origin"
+                  },
+                  {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(), microphone=(), geolocation=()"
+                  }
+                ]
+              }
+            ]
+          }
+          VERCEL
+
+          git add -A
+          git config user.name "Geek Protocol Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "Replace legacy monorepo with Geek Protocol Site"
+          git push origin HEAD:codex/clean-site-replacement
