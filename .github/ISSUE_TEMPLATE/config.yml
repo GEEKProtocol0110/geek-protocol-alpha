@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: 📣 Community Chat (Telegram)
-    url: https://t.me/GEEKonKAScommunity
-    about: Ask questions or get support from the community.
-  - name: 🔐 Security Disclosure
-    url: mailto:security@geekprotocol.xyz
-    about: Please report security vulnerabilities privately.
