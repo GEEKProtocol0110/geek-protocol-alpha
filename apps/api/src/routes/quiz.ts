@@ -65,7 +65,13 @@ function getDailyTheme(): string {
   return themes[dayOfYear % themes.length];
 }
 
-function shuffleOptions(q: any) {
+function shuffleOptions(q: {
+  option1: string;
+  option2: string;
+  option3: string;
+  option4: string;
+  correctOption: number;
+}) {
   const options = [q.option1, q.option2, q.option3, q.option4];
   const correctText = options[q.correctOption - 1];
 
@@ -192,9 +198,9 @@ export async function quizRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ success: false, error: verified.error });
       }
 
-      const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson, iat } = verified.data as any;
-      const questionIds: number[] = JSON.parse(questionIdsJson);
-      const correctAnswers: number[] = JSON.parse(correctAnswersJson);
+      const { attemptId, round, questionIds: questionIdsJson, correctAnswers: correctAnswersJson, iat } = verified.data;
+      const questionIds: number[] = JSON.parse(String(questionIdsJson));
+      const correctAnswers: number[] = JSON.parse(String(correctAnswersJson));
 
       // Validate answers array length
       if (answers.length !== questionIds.length) {
@@ -381,8 +387,8 @@ export async function quizRoutes(fastify: FastifyInstance) {
 
     const { attemptId, correctAnswers: correctAnswersJson, questionIds: questionIdsJson } =
       verified.data as Record<string, string>;
-    const correctAnswers: number[] = JSON.parse(correctAnswersJson);
-    const questionIds: number[] = JSON.parse(questionIdsJson);
+    const correctAnswers: number[] = JSON.parse(String(correctAnswersJson));
+    const questionIds: number[] = JSON.parse(String(questionIdsJson));
 
     if (questionIndex >= correctAnswers.length) {
       return reply.code(400).send({ success: false, error: "Question index out of range" });
@@ -440,9 +446,9 @@ export async function quizRoutes(fastify: FastifyInstance) {
         questionIds: questionIdsJson,
         correctAnswers: correctAnswersJson,
         iat,
-      } = verified.data as any;
-      const questionIds: number[] = JSON.parse(questionIdsJson);
-      const correctAnswers: number[] = JSON.parse(correctAnswersJson);
+      } = verified.data;
+      const questionIds: number[] = JSON.parse(String(questionIdsJson));
+      const correctAnswers: number[] = JSON.parse(String(correctAnswersJson));
 
       if (answers.length !== questionIds.length || timings.length !== questionIds.length) {
         return reply.code(400).send({ success: false, error: "Answer count mismatch" });
