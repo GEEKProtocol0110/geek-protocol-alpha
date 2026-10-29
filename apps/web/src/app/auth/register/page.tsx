@@ -100,9 +100,9 @@ export default function RegisterPage() {
         <div>
           {/* Logo */}
           <div className="text-center mb-6">
-            <a href="/" className="inline-flex items-center mb-4">
+            <Link href="/" className="inline-flex items-center mb-4">
               <Image src="/logo.png" alt="Geek Protocol" width={1536} height={1024} className="h-24 w-auto" />
-            </a>
+            </Link>
             <h1 className="font-extrabold text-4xl"><span className="neon-text-pink">Create Account</span></h1>
             <p className="text-[var(--text-3)] text-sm mt-1">Join the Proof-of-Learning movement</p>
           </div>

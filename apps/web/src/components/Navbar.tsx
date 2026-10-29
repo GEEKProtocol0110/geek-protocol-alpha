@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   FaCoins, FaStar, FaUser, FaChartLine, FaGamepad, FaBrain,
   FaTrophy, FaSignInAlt, FaUserPlus, FaChevronDown, FaBars, FaTimes, FaShieldAlt,
@@ -68,7 +69,7 @@ export function Navbar() {
         <div className="flex items-center justify-between px-4 md:px-8 py-3 max-w-[1600px] mx-auto">
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <a href="/" className="flex items-center">
+            <Link href="/" className="flex items-center">
               <Image
                 src="/logo.png"
                 alt="Geek Protocol"
@@ -77,7 +78,7 @@ export function Navbar() {
                 priority
                 className="h-14 w-auto sm:h-16 lg:h-20 xl:h-[6.5rem]"
               />
-            </a>
+            </Link>
           </div>
 
           {/* Desktop links */}

@@ -107,7 +107,7 @@ export function Hero() {
             </div>
 
             <div className="flex items-center justify-between border-b border-[#2a1a3a] pb-4">
-              <div className="font-mono text-xs tracking-widest text-[#7a5a9a]">// SYS_PANEL_001 · GEEK_PROTOCOL</div>
+              <div className="font-mono text-xs tracking-widest text-[#7a5a9a]">{"// SYS_PANEL_001 · GEEK_PROTOCOL"}</div>
               <div className="flex items-center gap-2 font-mono text-xs text-[#cc44ff]">
                 <span className="size-1.5 animate-pulse rounded-full bg-[#cc44ff]" />
                 ONLINE
@@ -149,7 +149,7 @@ export function Hero() {
             </div>
 
             <div className="mt-px border-t border-[#2a1a3a] bg-[#0a0e0a] p-4">
-              <div className="mb-3 font-mono text-[0.62rem] tracking-widest text-[#7a5a9a]">// YOUR_PROGRESS</div>
+              <div className="mb-3 font-mono text-[0.62rem] tracking-widest text-[#7a5a9a]">{"// YOUR_PROGRESS"}</div>
               <div className="grid grid-cols-4 gap-px bg-[#2a1a3a]">
                 <div className="bg-[#0d120d] py-2 text-center">
                   <span className="block font-mono text-lg text-[#ff2d78]">1</span>
