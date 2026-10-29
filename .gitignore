@@ -60,3 +60,11 @@ apps/api/.next/
 /apps/web/playwright-report/
 /apps/web/test-results/
 /apps/api/node_modules/.vite/
+
+# dependencies (any depth) and generated build output
+node_modules/
+.next/
+apps/api/dist/
+# NOTE: packages/shared/dist is intentionally still tracked — the Railway build
+# (`npm run build --workspace @geek/api`) does not build @geek/shared, whose
+# package.json "main" points at dist/index.js.
